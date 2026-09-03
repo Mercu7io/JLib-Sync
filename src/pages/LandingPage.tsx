@@ -536,7 +536,7 @@ export const LandingPage: React.FC = () => {
                     onClick={() => setConflicts(prev => prev.map(c => c.id === conf.id ? { ...c, choice: 'both' } : c))}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${conf.choice === 'both' ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
                   >
-                    {t('merge.combineBoth', 'Combine Both Notes')}
+                    {t('merge.combineBoth', 'Keep Both Notes')}
                   </button>
                 </div>
               ))}

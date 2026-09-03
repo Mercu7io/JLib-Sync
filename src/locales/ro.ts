@@ -123,7 +123,7 @@ export const ro: TranslationSchema = {
     "collisionExplain": "Alegeți cum să rezolvați notițele de pe versete identice:",
     "keepSourceA": "Păstrează Sursa A",
     "keepSourceB": "Păstrează Sursa B",
-    "combineBoth": "Combină ambele notițe",
+    "combineBoth": "Păstrează ambele notițe",
     "buttonMerge": "Generează și Descarcă Copia Combinată",
     "buttonMergeShort": "Îmbină și Descarcă",
     "successTitle": "Îmbinare finalizată cu succes!",

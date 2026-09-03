@@ -123,7 +123,7 @@ export const zh_Hans: TranslationSchema = {
     "collisionExplain": "请选择如何处理相同经文处的笔记：",
     "keepSourceA": "保留来源 A",
     "keepSourceB": "保留来源 B",
-    "combineBoth": "合并两处笔记",
+    "combineBoth": "保留两处笔记",
     "buttonMerge": "生成并下载合并后的备份",
     "buttonMergeShort": "合并并下载",
     "successTitle": "合并成功完成！",

@@ -123,7 +123,7 @@ export const ru: TranslationSchema = {
     "collisionExplain": "Выберите способ разрешения заметок к одинаковым стихам:",
     "keepSourceA": "Оставить из Источника A",
     "keepSourceB": "Оставить из Источника B",
-    "combineBoth": "Объединить обе заметки",
+    "combineBoth": "Сохранить обе заметки",
     "buttonMerge": "Создать и скачать объединенную копию",
     "buttonMergeShort": "Объединить и скачать",
     "successTitle": "Слияние успешно завершено!",

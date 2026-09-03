@@ -123,7 +123,7 @@ export const el: TranslationSchema = {
     "collisionExplain": "Επιλέξτε πώς θα επιλυθούν οι σημειώσεις σε ίδια εδάφια:",
     "keepSourceA": "Διατήρηση Πηγής Α",
     "keepSourceB": "Διατήρηση Πηγής Β",
-    "combineBoth": "Συνδυασμός και των δύο σημειώσεων",
+    "combineBoth": "Διατήρηση και των δύο σημειώσεων",
     "buttonMerge": "Δημιουργία & Λήψη Συνδυασμένου Αντιγράφου",
     "buttonMergeShort": "Συγχώνευση & Λήψη",
     "successTitle": "Η συγχώνευση ολοκληρώθηκε με επιτυχία!",

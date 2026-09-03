@@ -123,7 +123,7 @@ export const he: TranslationSchema = {
     "collisionExplain": "בחר כיצד לפתור הערות על פסוקים זהים:",
     "keepSourceA": "שמור מקור א׳",
     "keepSourceB": "שמור מקור ב׳",
-    "combineBoth": "שלב את שתי ההערות",
+    "combineBoth": "שמור את שתי ההערות",
     "buttonMerge": "צור והורד גיבוי משולב",
     "buttonMergeShort": "מזג והורד",
     "successTitle": "המיזוג הושלם בהצלחה!",

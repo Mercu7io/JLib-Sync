@@ -123,7 +123,7 @@ export const es: TranslationSchema = {
     "collisionExplain": "Selecciona cómo resolver notas en versículos idénticos:",
     "keepSourceA": "Conservar Fuente A",
     "keepSourceB": "Conservar Fuente B",
-    "combineBoth": "Combinar ambas notas",
+    "combineBoth": "Conservar ambas notas",
     "buttonMerge": "Generar y Descargar Copia Combinada",
     "buttonMergeShort": "Fusionar y Descargar",
     "successTitle": "¡Fusión completada con éxito!",

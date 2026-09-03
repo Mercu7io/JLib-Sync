@@ -123,7 +123,7 @@ export const hu: TranslationSchema = {
     "collisionExplain": "Válassza ki, hogyan oldja meg az azonos versekhez fűzött jegyzeteket:",
     "keepSourceA": "A forrás megtartása",
     "keepSourceB": "B forrás megtartása",
-    "combineBoth": "Mindkét jegyzet összevonása",
+    "combineBoth": "Mindkét jegyzet megtartása",
     "buttonMerge": "Egyesített mentés készítése és letöltése",
     "buttonMergeShort": "Egyesítés és letöltés",
     "successTitle": "Az egyesítés sikeresen befejeződött!",

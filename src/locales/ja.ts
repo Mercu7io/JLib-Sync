@@ -123,7 +123,7 @@ export const ja: TranslationSchema = {
     "collisionExplain": "同一節のノートの統合方法を選択してください:",
     "keepSourceA": "ソースAを保持",
     "keepSourceB": "ソースBを保持",
-    "combineBoth": "両方のノートを結合",
+    "combineBoth": "両方のノートを保持",
     "buttonMerge": "統合バックアップを生成してダウンロード",
     "buttonMergeShort": "結合してダウンロード",
     "successTitle": "結合が正常に完了しました！",

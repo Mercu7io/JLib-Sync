@@ -123,7 +123,7 @@ export const ceb: TranslationSchema = {
     "collisionExplain": "Pilia kon unsaon pagsulbad ang mga nota sa samang bersikulo:",
     "keepSourceA": "Pabiling Tinubdan A",
     "keepSourceB": "Pabiling Tinubdan B",
-    "combineBoth": "Hiusaha ang Duha ka Nota",
+    "combineBoth": "Tipigi ang Duha ka Nota",
     "buttonMerge": "I-generate ug I-download ang Nahiusang Backup",
     "buttonMergeShort": "Hiusaha ug I-download",
     "successTitle": "Malamposong Nahiusa!",

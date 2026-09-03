@@ -123,7 +123,7 @@ export const de: TranslationSchema = {
     "collisionExplain": "Wählen Sie, wie Notizen bei identischen Versen gelöst werden sollen:",
     "keepSourceA": "Quelle A behalten",
     "keepSourceB": "Quelle B behalten",
-    "combineBoth": "Beide Notizen zusammenführen",
+    "combineBoth": "Beide Notizen behalten",
     "buttonMerge": "Kombinierte Sicherung generieren & herunterladen",
     "buttonMergeShort": "Zusammenführen & Herunterladen",
     "successTitle": "Zusammenführung erfolgreich abgeschlossen!",

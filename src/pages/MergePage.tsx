@@ -493,7 +493,7 @@ export const MergePage: React.FC = () => {
                   onClick={() => setConflicts(prev => prev.map(c => c.id === conf.id ? { ...c, choice: 'both' } : c))}
                   className={`px-2.5 py-1 rounded-md text-[11px] font-medium ${conf.choice === 'both' ? 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30' : 'text-slate-500 hover:text-slate-800'}`}
                 >
-                  {t('merge.combineBoth', 'Combine Both Notes')}
+                  {t('merge.combineBoth', 'Keep Both Notes')}
                 </button>
               </div>
             ))}

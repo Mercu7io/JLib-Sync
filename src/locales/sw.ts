@@ -123,7 +123,7 @@ export const sw: TranslationSchema = {
     "collisionExplain": "Chagua jinsi ya kushughulikia maelezo kwenye mistari inayofanana:",
     "keepSourceA": "Baki na Chanzo A",
     "keepSourceB": "Baki na Chanzo B",
-    "combineBoth": "Unganisha Maelezo Yote Mawili",
+    "combineBoth": "Hifadhi Maelezo Yote Mawili",
     "buttonMerge": "Tengeneza & Pakua Nakala Iliyounganishwa",
     "buttonMergeShort": "Unganisha & Pakua",
     "successTitle": "Uunganishaji Umekamilika Kikamilifu!",

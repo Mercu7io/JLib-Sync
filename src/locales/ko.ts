@@ -123,7 +123,7 @@ export const ko: TranslationSchema = {
     "collisionExplain": "동일 구절 메모 처리 방법을 선택하세요:",
     "keepSourceA": "소스 A 유지",
     "keepSourceB": "소스 B 유지",
-    "combineBoth": "두 메모 모두 합치기",
+    "combineBoth": "두 메모 모두 유지",
     "buttonMerge": "통합 백업 생성 및 다운로드",
     "buttonMergeShort": "병합 및 다운로드",
     "successTitle": "병합이 성공적으로 완료되었습니다!",

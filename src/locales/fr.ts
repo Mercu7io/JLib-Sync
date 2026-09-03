@@ -129,7 +129,7 @@ export const fr: TranslationSchema = {
     "collisionExplain": "Choisissez comment résoudre les notes sur des versets identiques :",
     "keepSourceA": "Garder Source A",
     "keepSourceB": "Garder Source B",
-    "combineBoth": "Combiner les deux notes",
+    "combineBoth": "Conserver les deux notes",
     "tagImportedNotes": "Tagger les notes importées du Backup 2",
     "tagImportedNotesDesc": "Attribuer un tag aux notes issues de la 2ᵉ sauvegarde pour les retrouver facilement dans Étude individuelle > Balises dans JW Library.",
     "tagImportedNotesLabel": "Nom du tag",

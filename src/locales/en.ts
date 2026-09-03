@@ -127,7 +127,7 @@ export const en = {
     collisionExplain: 'Select how to resolve notes on identical verses:',
     keepSourceA: 'Keep Source A',
     keepSourceB: 'Keep Source B',
-    combineBoth: 'Combine Both Notes',
+    combineBoth: 'Keep Both Notes',
     tagImportedNotes: 'Tag notes imported from Backup 2',
     tagImportedNotesDesc: 'Attach a tag to all notes imported from the second backup so you can easily review them under Personal Study > Tags in JW Library.',
     tagImportedNotesLabel: 'Tag name',

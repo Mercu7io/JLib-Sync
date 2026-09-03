@@ -123,7 +123,7 @@ export const id: TranslationSchema = {
     "collisionExplain": "Pilih cara menyelesaikan catatan pada ayat identik:",
     "keepSourceA": "Pertahankan Sumber A",
     "keepSourceB": "Pertahankan Sumber B",
-    "combineBoth": "Gabungkan Kedua Catatan",
+    "combineBoth": "Simpan Kedua Catatan",
     "buttonMerge": "Buat & Unduh Cadangan Gabungan",
     "buttonMergeShort": "Gabungkan & Unduh",
     "successTitle": "Penggabungan Berhasil!",

@@ -123,7 +123,7 @@ export const tl: TranslationSchema = {
     "collisionExplain": "Piliin kung paano aayusin ang mga note sa magkaparehong talata:",
     "keepSourceA": "Panatilihin ang Pinagmulan A",
     "keepSourceB": "Panatilihin ang Pinagmulan B",
-    "combineBoth": "Pagsamahin ang Parehong Note",
+    "combineBoth": "Panatilihin ang Parehong Note",
     "buttonMerge": "I-generate at I-download ang Pinagsamang Backup",
     "buttonMergeShort": "Pagsamahin at I-download",
     "successTitle": "Matagumpay na Napagsama!",

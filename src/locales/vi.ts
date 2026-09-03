@@ -123,7 +123,7 @@ export const vi: TranslationSchema = {
     "collisionExplain": "Chọn cách xử lý các ghi chú trùng câu:",
     "keepSourceA": "Giữ nguồn A",
     "keepSourceB": "Giữ nguồn B",
-    "combineBoth": "Kết hợp cả hai ghi chú",
+    "combineBoth": "Giữ lại cả hai ghi chú",
     "buttonMerge": "Tạo & Tải xuống Bản sao lưu Kết hợp",
     "buttonMergeShort": "Hợp nhất & Tải xuống",
     "successTitle": "Hợp nhất thành công!",

@@ -123,7 +123,7 @@ export const uk: TranslationSchema = {
     "collisionExplain": "Виберіть спосіб вирішення приміток до однакових віршів:",
     "keepSourceA": "Залишити з Джерела А",
     "keepSourceB": "Залишити з Джерела Б",
-    "combineBoth": "Об'єднати обидві примітки",
+    "combineBoth": "Зберегти обидві примітки",
     "buttonMerge": "Створити та завантажити об'єднану копію",
     "buttonMergeShort": "Об'єднати та завантажити",
     "successTitle": "Об'єднання успішно завершено!",

@@ -123,7 +123,7 @@ export const nl: TranslationSchema = {
     "collisionExplain": "Kies hoe notities op identieke verzen moeten worden opgelost:",
     "keepSourceA": "Behoud Bron A",
     "keepSourceB": "Behoud Bron B",
-    "combineBoth": "Combineer beide notities",
+    "combineBoth": "Beide notities behouden",
     "buttonMerge": "Gecombineerde back-up genereren & downloaden",
     "buttonMergeShort": "Samenvoegen & Downloaden",
     "successTitle": "Samenvoeging succesvol voltooid!",

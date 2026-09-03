@@ -123,7 +123,7 @@ export const ar: TranslationSchema = {
     "collisionExplain": "اختر كيفية تسوية الملاحظات على الآيات المتطابقة:",
     "keepSourceA": "الإبقاء على المصدر أ",
     "keepSourceB": "الإبقاء على المصدر ب",
-    "combineBoth": "دمج الملاحظتين معاً",
+    "combineBoth": "الاحتفاظ بكلتا الملاحظتين",
     "buttonMerge": "إنشاء وتنزيل النسخة المدمجة",
     "buttonMergeShort": "دمج وتنزيل",
     "successTitle": "تم الدمج بنجاح!",

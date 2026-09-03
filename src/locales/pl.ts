@@ -123,7 +123,7 @@ export const pl: TranslationSchema = {
     "collisionExplain": "Wybierz sposób rozwiązania notatek przy identycznych wersetach:",
     "keepSourceA": "Zachowaj ze Źródła A",
     "keepSourceB": "Zachowaj ze Źródła B",
-    "combineBoth": "Połącz obie notatki",
+    "combineBoth": "Zachowaj obie notatki",
     "buttonMerge": "Wygeneruj i pobierz połączoną kopię",
     "buttonMergeShort": "Scal i pobierz",
     "successTitle": "Scalanie zakończone sukcesem!",

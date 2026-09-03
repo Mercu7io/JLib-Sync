@@ -123,7 +123,7 @@ export const zh_Hant: TranslationSchema = {
     "collisionExplain": "請選擇如何處理相同經文上的筆記：",
     "keepSourceA": "保留來源 A",
     "keepSourceB": "保留來源 B",
-    "combineBoth": "合併兩份筆記",
+    "combineBoth": "保留兩份筆記",
     "buttonMerge": "產生並下載合併後的備份",
     "buttonMergeShort": "合併並下載",
     "successTitle": "合併成功完成！",

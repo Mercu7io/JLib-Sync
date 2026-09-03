@@ -123,7 +123,7 @@ export const yue_Hant: TranslationSchema = {
     "collisionExplain": "請選擇點樣處理同一處經文嘅筆記：",
     "keepSourceA": "保留來源 A",
     "keepSourceB": "保留來源 B",
-    "combineBoth": "兩份筆記合埋一齊",
+    "combineBoth": "保留兩份筆記",
     "buttonMerge": "產生並下載合併後嘅備份",
     "buttonMergeShort": "合併並下載",
     "successTitle": "合併順利完成！",

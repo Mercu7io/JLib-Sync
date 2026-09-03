@@ -123,7 +123,7 @@ export const it: TranslationSchema = {
     "collisionExplain": "Scegli come gestire le note su versetti identici:",
     "keepSourceA": "Mantieni Origine A",
     "keepSourceB": "Mantieni Origine B",
-    "combineBoth": "Combina entrambe le note",
+    "combineBoth": "Mantieni entrambe le note",
     "buttonMerge": "Genera e Scarica Backup Combinato",
     "buttonMergeShort": "Unisci e Scarica",
     "successTitle": "Unione completata con successo!",

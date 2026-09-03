@@ -123,7 +123,7 @@ export const sv: TranslationSchema = {
     "collisionExplain": "Välj hur anteckningar på identiska verser ska hanteras:",
     "keepSourceA": "Behåll Källa A",
     "keepSourceB": "Behåll Källa B",
-    "combineBoth": "Kombinera båda anteckningarna",
+    "combineBoth": "Behåll båda anteckningarna",
     "buttonMerge": "Generera & ladda ner kombinerad kopia",
     "buttonMergeShort": "Slå samman & ladda ner",
     "successTitle": "Sammanslagningen slutförd!",

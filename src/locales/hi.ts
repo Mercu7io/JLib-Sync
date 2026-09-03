@@ -123,7 +123,7 @@ export const hi: TranslationSchema = {
     "collisionExplain": "चुनें कि समान वचनों पर नोट्स को कैसे हल किया जाए:",
     "keepSourceA": "स्रोत A रखें",
     "keepSourceB": "स्रोत B रखें",
-    "combineBoth": "दोनों नोट्स को मिलाएं",
+    "combineBoth": "दोनों नोट्स रखें",
     "buttonMerge": "संयुक्त बैकअप उत्पन्न और डाउनलोड करें",
     "buttonMergeShort": "मर्ज और डाउनलोड करें",
     "successTitle": "मर्ज सफलतापूर्वक पूरा हुआ!",
