@@ -312,7 +312,7 @@ export const LandingPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                 <Smartphone className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <span>Phone</span>
+                <span>{t('merge.backup1', 'Backup 1')}</span>
               </div>
               {primaryFile ? (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 flex items-center space-x-1">
@@ -339,7 +339,7 @@ export const LandingPage: React.FC = () => {
               >
                 {/* Universal Phone outline icon with centered punch-hole */}
                 <div className="w-12 h-16 rounded-xl border-2 border-slate-400 group-hover:border-blue-500 dark:border-slate-500 dark:group-hover:border-blue-400 flex flex-col items-center justify-between p-1 mx-auto transition-colors shadow-sm">
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-400 group-hover:bg-blue-500 dark:bg-slate-500 dark:group-hover:bg-blue-400 mt-0.5" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-slate-400 group-hover:bg-blue-500 dark:bg-slate-500 dark:group-hover:border-blue-400 mt-0.5" />
                   <Upload className="w-4 h-4 text-slate-400 group-hover:text-blue-500 dark:text-slate-500 dark:group-hover:text-blue-400" />
                   <div className="w-4 h-0.5 rounded-full bg-slate-300 dark:bg-slate-600 mb-0.5" />
                 </div>
@@ -347,7 +347,7 @@ export const LandingPage: React.FC = () => {
                   <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                     {t('merge.dropHere', 'Drop .jwlibrary or browse')}
                   </div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Phone study backup</div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{t('merge.backup1Desc', 'First study backup')}</div>
                 </div>
               </div>
             ) : (
@@ -407,7 +407,7 @@ export const LandingPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                 <Tablet className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-                <span>Tablet</span>
+                <span>{t('merge.backup2', 'Backup 2')}</span>
               </div>
               {secondaryFile ? (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 flex items-center space-x-1">
@@ -442,7 +442,7 @@ export const LandingPage: React.FC = () => {
                   <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
                     {t('merge.dropHere', 'Drop .jwlibrary or browse')}
                   </div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Tablet study backup</div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{t('merge.backup2Desc', 'Second study backup')}</div>
                 </div>
               </div>
             ) : (
@@ -508,14 +508,14 @@ export const LandingPage: React.FC = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <label className={`p-3 rounded-xl border cursor-pointer transition-all ${conf.choice === 'a' ? 'border-blue-500 bg-blue-500/10' : 'border-slate-200 dark:border-white/[0.06]'}`}>
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-xs">Phone ({primaryFile.summary.deviceName})</span>
+                        <span className="font-semibold text-xs">{t('merge.backup1', 'Backup 1')} ({primaryFile.summary.deviceName || 'Source 1'})</span>
                         <input type="radio" name={`conf_${conf.id}`} checked={conf.choice === 'a'} onChange={() => setConflicts(prev => prev.map(c => c.id === conf.id ? { ...c, choice: 'a' } : c))} />
                       </div>
                       <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2 mt-1">&ldquo;{conf.sourceAText}&rdquo;</p>
                     </label>
                     <label className={`p-3 rounded-xl border cursor-pointer transition-all ${conf.choice === 'b' ? 'border-blue-500 bg-blue-500/10' : 'border-slate-200 dark:border-white/[0.06]'}`}>
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-xs">Tablet ({secondaryFile.summary.deviceName})</span>
+                        <span className="font-semibold text-xs">{t('merge.backup2', 'Backup 2')} ({secondaryFile.summary.deviceName || 'Source 2'})</span>
                         <input type="radio" name={`conf_${conf.id}`} checked={conf.choice === 'b'} onChange={() => setConflicts(prev => prev.map(c => c.id === conf.id ? { ...c, choice: 'b' } : c))} />
                       </div>
                       <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2 mt-1">&ldquo;{conf.sourceBText}&rdquo;</p>
@@ -648,7 +648,7 @@ export const LandingPage: React.FC = () => {
             className="inline-flex items-center space-x-1.5 text-blue-600 dark:text-blue-400 hover:underline font-semibold"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>{t('merge.loadDemoPair', 'Load Demo Pair (Tablet & Phone)')}</span>
+            <span>{t('merge.loadDemoPair', 'Load Demo Pair (Sample Files)')}</span>
           </button>
           <span className="text-slate-300 dark:text-slate-700">•</span>
           <Link
@@ -669,7 +669,7 @@ export const LandingPage: React.FC = () => {
               <div className="flex items-center space-x-2 text-sm font-bold text-slate-900 dark:text-white">
                 <Cloud className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <span>
-                  Select Backup for {cloudPickerTarget === 'primary' ? 'Phone' : 'Tablet'}
+                  Select Backup for {cloudPickerTarget === 'primary' ? t('merge.backup1', 'Backup 1') : t('merge.backup2', 'Backup 2')}
                 </span>
               </div>
               <button

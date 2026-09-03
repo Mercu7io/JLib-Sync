@@ -107,7 +107,11 @@ export const en = {
   merge: {
     heroTitle: 'Merge your .jwlibrary files instantly.',
     heroSubtitle: 'Combine your notes, highlights, and bookmarks from multiple devices seamlessly.',
-    loadDemoPair: 'Load Demo Pair (Tablet & Phone)',
+    loadDemoPair: 'Load Demo Pair (Sample Files)',
+    backup1: 'Backup 1',
+    backup2: 'Backup 2',
+    backup1Desc: 'First study backup',
+    backup2Desc: 'Second study backup',
     sourceA: 'Source A (Primary Base)',
     sourceB: 'Source B (Secondary to Merge In)',
     selectBackup: 'Select .jwlibrary backup',
@@ -247,7 +251,7 @@ export const en = {
     step1Title: '1. Export your backups from JW Library',
     step1Desc: 'Open JW Library on your phone and tablet. Go to Personal Study > Backup and Restore > Create a Backup, then save the .jwlibrary file.',
     step2Title: '2. Merge them together on Panda JWL-Sync',
-    step2Desc: 'Drop your phone backup on the left and your tablet backup on the right. Our algorithm unifies notes on the same verses, consolidates tags, and avoids duplicates.',
+    step2Desc: 'Drop your first backup on the left and your second backup on the right. Our algorithm unifies notes on the same verses, consolidates tags, and avoids duplicates.',
     step3Title: '3. Restore the merged backup',
     step3Desc: 'Download your merged .jwlibrary file. Open JW Library on both devices and select Restore a Backup. Both devices now share your complete research!',
     privacyTitle: '100% In-Browser Privacy Guarantee',
@@ -286,6 +290,13 @@ export type TranslationSchema = {
     ? Omit<EnSchema['nav'], 'help' | 'helpDesc'> & {
         help?: string;
         helpDesc?: string;
+      }
+    : K extends 'merge'
+    ? Omit<EnSchema['merge'], 'backup1' | 'backup2' | 'backup1Desc' | 'backup2Desc'> & {
+        backup1?: string;
+        backup2?: string;
+        backup1Desc?: string;
+        backup2Desc?: string;
       }
     : EnSchema[K];
 } & {
