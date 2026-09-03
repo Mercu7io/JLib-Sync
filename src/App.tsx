@@ -24,7 +24,7 @@ export const App: React.FC = () => {
     <BrowserRouter>
       <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 selection:bg-orange-500/20 selection:text-orange-400 transition-colors duration-150">
         <Navbar />
-        <main className="flex-1">
+        <main className="flex-1 pb-20 lg:pb-0">
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/merge" element={<MergePage />} />

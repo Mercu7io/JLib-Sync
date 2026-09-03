@@ -51,6 +51,41 @@ export class GoogleDriveManager {
     });
   }
 
+  private saveToken(token: string, expiresInSec = 3599): void {
+    this.accessToken = token;
+    // Set expiry with a 2-minute safety buffer
+    const expiresAt = Date.now() + Math.max(0, expiresInSec - 120) * 1000;
+    try {
+      localStorage.setItem('jwsync_drive_token', token);
+      localStorage.setItem('jwsync_drive_token_expires_at', expiresAt.toString());
+      localStorage.setItem('jwsync_drive_connected', 'true');
+    } catch (_) {}
+  }
+
+  private clearStoredToken(): void {
+    this.accessToken = null;
+    this.folderId = null;
+    try {
+      localStorage.removeItem('jwsync_drive_token');
+      localStorage.removeItem('jwsync_drive_token_expires_at');
+      localStorage.removeItem('jwsync_drive_connected');
+    } catch (_) {}
+  }
+
+  getStoredToken(): string | null {
+    try {
+      const token = localStorage.getItem('jwsync_drive_token');
+      const expiresAtStr = localStorage.getItem('jwsync_drive_token_expires_at');
+      if (token && expiresAtStr) {
+        const expiresAt = parseInt(expiresAtStr, 10);
+        if (Date.now() < expiresAt) {
+          return token;
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
   async init(onAuthSuccess?: (token: string) => void): Promise<void> {
     await this.loadGoogleScript();
 
@@ -64,16 +99,31 @@ export class GoogleDriveManager {
       callback: (tokenResponse: any) => {
         if (tokenResponse.error) {
           if (tokenResponse.type === 'no_session' || tokenResponse.error === 'user_logged_out') {
-            localStorage.removeItem('jwsync_drive_connected');
+            this.clearStoredToken();
             return;
           }
           throw tokenResponse;
         }
-        this.accessToken = tokenResponse.access_token;
-        localStorage.setItem('jwsync_drive_connected', 'true');
+        const expiresIn = Number(tokenResponse.expires_in) || 3599;
+        this.saveToken(tokenResponse.access_token, expiresIn);
         onAuthSuccess?.(this.accessToken!);
       },
     });
+
+    // Check if we have an active, non-expired token in localStorage
+    const savedToken = this.getStoredToken();
+    if (savedToken) {
+      this.accessToken = savedToken;
+      onAuthSuccess?.(savedToken);
+    } else {
+      // If token is expired but user was previously connected, attempt a silent token refresh
+      const wasConnected = localStorage.getItem('jwsync_drive_connected');
+      if (wasConnected === 'true') {
+        try {
+          this.tokenClient.requestAccessToken({ prompt: '' });
+        } catch (_) {}
+      }
+    }
   }
 
   login(): void {
@@ -96,16 +146,12 @@ export class GoogleDriveManager {
   }
 
   logout(): void {
-    if (this.accessToken && window.google?.accounts?.oauth2) {
-      window.google.accounts.oauth2.revoke(this.accessToken, () => {
-        this.accessToken = null;
-        this.folderId = null;
-        localStorage.removeItem('jwsync_drive_connected');
-      });
-    } else {
-      this.accessToken = null;
-      this.folderId = null;
-      localStorage.removeItem('jwsync_drive_connected');
+    const token = this.accessToken;
+    this.clearStoredToken();
+    if (token && window.google?.accounts?.oauth2) {
+      try {
+        window.google.accounts.oauth2.revoke(token, () => {});
+      } catch (_) {}
     }
   }
 
