@@ -108,20 +108,20 @@ export function runHealthChecks(db: Database): IHealthCheckResult[] {
     });
   }
 
-  // 5. Unused Tags
+  // 5. Unused Tags (Only user tags Type = 1; playlists Type = 2 and system tags Type = 0 must be preserved)
   if (tableExists(db, 'Tag') && tableExists(db, 'TagMap')) {
     const sql = `
       SELECT t.TagId 
       FROM Tag t 
       LEFT JOIN TagMap tm ON t.TagId = tm.TagId 
-      WHERE tm.TagMapId IS NULL
+      WHERE t.Type = 1 AND tm.TagMapId IS NULL
     `;
     const unusedTags = queryAll<{ TagId: number }>(db, sql);
     results.push({
       key: 'unused_tags',
       label: 'Unused Tags',
       count: unusedTags.length,
-      description: 'Tags with zero attached notes or scriptures.',
+      description: 'Study tags with zero attached notes or scriptures.',
       canFix: true,
       affectedIds: unusedTags.map((r) => r.TagId),
     });

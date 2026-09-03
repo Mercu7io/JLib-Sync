@@ -134,10 +134,10 @@ export async function mergeJwLibraries(
             AND IFNULL(KeySymbol, '') = :key
             AND IFNULL(MepsLanguage, -1) = :meps
             AND IFNULL(Type, 0) = :type
-            AND (
-              (:type = 0 AND IFNULL(DocumentId, -1) = :doc AND IFNULL(Track, -1) = :track AND IFNULL(IssueTagNumber, 0) = :issue)
-              OR (:type != 0)
-            )
+            AND IFNULL(DocumentId, -1) = :doc
+            AND IFNULL(Track, -1) = :track
+            AND IFNULL(IssueTagNumber, 0) = :issue
+            AND IFNULL(Specialty, '') = :spec
           LIMIT 1
         `;
 
@@ -150,6 +150,7 @@ export async function mergeJwLibraries(
           ':doc': loc.DocumentId ?? -1,
           ':track': loc.Track ?? -1,
           ':issue': loc.IssueTagNumber ?? 0,
+          ':spec': loc.Specialty ?? '',
         });
 
         if (match) {
@@ -158,8 +159,8 @@ export async function mergeJwLibraries(
           // Insert new location into mainDb
           execute(
             mainDb,
-            `INSERT INTO Location (BookNumber, ChapterNumber, DocumentId, Track, IssueTagNumber, KeySymbol, MepsLanguage, Type, Title)
-             VALUES (:b, :c, :d, :tr, :i, :k, :m, :ty, :t)`,
+            `INSERT INTO Location (BookNumber, ChapterNumber, DocumentId, Track, IssueTagNumber, KeySymbol, MepsLanguage, Type, Title, Specialty, Edition)
+             VALUES (:b, :c, :d, :tr, :i, :k, :m, :ty, :t, :spec, :ed)`,
             {
               ':b': loc.BookNumber ?? null,
               ':c': loc.ChapterNumber ?? null,
@@ -170,6 +171,8 @@ export async function mergeJwLibraries(
               ':m': loc.MepsLanguage ?? null,
               ':ty': loc.Type ?? 0,
               ':t': loc.Title ?? null,
+              ':spec': loc.Specialty ?? null,
+              ':ed': loc.Edition ?? null,
             }
           );
           const newIdRow = queryOne<{ id: number }>(mainDb, 'SELECT last_insert_rowid() AS id');
@@ -188,20 +191,22 @@ export async function mergeJwLibraries(
 
       for (const tag of secTags) {
         let finalTagName = tag.Name;
-        const rule = tagManager[tag.Name];
-
-        if (rule) {
-          if (rule.action === 'merge' && rule.targetName) {
-            finalTagName = rule.targetName;
-          } else if (rule.action === 'rename' && rule.customName?.trim()) {
-            finalTagName = rule.customName.trim();
+        // Only apply user tagManager rules to personal study tags (Type = 1), never playlists (Type = 2) or system tags (Type = 0)
+        if (tag.Type === 1) {
+          const rule = tagManager[tag.Name];
+          if (rule) {
+            if (rule.action === 'merge' && rule.targetName) {
+              finalTagName = rule.targetName;
+            } else if (rule.action === 'rename' && rule.customName?.trim()) {
+              finalTagName = rule.customName.trim();
+            }
           }
         }
 
         const match = queryOne<{ TagId: number }>(
           mainDb,
-          'SELECT TagId FROM Tag WHERE Name = :name COLLATE NOCASE LIMIT 1',
-          { ':name': finalTagName }
+          'SELECT TagId FROM Tag WHERE Name = :name COLLATE NOCASE AND Type = :type LIMIT 1',
+          { ':name': finalTagName, ':type': tag.Type ?? 1 }
         );
 
         if (match) {
@@ -520,13 +525,21 @@ export async function mergeJwLibraries(
     }
 
     // ── 8. Merge Playlists & Independent Media ─────────────────────────────
+    // Seed PlaylistItemAccuracy if needed to satisfy FK references
+    if (tableExists(mainDb, 'PlaylistItemAccuracy')) {
+      execute(
+        mainDb,
+        `INSERT OR IGNORE INTO PlaylistItemAccuracy (PlaylistItemAccuracyId, Description) VALUES (1, 'Accurate'), (2, 'NeedsUserVerification')`
+      );
+    }
+
     const mediaMap = new Map<number, number>(); // secMediaId -> mainMediaId
     if (tableExists(secDb, 'IndependentMedia') && tableExists(mainDb, 'IndependentMedia')) {
       const secMedias = queryAll<any>(secDb, 'SELECT * FROM IndependentMedia');
       for (const media of secMedias) {
         const dup = queryOne<{ IndependentMediaId: number }>(
           mainDb,
-          'SELECT IndependentMediaId FROM IndependentMedia WHERE Hash = :h AND FilePath = :f LIMIT 1',
+          'SELECT IndependentMediaId FROM IndependentMedia WHERE FilePath = :f OR Hash = :h LIMIT 1',
           { ':h': media.Hash, ':f': media.FilePath }
         );
         if (dup) {
@@ -534,7 +547,7 @@ export async function mergeJwLibraries(
         } else {
           execute(
             mainDb,
-            'INSERT INTO IndependentMedia (OriginalFilename, FilePath, MimeType, Hash) VALUES (:o, :f, :m, :h)',
+            'INSERT OR IGNORE INTO IndependentMedia (OriginalFilename, FilePath, MimeType, Hash) VALUES (:o, :f, :m, :h)',
             { ':o': media.OriginalFilename, ':f': media.FilePath, ':m': media.MimeType, ':h': media.Hash }
           );
           const newIdRow = queryOne<{ id: number }>(mainDb, 'SELECT last_insert_rowid() AS id');
@@ -547,12 +560,48 @@ export async function mergeJwLibraries(
     if (tableExists(secDb, 'PlaylistItem') && tableExists(mainDb, 'PlaylistItem')) {
       const secPlaylists = queryAll<any>(secDb, 'SELECT * FROM PlaylistItem');
       for (const pl of secPlaylists) {
+        // Validate thumbnail path exists in IndependentMedia to satisfy FK constraint
+        const thumbValid = pl.ThumbnailFilePath
+          ? queryOne(mainDb, 'SELECT 1 FROM IndependentMedia WHERE FilePath = :f LIMIT 1', { ':f': pl.ThumbnailFilePath })
+          : null;
+        const finalThumb = thumbValid ? pl.ThumbnailFilePath : null;
+
+        // Check if identical playlist item already exists in mainDb
+        const existingPl = queryOne<{ PlaylistItemId: number }>(
+          mainDb,
+          `SELECT PlaylistItemId FROM PlaylistItem 
+           WHERE Label = :l 
+             AND IFNULL(StartTrimOffsetTicks, -1) = :s 
+             AND IFNULL(EndTrimOffsetTicks, -1) = :e 
+             AND Accuracy = :a 
+             AND EndAction = :ea 
+             AND IFNULL(ThumbnailFilePath, '') = :t 
+           LIMIT 1`,
+          {
+            ':l': pl.Label,
+            ':s': pl.StartTrimOffsetTicks ?? -1,
+            ':e': pl.EndTrimOffsetTicks ?? -1,
+            ':a': pl.Accuracy ?? 1,
+            ':ea': pl.EndAction ?? 0,
+            ':t': finalThumb ?? '',
+          }
+        );
+
+        if (existingPl) {
+          playlistMap.set(pl.PlaylistItemId, existingPl.PlaylistItemId);
+          continue;
+        }
+
         execute(
           mainDb,
           'INSERT INTO PlaylistItem (Label, StartTrimOffsetTicks, EndTrimOffsetTicks, Accuracy, EndAction, ThumbnailFilePath) VALUES (:l, :s, :e, :a, :ea, :t)',
           {
-            ':l': pl.Label, ':s': pl.StartTrimOffsetTicks, ':e': pl.EndTrimOffsetTicks,
-            ':a': pl.Accuracy, ':ea': pl.EndAction, ':t': pl.ThumbnailFilePath
+            ':l': pl.Label,
+            ':s': pl.StartTrimOffsetTicks ?? null,
+            ':e': pl.EndTrimOffsetTicks ?? null,
+            ':a': pl.Accuracy ?? 1,
+            ':ea': pl.EndAction ?? 0,
+            ':t': finalThumb,
           }
         );
         const newIdRow = queryOne<{ id: number }>(mainDb, 'SELECT last_insert_rowid() AS id');
@@ -567,8 +616,8 @@ export async function mergeJwLibraries(
               if (mappedMediaId) {
                 execute(
                   mainDb,
-                  'INSERT INTO PlaylistItemIndependentMediaMap (PlaylistItemId, IndependentMediaId, DurationTicks) VALUES (:pid, :mid, :d)',
-                  { ':pid': newIdRow.id, ':mid': mappedMediaId, ':d': mm.DurationTicks }
+                  'INSERT OR IGNORE INTO PlaylistItemIndependentMediaMap (PlaylistItemId, IndependentMediaId, DurationTicks) VALUES (:pid, :mid, :d)',
+                  { ':pid': newIdRow.id, ':mid': mappedMediaId, ':d': mm.DurationTicks ?? 0 }
                 );
               }
             }
@@ -582,8 +631,8 @@ export async function mergeJwLibraries(
               if (mappedLocId) {
                 execute(
                   mainDb,
-                  'INSERT INTO PlaylistItemLocationMap (PlaylistItemId, LocationId, MajorMultimediaType, BaseDurationTicks) VALUES (:pid, :lid, :m, :b)',
-                  { ':pid': newIdRow.id, ':lid': mappedLocId, ':m': lm.MajorMultimediaType, ':b': lm.BaseDurationTicks }
+                  'INSERT OR IGNORE INTO PlaylistItemLocationMap (PlaylistItemId, LocationId, MajorMultimediaType, BaseDurationTicks) VALUES (:pid, :lid, :m, :b)',
+                  { ':pid': newIdRow.id, ':lid': mappedLocId, ':m': lm.MajorMultimediaType ?? 0, ':b': lm.BaseDurationTicks ?? null }
                 );
               }
             }
@@ -597,39 +646,52 @@ export async function mergeJwLibraries(
               execute(
                 mainDb,
                 'INSERT INTO PlaylistItemMarker (PlaylistItemId, Label, StartTimeTicks, DurationTicks, EndTransitionDurationTicks) VALUES (:pid, :l, :s, :d, :e)',
-                { ':pid': newIdRow.id, ':l': mk.Label, ':s': mk.StartTimeTicks, ':d': mk.DurationTicks, ':e': mk.EndTransitionDurationTicks }
+                {
+                  ':pid': newIdRow.id,
+                  ':l': mk.Label,
+                  ':s': mk.StartTimeTicks ?? 0,
+                  ':d': mk.DurationTicks ?? 0,
+                  ':e': mk.EndTransitionDurationTicks ?? 0,
+                }
               );
               const newMkRow = queryOne<{ id: number }>(mainDb, 'SELECT last_insert_rowid() AS id');
               if (newMkRow) markerMap.set(mk.PlaylistItemMarkerId, newMkRow.id);
             }
           }
 
-          // PlaylistItemMarkerBibleVerseMap
-          if (tableExists(secDb, 'PlaylistItemMarkerBibleVerseMap') && tableExists(mainDb, 'PlaylistItemMarkerBibleVerseMap')) {
-            const secVerseMaps = queryAll<any>(secDb, 'SELECT * FROM PlaylistItemMarkerBibleVerseMap');
-            for (const vm of secVerseMaps) {
-              const mappedMkId = markerMap.get(vm.PlaylistItemMarkerId);
-              if (mappedMkId) {
-                execute(
-                  mainDb,
-                  'INSERT INTO PlaylistItemMarkerBibleVerseMap (PlaylistItemMarkerId, VerseId) VALUES (:mid, :vid)',
-                  { ':mid': mappedMkId, ':vid': vm.VerseId }
+          // PlaylistItemMarkerBibleVerseMap & PlaylistItemMarkerParagraphMap (scoped to current playlist markers)
+          if (markerMap.size > 0) {
+            if (tableExists(secDb, 'PlaylistItemMarkerBibleVerseMap') && tableExists(mainDb, 'PlaylistItemMarkerBibleVerseMap')) {
+              for (const [secMkId, mainMkId] of markerMap.entries()) {
+                const secVerseMaps = queryAll<any>(
+                  secDb,
+                  'SELECT * FROM PlaylistItemMarkerBibleVerseMap WHERE PlaylistItemMarkerId = :mid',
+                  { ':mid': secMkId }
                 );
+                for (const vm of secVerseMaps) {
+                  execute(
+                    mainDb,
+                    'INSERT OR IGNORE INTO PlaylistItemMarkerBibleVerseMap (PlaylistItemMarkerId, VerseId) VALUES (:mid, :vid)',
+                    { ':mid': mainMkId, ':vid': vm.VerseId }
+                  );
+                }
               }
             }
-          }
 
-          // PlaylistItemMarkerParagraphMap
-          if (tableExists(secDb, 'PlaylistItemMarkerParagraphMap') && tableExists(mainDb, 'PlaylistItemMarkerParagraphMap')) {
-            const secParaMaps = queryAll<any>(secDb, 'SELECT * FROM PlaylistItemMarkerParagraphMap');
-            for (const pm of secParaMaps) {
-              const mappedMkId = markerMap.get(pm.PlaylistItemMarkerId);
-              if (mappedMkId) {
-                execute(
-                  mainDb,
-                  'INSERT INTO PlaylistItemMarkerParagraphMap (PlaylistItemMarkerId, MepsDocumentId, ParagraphIndex, MarkerIndexWithinParagraph) VALUES (:mid, :meps, :pi, :mi)',
-                  { ':mid': mappedMkId, ':meps': pm.MepsDocumentId, ':pi': pm.ParagraphIndex, ':mi': pm.MarkerIndexWithinParagraph }
+            if (tableExists(secDb, 'PlaylistItemMarkerParagraphMap') && tableExists(mainDb, 'PlaylistItemMarkerParagraphMap')) {
+              for (const [secMkId, mainMkId] of markerMap.entries()) {
+                const secParaMaps = queryAll<any>(
+                  secDb,
+                  'SELECT * FROM PlaylistItemMarkerParagraphMap WHERE PlaylistItemMarkerId = :mid',
+                  { ':mid': secMkId }
                 );
+                for (const pm of secParaMaps) {
+                  execute(
+                    mainDb,
+                    'INSERT OR IGNORE INTO PlaylistItemMarkerParagraphMap (PlaylistItemMarkerId, MepsDocumentId, ParagraphIndex, MarkerIndexWithinParagraph) VALUES (:mid, :meps, :pi, :mi)',
+                    { ':mid': mainMkId, ':meps': pm.MepsDocumentId, ':pi': pm.ParagraphIndex, ':mi': pm.MarkerIndexWithinParagraph }
+                  );
+                }
               }
             }
           }
@@ -639,10 +701,12 @@ export async function mergeJwLibraries(
 
     // ── 9. Merge TagMap ────────────────────────────────────────────────────
     if (tableExists(secDb, 'TagMap') && tableExists(mainDb, 'TagMap')) {
-      const secTagMaps = queryAll<ITagMap>(secDb, 'SELECT * FROM TagMap');
+      const secTagMaps = queryAll<ITagMap>(secDb, 'SELECT * FROM TagMap ORDER BY TagId ASC, Position ASC');
 
       for (const tm of secTagMaps) {
         const mappedTagId = tagMap.get(tm.TagId);
+        if (!mappedTagId) continue;
+
         const mappedNoteId = tm.NoteId ? noteMap.get(tm.NoteId) : null;
         const mappedLocId = tm.LocationId ? locationMap.get(tm.LocationId) : null;
         const mappedPlaylistId = tm.PlaylistItemId ? playlistMap.get(tm.PlaylistItemId) : null;
@@ -688,7 +752,7 @@ export async function mergeJwLibraries(
 
           execute(
             mainDb,
-            `INSERT INTO TagMap (PlaylistItemId, LocationId, NoteId, TagId, Position)
+            `INSERT OR IGNORE INTO TagMap (PlaylistItemId, LocationId, NoteId, TagId, Position)
              VALUES (:pl, :loc, :nid, :tid, :pos)`,
             {
               ':pl': finalPlaylistId,

@@ -14,6 +14,8 @@ export interface ILocation {
   MepsLanguage: number | null;
   Type: number;
   Title: string | null;
+  Specialty?: string | null;
+  Edition?: string | null;
 }
 
 export interface INote {
