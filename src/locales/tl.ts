@@ -108,6 +108,7 @@ export const tl: TranslationSchema = {
     "heroTitle": "Merge your .jwlibrary files instantly.",
     "heroSubtitle": "Combine your notes, highlights, and bookmarks from multiple devices seamlessly.",
     "loadDemoPair": "Load Demo Pair (Tablet & Phone)",
+    "howToExport": "Paano mag-export?",
     "sourceA": "Pangunahing Library (Pinagmulan A)",
     "sourceB": "Pangalawang Library (Pinagmulan B)",
     "selectBackup": "Pumili ng .jwlibrary backup",
@@ -241,7 +242,7 @@ export const tl: TranslationSchema = {
   "footer": {
     "clientSide": "100% Client-Side SQLite (WASM)",
     "zeroTelemetry": "Walang telemetry at lubos na pribado",
-    "companion": "Hindi opisyal na tool para sa mga nag-aaral at mananaliksik. Hindi kaanib sa jw.org.",
+    "companion": "Ang Panda JWL-Sync ay gumagana nang buo sa iyong browser gamit ang SQLite WebAssembly. Ang iyong mga personal na study note, highlight, at backup ay hinding-hindi ipinapadala sa internet o ia-upload sa anumang third-party server.",
     "officialLinks": "Mga opisyal na link sa jw.org para sa beripikadong mga teksto sa Bibliya.",
     "creatorSite": "Bisitahin ang redpandaium.com",
     "app1Title": "Daily Text Wallpaper & Widget",

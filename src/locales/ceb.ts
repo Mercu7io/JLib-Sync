@@ -108,6 +108,7 @@ export const ceb: TranslationSchema = {
     "heroTitle": "Merge your .jwlibrary files instantly.",
     "heroSubtitle": "Combine your notes, highlights, and bookmarks from multiple devices seamlessly.",
     "loadDemoPair": "Load Demo Pair (Tablet & Phone)",
+    "howToExport": "Unsaon pag-export?",
     "sourceA": "Pangulong Librarya (Tinubdan A)",
     "sourceB": "Ikaduhang Librarya (Tinubdan B)",
     "selectBackup": "Pagpili og .jwlibrary backup",
@@ -241,7 +242,7 @@ export const ceb: TranslationSchema = {
   "footer": {
     "clientSide": "100% Client-Side SQLite (WASM)",
     "zeroTelemetry": "Walay telemetry ug hingpit nga pribado",
-    "companion": "Dili opisyal nga himan alang sa mga estudyante ug tigdukiduki. Wala makig-uban sa jw.org.",
+    "companion": "Ang Panda JWL-Sync hingpit nga naglihok sa imong browser gamit ang SQLite WebAssembly. Ang imong personal nga mga nota sa pagtuon, mga highlight, ug mga backup dili gayud ipadala sa internet o i-upload sa bisan unsang server sa ikatulo nga partido.",
     "officialLinks": "Mga opisyal nga link sa jw.org alang sa nakompirmar nga mga teksto.",
     "creatorSite": "Bisitaha ang redpandaium.com",
     "app1Title": "Daily Text Wallpaper & Widget",

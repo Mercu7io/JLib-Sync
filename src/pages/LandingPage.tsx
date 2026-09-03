@@ -734,7 +734,7 @@ export const LandingPage: React.FC = () => {
             className="inline-flex items-center space-x-1 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium"
           >
             <HelpCircle className="w-3.5 h-3.5 text-emerald-500" />
-            <span>How to export?</span>
+            <span>{t('merge.howToExport', 'How to export?')}</span>
           </Link>
         </div>
       </section>

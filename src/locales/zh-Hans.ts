@@ -108,6 +108,7 @@ export const zh_Hans: TranslationSchema = {
     "heroTitle": "Merge your .jwlibrary files instantly.",
     "heroSubtitle": "Combine your notes, highlights, and bookmarks from multiple devices seamlessly.",
     "loadDemoPair": "Load Demo Pair (Tablet & Phone)",
+    "howToExport": "如何导出？",
     "sourceA": "主要资料库 (来源 A)",
     "sourceB": "次要资料库 (来源 B)",
     "selectBackup": "选择 .jwlibrary 备份",
@@ -241,7 +242,7 @@ export const zh_Hans: TranslationSchema = {
   "footer": {
     "clientSide": "100% 浏览器本地 SQLite (WASM)",
     "zeroTelemetry": "零数据追踪，严格保护隐私",
-    "companion": "专为研读人员制作的非官方辅助工具，与 jw.org 无隶属关系。",
+    "companion": "Panda JWL-Sync 完全使用 SQLite WebAssembly 在您的浏览器中运行。您的个人研读笔记、高亮和备份文件绝不会通过互联网传输或上传至任何第三方服务器。",
     "officialLinks": "已验证的经文引用链接将直接跳转至 jw.org 官方页面。",
     "creatorSite": "访问 redpandaium.com",
     "app1Title": "Daily Text Wallpaper & Widget",

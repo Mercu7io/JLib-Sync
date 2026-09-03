@@ -108,6 +108,7 @@ export const id: TranslationSchema = {
     "heroTitle": "Merge your .jwlibrary files instantly.",
     "heroSubtitle": "Combine your notes, highlights, and bookmarks from multiple devices seamlessly.",
     "loadDemoPair": "Load Demo Pair (Tablet & Phone)",
+    "howToExport": "Bagaimana cara mengekspor?",
     "sourceA": "Perpustakaan Utama (Sumber A)",
     "sourceB": "Perpustakaan Sekunder (Sumber B)",
     "selectBackup": "Pilih cadangan .jwlibrary",
@@ -241,7 +242,7 @@ export const id: TranslationSchema = {
   "footer": {
     "clientSide": "100% SQLite di Sisi Klien (WASM)",
     "zeroTelemetry": "Nol telemetri & privasi mutlak",
-    "companion": "Alat bantu belajar tidak resmi bagi pelajar dan peneliti. Tidak berafiliasi dengan jw.org.",
+    "companion": "Panda JWL-Sync beroperasi sepenuhnya di browser Anda menggunakan SQLite WebAssembly. Catatan pelajaran pribadi, sorotan, dan cadangan database Anda tidak pernah dikirimkan melalui internet atau diunggah ke server pihak ketiga mana pun.",
     "officialLinks": "Tautan resmi jw.org untuk rujukan ayat yang terverifikasi.",
     "creatorSite": "Kunjungi redpandaium.com",
     "app1Title": "Daily Text Wallpaper & Widget",

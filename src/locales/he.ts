@@ -108,6 +108,7 @@ export const he: TranslationSchema = {
     "heroTitle": "Merge your .jwlibrary files instantly.",
     "heroSubtitle": "Combine your notes, highlights, and bookmarks from multiple devices seamlessly.",
     "loadDemoPair": "Load Demo Pair (Tablet & Phone)",
+    "howToExport": "כיצד לייצא?",
     "sourceA": "ספרייה ראשית (מקור א׳)",
     "sourceB": "ספרייה משנית (מקור ב׳)",
     "selectBackup": "בחר גיבוי .jwlibrary",
@@ -241,7 +242,7 @@ export const he: TranslationSchema = {
   "footer": {
     "clientSide": "100% עיבוד צד-לקוח עם SQLite (WASM)",
     "zeroTelemetry": "ללא מעקב נתונים ופרטיות מוחלטת",
-    "companion": "כלי עיון לא רשמי לתלמידים וחוקרים. אינו מסונף ל-jw.org.",
+    "companion": "‏Panda JWL-Sync פועל כולו בדפדפן שלך באמצעות SQLite WebAssembly. הערות הלימוד האישיות, הסימונים וגיבויי הנתונים שלך לעולם אינם מועברים באינטרנט או מועלים לשרת צד שלישי כלשהו.",
     "officialLinks": "קישורים רשמיים ל-jw.org עבור מראי מקום מאומתים.",
     "creatorSite": "בקר ב-redpandaium.com",
     "app1Title": "Daily Text Wallpaper & Widget",

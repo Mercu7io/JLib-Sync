@@ -108,6 +108,7 @@ export const ro: TranslationSchema = {
     "heroTitle": "Merge your .jwlibrary files instantly.",
     "heroSubtitle": "Combine your notes, highlights, and bookmarks from multiple devices seamlessly.",
     "loadDemoPair": "Load Demo Pair (Tablet & Phone)",
+    "howToExport": "Cum se exportă?",
     "sourceA": "Biblioteca Principală (Sursa A)",
     "sourceB": "Biblioteca Secundară (Sursa B)",
     "selectBackup": "Selectează copie .jwlibrary",
@@ -241,7 +242,7 @@ export const ro: TranslationSchema = {
   "footer": {
     "clientSide": "100% SQLite în browser (WASM)",
     "zeroTelemetry": "Zero telemetrie & confidențialitate absolută",
-    "companion": "Instrument neoficial pentru cercetători și studenți. Neafiliat cu jw.org.",
+    "companion": "Panda JWL-Sync funcționează în totalitate în browserul dvs. utilizând SQLite WebAssembly. Notițele dvs. personale de studiu, evidențierile și copiile de rezervă nu sunt transmise niciodată pe internet și nu sunt încărcate pe vreun server terț.",
     "officialLinks": "Linkuri oficiale jw.org pentru referințe biblice verificate.",
     "creatorSite": "Vizitați redpandaium.com",
     "app1Title": "Daily Text Wallpaper & Widget",

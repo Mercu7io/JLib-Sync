@@ -108,6 +108,7 @@ export const vi: TranslationSchema = {
     "heroTitle": "Merge your .jwlibrary files instantly.",
     "heroSubtitle": "Combine your notes, highlights, and bookmarks from multiple devices seamlessly.",
     "loadDemoPair": "Load Demo Pair (Tablet & Phone)",
+    "howToExport": "Cách xuất dữ liệu?",
     "sourceA": "Thư viện chính (Nguồn A)",
     "sourceB": "Thư viện phụ (Nguồn B)",
     "selectBackup": "Chọn bản sao lưu .jwlibrary",
@@ -241,7 +242,7 @@ export const vi: TranslationSchema = {
   "footer": {
     "clientSide": "100% SQLite phía máy khách (WASM)",
     "zeroTelemetry": "Không thu thập dữ liệu & bảo mật tuyệt đối",
-    "companion": "Công cụ học tập không chính thức dành cho học viên và nhà nghiên cứu. Không liên kết với jw.org.",
+    "companion": "Panda JWL-Sync hoạt động hoàn toàn trong trình duyệt của bạn bằng SQLite WebAssembly. Các ghi chú học hỏi cá nhân, phần đánh dấu và bản sao lưu của bạn không bao giờ được truyền qua internet hoặc tải lên bất kỳ máy chủ bên thứ ba nào.",
     "officialLinks": "Liên kết chính thức đến jw.org cho các câu Kinh Thánh đã xác minh.",
     "creatorSite": "Truy cập redpandaium.com",
     "app1Title": "Daily Text Wallpaper & Widget",

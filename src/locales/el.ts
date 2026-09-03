@@ -108,6 +108,7 @@ export const el: TranslationSchema = {
     "heroTitle": "Merge your .jwlibrary files instantly.",
     "heroSubtitle": "Combine your notes, highlights, and bookmarks from multiple devices seamlessly.",
     "loadDemoPair": "Load Demo Pair (Tablet & Phone)",
+    "howToExport": "Πώς γίνεται η εξαγωγή;",
     "sourceA": "Κύρια Βιβλιοθήκη (Πηγή Α)",
     "sourceB": "Δευτερεύουσα Βιβλιοθήκη (Πηγή Β)",
     "selectBackup": "Επιλέξτε αντίγραφο .jwlibrary",
@@ -241,7 +242,7 @@ export const el: TranslationSchema = {
   "footer": {
     "clientSide": "100% SQLite στον υπολογιστή σας (WASM)",
     "zeroTelemetry": "Χωρίς τηλεμετρία & απόλυτη ιδιωτικότητα",
-    "companion": "Ανεπίσημο εργαλείο μελέτης για ερευνητές και σπουδαστές. Δεν συνδέεται με το jw.org.",
+    "companion": "Το Panda JWL-Sync λειτουργεί εξ ολοκλήρου στο πρόγραμμα περιήγησής σας χρησιμοποιώντας SQLite WebAssembly. Οι προσωπικές σας σημειώσεις μελέτης, οι επισημάνσεις και τα αντίγραφα ασφαλείας δεν μεταδίδονται ποτέ μέσω διαδικτύου ούτε μεταφορτώνονται σε διακομιστή τρίτων.",
     "officialLinks": "Επίσημοι σύνδεσμοι jw.org για επιβεβαιωμένες βιβλικές παραπομπές.",
     "creatorSite": "Επισκεφθείτε το redpandaium.com",
     "app1Title": "Daily Text Wallpaper & Widget",

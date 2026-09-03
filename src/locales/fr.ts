@@ -110,6 +110,7 @@ export const fr: TranslationSchema = {
     "heroTitle": "Fusionnez vos fichiers .jwlibrary instantanément.",
     "heroSubtitle": "Combinez vos notes, surlignages et signets de plusieurs appareils sans couture.",
     "loadDemoPair": "Charger un exemple (2 sauvegardes démo)",
+    "howToExport": "Comment exporter ?",
     "backup1": "Sauvegarde 1",
     "backup2": "Sauvegarde 2",
     "backup1Desc": "Première sauvegarde d’étude",
@@ -271,7 +272,7 @@ export const fr: TranslationSchema = {
   "footer": {
     "clientSide": "100% SQLite côté client (WASM)",
     "zeroTelemetry": "Zéro télémétrie & confidentialité absolue",
-    "companion": "Outil d'étude non officiel conçu pour les étudiants et chercheurs. Non affilié à jw.org.",
+    "companion": "Panda JWL-Sync fonctionne entièrement dans votre navigateur grâce à SQLite WebAssembly. Vos notes d'étude personnelle, surlignages et sauvegardes ne sont jamais transmis sur Internet ni envoyés à un serveur tiers.",
     "officialLinks": "Liens officiels jw.org générés pour les références bibliques vérifiées.",
     "creatorSite": "Visiter redpandaium.com",
     "app1Title": "Daily Text Wallpaper & Widget",

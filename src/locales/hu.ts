@@ -108,6 +108,7 @@ export const hu: TranslationSchema = {
     "heroTitle": "Merge your .jwlibrary files instantly.",
     "heroSubtitle": "Combine your notes, highlights, and bookmarks from multiple devices seamlessly.",
     "loadDemoPair": "Load Demo Pair (Tablet & Phone)",
+    "howToExport": "Hogyan exportálható?",
     "sourceA": "Elsődleges könyvtár (A forrás)",
     "sourceB": "Másodlagos könyvtár (B forrás)",
     "selectBackup": ".jwlibrary mentés kiválasztása",
@@ -241,7 +242,7 @@ export const hu: TranslationSchema = {
   "footer": {
     "clientSide": "100% Kliensoldali SQLite (WASM)",
     "zeroTelemetry": "Telemetriamentes és maximálisan privát",
-    "companion": "Nem hivatalos tanulmányozási eszköz diákok és kutatók számára. Nem áll kapcsolatban a jw.org-gal.",
+    "companion": "A Panda JWL-Sync teljes egészében a böngésződben működik a SQLite WebAssembly segítségével. Személyes tanulmányozási jegyzeteid, kiemeléseid és biztonsági mentéseid soha nem kerülnek továbbításra az interneten, sem külső szerverekre.",
     "officialLinks": "Hivatalos jw.org hivatkozások az ellenőrzött írásszövegekhez.",
     "creatorSite": "Keresse fel a redpandaium.com weboldalt",
     "app1Title": "Daily Text Wallpaper & Widget",

@@ -108,6 +108,7 @@ export const sw: TranslationSchema = {
     "heroTitle": "Merge your .jwlibrary files instantly.",
     "heroSubtitle": "Combine your notes, highlights, and bookmarks from multiple devices seamlessly.",
     "loadDemoPair": "Load Demo Pair (Tablet & Phone)",
+    "howToExport": "Jinsi ya kusafirisha?",
     "sourceA": "Maktaba Kuu (Chanzo A)",
     "sourceB": "Maktaba ya Pili (Chanzo B)",
     "selectBackup": "Chagua nakala ya .jwlibrary",
@@ -241,7 +242,7 @@ export const sw: TranslationSchema = {
   "footer": {
     "clientSide": "100% SQLite Kwenye Kifaa Chako (WASM)",
     "zeroTelemetry": "Hakuna ufuatiliaji & faragha ya uhakika",
-    "companion": "Chombo kisicho rasmi cha funzo kwa wanafunzi na watafiti. Hakihusiani na jw.org.",
+    "companion": "Panda JWL-Sync hufanya kazi kikamilifu katika kivinjari chako kwa kutumia SQLite WebAssembly. Maelezo yako ya funzo la kibinafsi, mambo yaliyotiwa alama, na nakala za hifadhidata hazitumwi kamwe kwenye intaneti au kupakiwa kwenye seva ya mtu mwingine.",
     "officialLinks": "Viungo rasmi vya jw.org kwa ajili ya marejeo yaliyothibitishwa ya Biblia.",
     "creatorSite": "Tembelea redpandaium.com",
     "app1Title": "Daily Text Wallpaper & Widget",

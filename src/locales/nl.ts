@@ -108,6 +108,7 @@ export const nl: TranslationSchema = {
     "heroTitle": "Merge your .jwlibrary files instantly.",
     "heroSubtitle": "Combine your notes, highlights, and bookmarks from multiple devices seamlessly.",
     "loadDemoPair": "Load Demo Pair (Tablet & Phone)",
+    "howToExport": "Hoe exporteren?",
     "sourceA": "Primaire Bibliotheek (Bron A)",
     "sourceB": "Secundaire Bibliotheek (Bron B)",
     "selectBackup": "Selecteer .jwlibrary back-up",
@@ -241,7 +242,7 @@ export const nl: TranslationSchema = {
   "footer": {
     "clientSide": "100% Client-Side SQLite (WASM)",
     "zeroTelemetry": "Geen telemetrie & absolute privacy",
-    "companion": "Onofficiële studietool voor studenten en onderzoekers. Niet verbonden met jw.org.",
+    "companion": "Panda JWL-Sync werkt volledig in uw browser met behulp van SQLite WebAssembly. Uw persoonlijke studienotities, markeringen en databaseback-ups worden nooit via internet verzonden of geüpload naar servers van derden.",
     "officialLinks": "Officiële jw.org-links voor geverifieerde schriftplaatsverwijzingen.",
     "creatorSite": "Bezoek redpandaium.com",
     "app1Title": "Daily Text Wallpaper & Widget",

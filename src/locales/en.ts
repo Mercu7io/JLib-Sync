@@ -108,6 +108,7 @@ export const en = {
     heroTitle: 'Merge your .jwlibrary files instantly.',
     heroSubtitle: 'Combine your notes, highlights, and bookmarks from multiple devices seamlessly.',
     loadDemoPair: 'Load Demo Pair (Sample Files)',
+    howToExport: 'How to export?',
     backup1: 'Backup 1',
     backup2: 'Backup 2',
     backup1Desc: 'First study backup',
@@ -306,6 +307,7 @@ export type TranslationSchema = {
         | 'tagImportedNotesDesc'
         | 'tagImportedNotesLabel'
         | 'fromMerge'
+        | 'howToExport'
       > & {
         backup1?: string;
         backup2?: string;
@@ -315,6 +317,7 @@ export type TranslationSchema = {
         tagImportedNotesDesc?: string;
         tagImportedNotesLabel?: string;
         fromMerge?: string;
+        howToExport?: string;
       }
     : EnSchema[K];
 } & {

@@ -54,7 +54,7 @@ export const Footer: React.FC = () => {
         {/* Row 2: Subtitle on left, Companion apps aligned with official logos on right */}
         <div className="pt-2.5 border-t border-slate-200/50 dark:border-white/[0.04] flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-400 dark:text-slate-500">
           <p>
-            {t('footer.companion', 'Unofficial study utility for personal research and preservation.')}
+            {t('footer.companion', 'Panda JWL-Sync operates entirely in your browser using SQLite WebAssembly. Your personal study notes, highlights, and database backups are never transmitted over the internet or uploaded to any third-party server.')}
           </p>
 
           <div className="flex items-center space-x-2.5 flex-wrap justify-center sm:justify-end">
