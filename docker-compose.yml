@@ -7,7 +7,7 @@ services:
     #   context: .
     #   dockerfile: Dockerfile
     #   args:
-    #     VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-753688786468-i2jvkcjmevbk5tdqqsujgooed7afm8qu.apps.googleusercontent.com}
+    #     VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-........apps.googleusercontent.com}
     ports:
       - "${PORT:-8080}:80"
     restart: unless-stopped
