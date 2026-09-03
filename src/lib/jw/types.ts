@@ -124,6 +124,7 @@ export interface IMergeOptions {
   deviceName?: string;
   doctorCheck?: boolean;
   colorRules?: Record<number, number>; // Map old ColorIndex -> new ColorIndex
+  conflictResolutions?: Record<string, 'both' | 'a' | 'b'>;
 }
 
 export interface IMergeProgress {

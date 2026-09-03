@@ -366,6 +366,28 @@ export async function mergeJwLibraries(
           noteMap.set(note.NoteId, dupMatch.NoteId);
           stats.notesMerged++;
         } else {
+          // Respect explicit conflict resolution if configured
+          const conflictChoice = options.conflictResolutions?.[note.Guid];
+          if (conflictChoice === 'a') {
+            // Discard secondary note, keep primary
+            continue;
+          }
+          if (conflictChoice === 'b') {
+            // Overwrite primary with secondary
+            const existingInMain = queryOne<{ NoteId: number }>(mainDb, 'SELECT NoteId FROM Note WHERE Guid = :guid', { ':guid': note.Guid });
+            if (existingInMain) {
+              execute(mainDb, 'UPDATE Note SET Content = :c, Title = :t, LastModified = :lm WHERE NoteId = :id', {
+                ':c': note.Content ?? null,
+                ':t': note.Title ?? null,
+                ':lm': note.LastModified || new Date().toISOString(),
+                ':id': existingInMain.NoteId,
+              });
+              noteMap.set(note.NoteId, existingInMain.NoteId);
+              stats.notesMerged++;
+              continue;
+            }
+          }
+
           // Check GUID collision
           const guidExists = queryOne<{ c: number }>(
             mainDb,

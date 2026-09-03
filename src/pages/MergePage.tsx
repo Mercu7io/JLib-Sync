@@ -22,6 +22,7 @@ import { extractJwLibrary } from '../lib/jw/zip';
 import { openDatabase, getLibrarySummary, queryAll } from '../lib/jw/sqlite';
 import { mergeJwLibraries, IMergeResult } from '../lib/jw/merge';
 import { IManifest, ILibrarySummary, IMergeProgress, TagManagerMap } from '../lib/jw/types';
+import { detectRealConflicts, IConflictItem } from '../lib/jw/conflicts';
 import { useAppStore } from '../store/useAppStore';
 import { useCloudStore } from '../store/useCloudStore';
 import { IDriveFile } from '../lib/cloud/googleDrive';
@@ -33,14 +34,6 @@ interface ILoadedFileState {
   manifest: IManifest;
   summary: ILibrarySummary;
   extraFiles: Map<string, Uint8Array>;
-}
-
-interface IConflictItem {
-  id: string;
-  verseAnchor: string;
-  sourceAText: string;
-  sourceBText: string;
-  choice: 'both' | 'a' | 'b';
 }
 
 export const MergePage: React.FC = () => {
@@ -126,37 +119,10 @@ export const MergePage: React.FC = () => {
         const dbA = await openDatabase(primaryFile.dbBytes);
         const dbB = await openDatabase(secondaryFile.dbBytes);
 
-        const notesA = queryAll<{ NoteId: number; LocationId: number; BlockIdentifier: number; Content: string; Title: string }>(
-          dbA,
-          'SELECT NoteId, LocationId, BlockIdentifier, Content, Title FROM Note WHERE Content IS NOT NULL'
-        );
-        const notesB = queryAll<{ NoteId: number; LocationId: number; BlockIdentifier: number; Content: string; Title: string }>(
-          dbB,
-          'SELECT NoteId, LocationId, BlockIdentifier, Content, Title FROM Note WHERE Content IS NOT NULL'
-        );
+        const detected = detectRealConflicts(dbA, dbB);
 
         dbA.close();
         dbB.close();
-
-        const detected: IConflictItem[] = [];
-        notesA.forEach((nA) => {
-          if (!nA.LocationId) return;
-          const matchB = notesB.find(
-            (nB) =>
-              nB.LocationId === nA.LocationId &&
-              nB.BlockIdentifier === nA.BlockIdentifier &&
-              nB.Content !== nA.Content
-          );
-          if (matchB) {
-            detected.push({
-              id: `${nA.LocationId}_${nA.BlockIdentifier}`,
-              verseAnchor: nA.Title || `Location #${nA.LocationId}`,
-              sourceAText: nA.Content,
-              sourceBText: matchB.Content,
-              choice: 'both',
-            });
-          }
-        });
 
         setConflicts(detected);
       } catch (_) {}
@@ -231,6 +197,11 @@ export const MergePage: React.FC = () => {
 
       const tagRules: TagManagerMap = {};
 
+      const conflictResolutions: Record<string, 'both' | 'a' | 'b'> = {};
+      conflicts.forEach((c) => {
+        conflictResolutions[c.id] = c.choice;
+      });
+
       const result = await mergeJwLibraries(
         primaryFile.dbBytes,
         primaryFile.manifest,
@@ -245,6 +216,7 @@ export const MergePage: React.FC = () => {
         {
           primaryName: outputName.replace(/\.jwlibrary$/i, ''),
           doctorCheck: true,
+          conflictResolutions,
         },
         tagRules,
         (p) => setMergeProgress(p),
