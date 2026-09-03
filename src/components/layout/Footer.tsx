@@ -1,9 +1,11 @@
 import React from 'react';
 import { ShieldCheck, HardDrive, Lock, ExternalLink, Smartphone } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { GoogleIcon } from '../common/GoogleIcon';
 
 export const Footer: React.FC = () => {
+  const { t } = useTranslation();
   return (
     <footer className="mt-auto border-t border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0B0F19] py-12 text-slate-600 dark:text-slate-400 text-sm transition-colors duration-150">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
@@ -13,11 +15,10 @@ export const Footer: React.FC = () => {
           <div className="md:col-span-2 space-y-3">
             <div className="flex items-center space-x-2 text-slate-900 dark:text-white font-semibold">
               <ShieldCheck className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
-              <span>100% Client-Side & Private</span>
+              <span>{t('footer.clientSide')}</span>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed pr-6">
-              Panda JWL-Sync operates entirely in your browser using SQLite WebAssembly. Your personal study notes,
-              highlights, and database backups are never transmitted over the internet or uploaded to any third-party server.
+              {t('footer.companion')}
             </p>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1 text-xs text-slate-500">
               <span className="flex items-center space-x-1">
@@ -26,7 +27,7 @@ export const Footer: React.FC = () => {
               </span>
               <span className="flex items-center space-x-1">
                 <Lock className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
-                <span>Zero Server Telemetry</span>
+                <span>{t('footer.zeroTelemetry')}</span>
               </span>
             </div>
           </div>

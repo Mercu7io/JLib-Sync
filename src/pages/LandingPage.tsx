@@ -1,11 +1,13 @@
 import React, { useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Smartphone, Tablet } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../store/useAppStore';
 import { useCloudStore } from '../store/useCloudStore';
 import { GoogleIcon } from '../components/common/GoogleIcon';
 
 export const LandingPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { loadLibrary, loadDemoLibrary, summary, isLoading } = useAppStore();
@@ -43,25 +45,17 @@ export const LandingPage: React.FC = () => {
         {/* Floating glassmorphic trust badge */}
         <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold backdrop-blur-md shadow-sm">
           <GoogleIcon name="verified_user" className="text-base text-emerald-500 dark:text-emerald-400" fill />
-          <span>100% Client-Side. Your data never leaves your computer.</span>
+          <span>{t('landing.privacyBadge')}</span>
         </div>
 
         {/* Main Heading */}
         <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tight leading-[1.1]">
-          Merge your{' '}
-          <span className="bg-gradient-to-r from-blue-600 via-sky-500 to-indigo-600 dark:from-blue-400 dark:via-sky-400 dark:to-indigo-400 bg-clip-text text-transparent">
-            .jwlibrary files
-          </span>{' '}
-          instantly.
+          {t('landing.heroTitle')}
         </h1>
 
         {/* Subheadline & Crux copy */}
         <p className="text-base sm:text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed font-normal">
-          Combine your notes, highlights, and bookmarks from multiple devices seamlessly.
-          <br className="hidden sm:inline" />
-          Restore is a <span className="text-red-500 dark:text-red-400 font-semibold underline decoration-red-400/40">full swap</span>, not a merge.
-          Restoring one device deletes the other’s research.
-          <strong className="text-slate-900 dark:text-white font-bold"> Merging is the only exit.</strong>
+          {t('landing.heroSubtitle')}
         </p>
 
         {/* Action Button Group */}
@@ -71,7 +65,7 @@ export const LandingPage: React.FC = () => {
             className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-7 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-all shadow-lg shadow-blue-600/30 hover:shadow-blue-600/40 hover:scale-[1.02] active:scale-[0.98]"
           >
             <GoogleIcon name="call_merge" className="text-lg" />
-            <span>Merge Two Libraries</span>
+            <span>{t('landing.mergeCta')}</span>
             <ArrowRight className="w-4 h-4 ml-0.5" />
           </Link>
 
@@ -82,20 +76,20 @@ export const LandingPage: React.FC = () => {
             className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-white/[0.1] font-semibold text-sm transition-all shadow-sm"
           >
             <GoogleIcon name="folder_open" className="text-lg text-blue-600 dark:text-blue-400" />
-            <span>Open Local File</span>
+            <span>{t('landing.openLocal')}</span>
           </button>
         </div>
 
         {/* Quick Demo Samples */}
         <div className="pt-2 flex flex-wrap items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-          <span>Or load demo library:</span>
+          <span>{t('nav.loadSample')}:</span>
           <button
             type="button"
             onClick={() => handleDemoClick('example')}
             disabled={isLoading}
             className="px-2.5 py-1 rounded-lg bg-slate-200/70 dark:bg-white/[0.04] border border-slate-300 dark:border-white/[0.08] hover:border-blue-500/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium text-[11px]"
           >
-            Sample A (Phone Prep)
+            {t('landing.sampleA')}
           </button>
           <button
             type="button"
@@ -103,7 +97,7 @@ export const LandingPage: React.FC = () => {
             disabled={isLoading}
             className="px-2.5 py-1 rounded-lg bg-slate-200/70 dark:bg-white/[0.04] border border-slate-300 dark:border-white/[0.08] hover:border-blue-500/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium text-[11px]"
           >
-            Sample B (Tablet Study)
+            {t('landing.sampleB')}
           </button>
         </div>
       </section>
@@ -246,10 +240,10 @@ export const LandingPage: React.FC = () => {
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="text-center space-y-2">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            The 4 Things this App Does
+            {t('landing.superpowersTitle')}
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Panda JWL-Sync exists for combining, organizing, searching, and sharing the study library you already have.
+            {t('landing.superpowersSubtitle')}
           </p>
         </div>
 
@@ -259,13 +253,13 @@ export const LandingPage: React.FC = () => {
             <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-600 dark:text-blue-400">
               <GoogleIcon name="call_merge" className="text-xl" />
             </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">1. Merge Two Libraries Seamlessly</h3>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">{t('landing.power1Title')}</h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Import phone and tablet backups simultaneously. Deduplicates identical notes, unifies highlights, maps tags, and calculates exact SHA-256 manifest signatures.
+              {t('landing.power1Desc')}
             </p>
             <div className="pt-2">
               <Link to="/merge" className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center space-x-1">
-                <span>Open Merge Tool</span>
+                <span>{t('landing.power1Link')}</span>
                 <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -276,13 +270,13 @@ export const LandingPage: React.FC = () => {
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
               <GoogleIcon name="ios_share" className="text-xl" />
             </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">2. Selective Note Sharing</h3>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">{t('landing.power2Title')}</h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Send a friend just your notes under a single tag (e.g. &ldquo;Assembly 2026&rdquo;) or date range, without giving away your entire private research database.
+              {t('landing.power2Desc')}
             </p>
             <div className="pt-2">
               <Link to="/share" className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline inline-flex items-center space-x-1">
-                <span>Select & Share Tags</span>
+                <span>{t('landing.power2Link')}</span>
                 <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -293,30 +287,30 @@ export const LandingPage: React.FC = () => {
             <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-600 dark:text-sky-400">
               <GoogleIcon name="label" className="text-xl" fill />
             </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">3. Batch Tag & Topic Manager</h3>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">{t('landing.power3Title')}</h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Rename a tag across 300 notes at once, merge duplicate tags like &ldquo;Family Study&rdquo; and &ldquo;Family Worship&rdquo;, and clean unreferenced tags in 1 click.
+              {t('landing.power3Desc')}
             </p>
             <div className="pt-2">
               <Link to="/explorer" className="text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline inline-flex items-center space-x-1">
-                <span>Manage Topics</span>
+                <span>{t('landing.power3Link')}</span>
                 <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
           </div>
 
-          {/* 4. Semantic AI Search */}
+          {/* 4. Reading Analytics */}
           <div className="rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#111726]/75 p-6 space-y-3 hover:border-purple-500/40 transition-all shadow-sm hover:shadow-md backdrop-blur-xl">
             <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/25 flex items-center justify-center text-purple-600 dark:text-purple-400">
-              <GoogleIcon name="auto_awesome" className="text-xl" fill />
+              <GoogleIcon name="bar_chart" className="text-xl" fill />
             </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">4. Note Search by Meaning</h3>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">{t('landing.power4Title')}</h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Describe the concept (&ldquo;trials and joy&rdquo;, &ldquo;peace of mind&rdquo;) and find your notes even if you don’t remember the scripture citation.
+              {t('landing.power4Desc')}
             </p>
             <div className="pt-2">
-              <Link to="/explorer" className="text-xs font-semibold text-purple-600 dark:text-purple-400 hover:underline inline-flex items-center space-x-1">
-                <span>Try Meaning Search</span>
+              <Link to="/stats" className="text-xs font-semibold text-purple-600 dark:text-purple-400 hover:underline inline-flex items-center space-x-1">
+                <span>{t('landing.power4Link')}</span>
                 <ArrowRight className="w-3 h-3" />
               </Link>
             </div>

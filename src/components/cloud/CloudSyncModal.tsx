@@ -20,8 +20,10 @@ import {
 } from 'lucide-react';
 import { useCloudStore } from '../../store/useCloudStore';
 import { useAppStore } from '../../store/useAppStore';
+import { useTranslation } from 'react-i18next';
 
 export const CloudSyncModal: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const {
     isConnected,
@@ -257,11 +259,11 @@ export const CloudSyncModal: React.FC = () => {
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight flex items-center space-x-2">
-                <span>Google Drive Cloud Sync</span>
+                <span>{t('cloud.title')}</span>
                 {isConnected && (
                   <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>Connected</span>
+                    <span>{t('cloud.connected')}</span>
                   </span>
                 )}
               </h2>
@@ -330,7 +332,7 @@ export const CloudSyncModal: React.FC = () => {
                 className="w-full sm:w-auto inline-flex items-center justify-center space-x-2.5 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-all shadow-lg shadow-blue-600/25"
               >
                 <Cloud className="w-4 h-4" />
-                <span>Connect with Google Account</span>
+                <span>{t('cloud.connectButton')}</span>
               </button>
             </div>
 

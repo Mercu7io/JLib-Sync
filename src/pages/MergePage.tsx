@@ -25,6 +25,7 @@ import { IManifest, ILibrarySummary, IMergeProgress, TagManagerMap } from '../li
 import { useAppStore } from '../store/useAppStore';
 import { useCloudStore } from '../store/useCloudStore';
 import { IDriveFile } from '../lib/cloud/googleDrive';
+import { useTranslation } from 'react-i18next';
 
 interface ILoadedFileState {
   file: File;
@@ -43,6 +44,7 @@ interface IConflictItem {
 }
 
 export const MergePage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { updateActiveDatabase } = useAppStore();
   const {
@@ -739,23 +741,23 @@ export const MergePage: React.FC = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 py-2">
             <div className="bg-slate-50 dark:bg-[#0b0f19] border border-slate-200 dark:border-white/[0.08] rounded-xl p-4 shadow-sm">
               <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">+{mergeResult.stats.notesAdded}</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">New Notes Added</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{t('merge.notesAdded')}</div>
             </div>
             <div className="bg-slate-50 dark:bg-[#0b0f19] border border-slate-200 dark:border-white/[0.08] rounded-xl p-4 shadow-sm">
               <div className="text-2xl font-black text-blue-600 dark:text-blue-400">{mergeResult.stats.notesMerged}</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Duplicates Unified</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{t('merge.duplicatesUnified')}</div>
             </div>
             <div className="bg-slate-50 dark:bg-[#0b0f19] border border-slate-200 dark:border-white/[0.08] rounded-xl p-4 shadow-sm">
               <div className="text-2xl font-black text-sky-600 dark:text-sky-400">+{mergeResult.stats.marksAdded}</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Highlights Added</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{t('merge.marksAdded')}</div>
             </div>
             <div className="bg-slate-50 dark:bg-[#0b0f19] border border-slate-200 dark:border-white/[0.08] rounded-xl p-4 shadow-sm">
               <div className="text-2xl font-black text-amber-600 dark:text-amber-400">+{mergeResult.stats.bookmarksAdded}</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Bookmarks Added</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{t('merge.bookmarksAdded')}</div>
             </div>
             <div className="bg-slate-50 dark:bg-[#0b0f19] border border-slate-200 dark:border-white/[0.08] rounded-xl p-4 col-span-2 sm:col-span-1 shadow-sm">
               <div className="text-2xl font-black text-purple-600 dark:text-purple-400">+{mergeResult.stats.tagsAdded}</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Tags Consolidated</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{t('merge.tagsAdded')}</div>
             </div>
           </div>
 
@@ -766,7 +768,7 @@ export const MergePage: React.FC = () => {
               className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-600/30"
             >
               <Download className="w-4 h-4" />
-              <span>Download Combined Backup</span>
+              <span>{t('merge.downloadCombined')}</span>
             </button>
 
             <button
@@ -780,7 +782,7 @@ export const MergePage: React.FC = () => {
               }`}
             >
               <Cloud className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span>{cloudSaveSuccess ? 'Saved to Google Drive ✓' : isUploading ? 'Uploading...' : 'Save to Google Drive'}</span>
+              <span>{cloudSaveSuccess ? t('merge.savedDrive') : isUploading ? t('merge.savingDrive') : t('merge.saveDrive')}</span>
             </button>
 
             <button
@@ -789,7 +791,7 @@ export const MergePage: React.FC = () => {
               className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.02] dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] font-medium text-sm transition-all"
             >
               <Compass className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span>Explore in App</span>
+              <span>{t('merge.exploreInApp')}</span>
             </button>
           </div>
         </div>
@@ -806,8 +808,8 @@ export const MergePage: React.FC = () => {
           >
             <GitMerge className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
             <span className="truncate">
-              <span className="sm:hidden">Merge & Download Backup</span>
-              <span className="hidden sm:inline">Generate & Download Combined Backup</span>
+              <span className="sm:hidden">{t('merge.buttonMergeShort')}</span>
+              <span className="hidden sm:inline">{t('merge.buttonMerge')}</span>
             </span>
             <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-1 flex-shrink-0" />
           </button>

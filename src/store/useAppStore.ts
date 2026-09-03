@@ -10,6 +10,8 @@ import { IManifest, ILibrarySummary } from '../lib/jw/types';
 import { extractJwLibrary } from '../lib/jw/zip';
 import { openDatabase, getLibrarySummary } from '../lib/jw/sqlite';
 
+import i18n, { getInitialLanguage } from '../i18n';
+
 interface IAppState {
   activeLibraryFile: File | Blob | null;
   activeLibraryBytes: Uint8Array | null;
@@ -41,7 +43,7 @@ export const useAppStore = create<IAppState>((set, get) => ({
   isLoading: false,
   loadingMessage: '',
   error: null,
-  selectedLanguage: 'en',
+  selectedLanguage: getInitialLanguage(),
 
   loadLibrary: async (fileOrBlob: File | Blob, customName?: string) => {
     try {
@@ -158,6 +160,12 @@ export const useAppStore = create<IAppState>((set, get) => ({
     }
   },
 
-  setSelectedLanguage: (lang: string) => set({ selectedLanguage: lang }),
+  setSelectedLanguage: (lang: string) => {
+    try {
+      localStorage.setItem('jwsync_language', lang);
+      i18n.changeLanguage(lang);
+    } catch (_) {}
+    set({ selectedLanguage: lang });
+  },
   clearError: () => set({ error: null }),
 }));

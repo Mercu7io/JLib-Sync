@@ -11,7 +11,7 @@ RUN npm ci
 
 # Pass build-time environment variables for Vite (VITE_* are baked at compile time)
 ARG VITE_GOOGLE_CLIENT_ID
-ENV VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID:-753688786468-i2jvkcjmevbk5tdqqsujgooed7afm8qu.apps.googleusercontent.com}
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 
 # Copy project source files
 COPY . .

@@ -7,8 +7,10 @@ import { SUPPORTED_LANGUAGES } from '../../lib/jw/locales';
 import { getThemePreference, setThemePreference, ThemeMode } from '../../lib/theme';
 import { GoogleIcon } from '../common/GoogleIcon';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
+import { useTranslation } from 'react-i18next';
 
 export const Navbar: React.FC = () => {
+  const { t } = useTranslation();
   const {
     summary,
     activeLibraryFile,
@@ -71,11 +73,11 @@ export const Navbar: React.FC = () => {
   };
 
   const navItems = [
-    { to: '/', label: 'Overview', iconName: 'explore', desc: 'Home & capabilities' },
-    { to: '/merge', label: 'Merge', iconName: 'call_merge', desc: 'Combine two backups' },
-    { to: '/explorer', label: 'Explorer', iconName: 'menu_book', desc: 'Notes, tags & bookmarks' },
-    { to: '/stats', label: 'Analytics', iconName: 'bar_chart', desc: 'Reading stats & metrics' },
-    { to: '/share', label: 'Share', iconName: 'ios_share', desc: 'Selective export' },
+    { to: '/', label: t('nav.overview'), iconName: 'explore', desc: t('nav.overviewDesc') },
+    { to: '/merge', label: t('nav.merge'), iconName: 'call_merge', desc: t('nav.mergeDesc') },
+    { to: '/explorer', label: t('nav.explorer'), iconName: 'menu_book', desc: t('nav.explorerDesc') },
+    { to: '/stats', label: t('nav.analytics'), iconName: 'bar_chart', desc: t('nav.analyticsDesc') },
+    { to: '/share', label: t('nav.share'), iconName: 'ios_share', desc: t('nav.shareDesc') },
   ];
 
   return (
@@ -144,7 +146,7 @@ export const Navbar: React.FC = () => {
                   name="cloud_sync"
                   className={`text-base flex-shrink-0 ${isConnected ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}
                 />
-                <span className="hidden xl:inline whitespace-nowrap">Drive Cloud</span>
+                <span className="hidden xl:inline whitespace-nowrap">{t('nav.driveCloud')}</span>
                 {isConnected && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-ping" />}
               </button>
 
@@ -155,7 +157,7 @@ export const Navbar: React.FC = () => {
                   <div className="flex flex-col text-left max-w-[100px] xl:max-w-[150px]">
                     <span className="font-semibold text-slate-900 dark:text-white truncate text-[11px]">{summary.name}</span>
                     <span className="hidden xl:inline text-slate-500 dark:text-slate-400 text-[10px] truncate">
-                      {summary.notesCount} notes • {summary.tagsCount} tags
+                      {summary.notesCount} {t('nav.notes')} • {summary.tagsCount} {t('nav.tags')}
                     </span>
                   </div>
                   <button
@@ -163,13 +165,13 @@ export const Navbar: React.FC = () => {
                     onClick={() => fileInputRef.current?.click()}
                     className="text-blue-600 dark:text-blue-400 hover:underline text-[11px] font-medium ml-1"
                   >
-                    Swap
+                    {t('nav.swap')}
                   </button>
                   <button
                     type="button"
                     onClick={closeLibrary}
                     className="text-slate-400 hover:text-red-500 p-0.5 transition-colors ml-0.5"
-                    title="Close library"
+                    title={t('nav.close')}
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -181,20 +183,20 @@ export const Navbar: React.FC = () => {
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isLoading}
                     className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/[0.08] transition-all"
-                    title="Open local .jwlibrary file"
+                    title={t('nav.openFile')}
                   >
                     <GoogleIcon name="folder_open" className="text-base text-blue-600 dark:text-blue-400" />
-                    <span>Open File</span>
+                    <span>{t('nav.openFile')}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => loadDemoLibrary('example2')}
                     disabled={isLoading}
                     className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-500/10 to-indigo-500/10 hover:from-blue-500/20 hover:to-indigo-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30 transition-all shadow-sm"
-                    title="Load sample library"
+                    title={t('nav.demo')}
                   >
                     <GoogleIcon name="auto_awesome" className="text-sm text-blue-500 dark:text-blue-400" fill />
-                    <span>Demo</span>
+                    <span>{t('nav.demo')}</span>
                   </button>
                 </div>
               )}
@@ -233,13 +235,13 @@ export const Navbar: React.FC = () => {
                     className="bg-transparent text-slate-700 dark:text-slate-300 text-[11px] font-medium focus:outline-none cursor-pointer capitalize"
                   >
                     <option value="light" className="bg-white text-slate-900 dark:bg-[#0e1422] dark:text-slate-200">
-                      Light
+                      {t('nav.light')}
                     </option>
                     <option value="dark" className="bg-white text-slate-900 dark:bg-[#0e1422] dark:text-slate-200">
-                      Dark
+                      {t('nav.dark')}
                     </option>
                     <option value="system" className="bg-white text-slate-900 dark:bg-[#0e1422] dark:text-slate-200">
-                      System
+                      {t('nav.system')}
                     </option>
                   </select>
                 </div>
@@ -254,7 +256,7 @@ export const Navbar: React.FC = () => {
                   title="Install Panda JWL-Sync on your computer"
                 >
                   <GoogleIcon name="download" className="text-sm" />
-                  <span className="hidden xl:inline">Install App</span>
+                  <span className="hidden xl:inline">{t('nav.installApp')}</span>
                 </button>
               )}
             </div>
@@ -334,7 +336,7 @@ export const Navbar: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/[0.08]">
               <div className="flex items-center space-x-2">
                 <img src="/logo.jpg" alt="Logo" className="w-6 h-6 rounded-md object-cover" />
-                <span className="font-bold text-base text-slate-900 dark:text-white">Menu & Navigation</span>
+                <span className="font-bold text-base text-slate-900 dark:text-white">{t('nav.menuTitle')}</span>
               </div>
               <button
                 type="button"
@@ -360,11 +362,11 @@ export const Navbar: React.FC = () => {
                     <GoogleIcon name="install_mobile" className="text-xl" />
                   </div>
                   <div className="text-left">
-                    <div className="font-bold text-xs">Install Panda JWL-Sync</div>
-                    <div className="text-[10px] text-blue-100 font-normal">Works offline & from your home screen</div>
+                    <div className="font-bold text-xs">{t('nav.installBannerTitle')}</div>
+                    <div className="text-[10px] text-blue-100 font-normal">{t('nav.installBannerSubtitle')}</div>
                   </div>
                 </div>
-                <span className="px-2.5 py-1 rounded-lg bg-white/20 text-[11px] font-semibold">Install</span>
+                <span className="px-2.5 py-1 rounded-lg bg-white/20 text-[11px] font-semibold">{t('nav.installAction')}</span>
               </button>
             )}
 
@@ -377,7 +379,7 @@ export const Navbar: React.FC = () => {
                     <div className="min-w-0">
                       <div className="font-bold text-xs text-slate-900 dark:text-white truncate">{summary.name}</div>
                       <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                        {summary.notesCount} notes • {summary.userMarksCount} highlights • {summary.tagsCount} tags
+                        {summary.notesCount} {t('nav.notes')} • {summary.userMarksCount} {t('nav.highlights')} • {summary.tagsCount} {t('nav.tags')}
                       </div>
                     </div>
                   </div>
@@ -388,14 +390,14 @@ export const Navbar: React.FC = () => {
                     onClick={() => fileInputRef.current?.click()}
                     className="flex-1 py-1.5 rounded-lg bg-blue-600 text-white font-semibold text-center hover:bg-blue-500"
                   >
-                    Swap File
+                    {t('nav.swap')}
                   </button>
                   <button
                     type="button"
                     onClick={closeLibrary}
                     className="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 font-medium hover:text-red-500"
                   >
-                    Close
+                    {t('nav.close')}
                   </button>
                 </div>
               </div>
@@ -407,7 +409,7 @@ export const Navbar: React.FC = () => {
                   className="flex items-center justify-center space-x-1.5 p-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-colors shadow-sm"
                 >
                   <GoogleIcon name="folder_open" className="text-lg" />
-                  <span>Open .jwlibrary</span>
+                  <span>{t('nav.openJwlibrary')}</span>
                 </button>
                 <button
                   type="button"
@@ -418,7 +420,7 @@ export const Navbar: React.FC = () => {
                   className="flex items-center justify-center space-x-1.5 p-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.08] text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-white/[0.08] font-bold text-xs transition-colors"
                 >
                   <GoogleIcon name="auto_awesome" className="text-lg text-blue-500" fill />
-                  <span>Load Sample</span>
+                  <span>{t('nav.loadSample')}</span>
                 </button>
               </div>
             )}
@@ -442,18 +444,18 @@ export const Navbar: React.FC = () => {
                   className={`text-xl ${isConnected ? 'text-emerald-500' : 'text-slate-500'}`}
                 />
                 <span className="font-bold">
-                  {isConnected ? 'Google Drive Connected ✓' : 'Connect Google Drive Cloud'}
+                  {isConnected ? t('nav.driveConnected') : t('nav.connectDrive')}
                 </span>
               </div>
               <span className="text-[11px] text-blue-600 dark:text-blue-400 font-bold">
-                {isConnected ? 'Manage' : 'Connect →'}
+                {isConnected ? t('nav.manage') : 'Connect →'}
               </span>
             </button>
 
             {/* Navigation Pages List */}
             <div className="space-y-1.5">
               <div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-1">
-                Pages & Tools
+                {t('nav.pagesAndTools')}
               </div>
               {navItems.map((item) => (
                 <NavLink
@@ -490,7 +492,7 @@ export const Navbar: React.FC = () => {
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200 dark:border-white/[0.08]">
               {/* Language */}
               <div className="flex flex-col space-y-1">
-                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Language</span>
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{t('nav.language')}</span>
                 <div className="flex items-center space-x-1.5 p-2 rounded-xl bg-slate-100 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] text-xs">
                   <GoogleIcon name="language" className="text-base text-slate-500" />
                   <select
@@ -509,20 +511,20 @@ export const Navbar: React.FC = () => {
 
               {/* Theme */}
               <div className="flex flex-col space-y-1">
-                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Theme</span>
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{t('nav.theme')}</span>
                 <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] p-1 rounded-xl text-xs">
-                  {(['light', 'dark', 'system'] as ThemeMode[]).map((t) => (
+                  {(['light', 'dark', 'system'] as ThemeMode[]).map((themeMode) => (
                     <button
-                      key={t}
+                      key={themeMode}
                       type="button"
-                      onClick={() => handleThemeChange(t)}
+                      onClick={() => handleThemeChange(themeMode)}
                       className={`py-1 rounded-lg text-[10px] font-semibold capitalize transition-all ${
-                        theme === t
+                        theme === themeMode
                           ? 'bg-white dark:bg-blue-600 text-slate-900 dark:text-white shadow-sm'
                           : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
-                      {t}
+                      {t(`nav.${themeMode}`)}
                     </button>
                   ))}
                 </div>
