@@ -17,6 +17,7 @@ import {
   X,
   RefreshCw,
   Sliders,
+  Tag,
 } from 'lucide-react';
 import { extractJwLibrary } from '../lib/jw/zip';
 import { openDatabase, getLibrarySummary, queryAll } from '../lib/jw/sqlite';
@@ -56,6 +57,10 @@ export const MergePage: React.FC = () => {
 
   // Conflict Resolution State
   const [conflicts, setConflicts] = useState<IConflictItem[]>([]);
+
+  // Tag imported notes option
+  const [tagImportedNotes, setTagImportedNotes] = useState<boolean>(false);
+  const [customImportTagName, setCustomImportTagName] = useState<string>('From Merge');
 
   // Cloud Picker State
   const [cloudPickerTarget, setCloudPickerTarget] = useState<'primary' | 'secondary' | null>(null);
@@ -217,6 +222,7 @@ export const MergePage: React.FC = () => {
           primaryName: outputName.replace(/\.jwlibrary$/i, ''),
           doctorCheck: true,
           conflictResolutions,
+          secondaryNoteTag: tagImportedNotes ? (customImportTagName.trim() || 'From Merge') : undefined,
         },
         tagRules,
         (p) => setMergeProgress(p),
@@ -488,6 +494,76 @@ export const MergePage: React.FC = () => {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ── SMART TAGGING FOR IMPORTED NOTES ───────────────────────── */}
+      {bothFilesLoaded && !mergeResult && (
+        <div className="rounded-2xl border border-slate-200/90 dark:border-white/[0.08] bg-white dark:bg-[#101625] p-4 sm:p-5 space-y-3.5 shadow-sm transition-all">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-start space-x-3">
+              <div className="p-2 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 mt-0.5">
+                <Tag className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-slate-900 dark:text-white">
+                  {t('merge.tagImportedNotes', 'Tag notes imported from Backup 2')}
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  {t('merge.tagImportedNotesDesc', 'Attach a tag to all notes imported from the second backup so you can easily review them under Personal Study > Tags in JW Library.')}
+                </div>
+              </div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+              <input
+                type="checkbox"
+                checked={tagImportedNotes}
+                onChange={(e) => setTagImportedNotes(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+
+          {tagImportedNotes && (
+            <div className="pt-3 border-t border-slate-200/60 dark:border-white/[0.06] flex flex-wrap items-center gap-2.5 animate-in fade-in-50 duration-200">
+              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                {t('merge.tagImportedNotesLabel', 'Tag name')}:
+              </span>
+              <input
+                type="text"
+                value={customImportTagName}
+                onChange={(e) => setCustomImportTagName(e.target.value)}
+                placeholder={t('merge.fromMerge', 'From Merge')}
+                className="text-xs bg-slate-50 dark:bg-[#0b0f19] border border-slate-200 dark:border-white/[0.1] rounded-xl px-3.5 py-2 text-slate-900 dark:text-slate-100 font-medium focus:ring-1 focus:ring-blue-500 outline-none w-48 shadow-sm"
+              />
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setCustomImportTagName(t('merge.fromMerge', 'From Merge'))}
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-300 transition-colors"
+                >
+                  {t('merge.fromMerge', 'From Merge')}
+                </button>
+                {secondaryFile?.summary?.deviceName && (
+                  <button
+                    type="button"
+                    onClick={() => setCustomImportTagName(`From ${secondaryFile.summary.deviceName}`)}
+                    className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-300 transition-colors truncate max-w-[180px]"
+                  >
+                    From {secondaryFile.summary.deviceName}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setCustomImportTagName(t('merge.backup2', 'Backup 2'))}
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-300 transition-colors"
+                >
+                  {t('merge.backup2', 'Backup 2')}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

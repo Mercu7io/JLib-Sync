@@ -127,6 +127,7 @@ export interface IMergeOptions {
   doctorCheck?: boolean;
   colorRules?: Record<number, number>; // Map old ColorIndex -> new ColorIndex
   conflictResolutions?: Record<string, 'both' | 'a' | 'b'>;
+  secondaryNoteTag?: string; // Optional tag name to attach to notes imported/updated from secondary backups
 }
 
 export interface IMergeProgress {

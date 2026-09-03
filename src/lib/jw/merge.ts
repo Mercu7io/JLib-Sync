@@ -334,6 +334,7 @@ export async function mergeJwLibraries(
 
     // ── 4. Map & Merge Notes ───────────────────────────────────────────────
     const noteMap = new Map<number, number>(); // secNoteId -> mainNoteId
+    const notesToTagWithSecondary: number[] = [];
 
     if (tableExists(secDb, 'Note') && tableExists(mainDb, 'Note')) {
       const secNotes = queryAll<INote>(secDb, 'SELECT * FROM Note');
@@ -388,6 +389,7 @@ export async function mergeJwLibraries(
                 ':id': existingInMain.NoteId,
               });
               noteMap.set(note.NoteId, existingInMain.NoteId);
+              notesToTagWithSecondary.push(existingInMain.NoteId);
               stats.notesMerged++;
               continue;
             }
@@ -425,6 +427,7 @@ export async function mergeJwLibraries(
           );
           if (newNoteRow) {
             noteMap.set(note.NoteId, newNoteRow.id);
+            notesToTagWithSecondary.push(newNoteRow.id);
             stats.notesAdded++;
 
             if (previewNotes.length < 5) {
@@ -762,6 +765,60 @@ export async function mergeJwLibraries(
               ':pos': nextPos,
             }
           );
+        }
+      }
+    }
+
+    // ── 10. Optional: Tag Imported Secondary Notes ──────────────────────────
+    const secTagName = options.secondaryNoteTag?.trim();
+    if (
+      secTagName &&
+      notesToTagWithSecondary.length > 0 &&
+      tableExists(mainDb, 'Tag') &&
+      tableExists(mainDb, 'TagMap')
+    ) {
+      let secTagId: number | null = null;
+      const existingTag = queryOne<{ TagId: number }>(
+        mainDb,
+        'SELECT TagId FROM Tag WHERE Name = :name COLLATE NOCASE AND Type = 1 LIMIT 1',
+        { ':name': secTagName }
+      );
+      if (existingTag) {
+        secTagId = existingTag.TagId;
+      } else {
+        execute(
+          mainDb,
+          'INSERT INTO Tag (Type, Name) VALUES (1, :name)',
+          { ':name': secTagName }
+        );
+        const newTagRow = queryOne<{ id: number }>(mainDb, 'SELECT last_insert_rowid() AS id');
+        if (newTagRow) {
+          secTagId = newTagRow.id;
+          stats.tagsAdded++;
+        }
+      }
+
+      if (secTagId) {
+        for (const nid of notesToTagWithSecondary) {
+          const alreadyTagged = queryOne<{ c: number }>(
+            mainDb,
+            'SELECT COUNT(*) AS c FROM TagMap WHERE TagId = :tid AND NoteId = :nid',
+            { ':tid': secTagId, ':nid': nid }
+          );
+          if (!alreadyTagged || alreadyTagged.c === 0) {
+            const nextPosRow = queryOne<{ nextPos: number }>(
+              mainDb,
+              'SELECT COALESCE(MAX(Position), -1) + 1 AS nextPos FROM TagMap WHERE TagId = :tid',
+              { ':tid': secTagId }
+            );
+            const nextPos = nextPosRow ? nextPosRow.nextPos : 0;
+            execute(
+              mainDb,
+              `INSERT OR IGNORE INTO TagMap (PlaylistItemId, LocationId, NoteId, TagId, Position) 
+               VALUES (NULL, NULL, :nid, :tid, :pos)`,
+              { ':nid': nid, ':tid': secTagId, ':pos': nextPos }
+            );
+          }
         }
       }
     }

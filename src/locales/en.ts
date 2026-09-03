@@ -127,6 +127,10 @@ export const en = {
     keepSourceA: 'Keep Source A',
     keepSourceB: 'Keep Source B',
     combineBoth: 'Combine Both Notes',
+    tagImportedNotes: 'Tag notes imported from Backup 2',
+    tagImportedNotesDesc: 'Attach a tag to all notes imported from the second backup so you can easily review them under Personal Study > Tags in JW Library.',
+    tagImportedNotesLabel: 'Tag name',
+    fromMerge: 'From Merge',
     buttonMerge: 'Generate & Download Combined Backup',
     buttonMergeShort: 'Merge & Download Backup',
     successTitle: 'Merge Completed Successfully!',
@@ -292,11 +296,25 @@ export type TranslationSchema = {
         helpDesc?: string;
       }
     : K extends 'merge'
-    ? Omit<EnSchema['merge'], 'backup1' | 'backup2' | 'backup1Desc' | 'backup2Desc'> & {
+    ? Omit<
+        EnSchema['merge'],
+        | 'backup1'
+        | 'backup2'
+        | 'backup1Desc'
+        | 'backup2Desc'
+        | 'tagImportedNotes'
+        | 'tagImportedNotesDesc'
+        | 'tagImportedNotesLabel'
+        | 'fromMerge'
+      > & {
         backup1?: string;
         backup2?: string;
         backup1Desc?: string;
         backup2Desc?: string;
+        tagImportedNotes?: string;
+        tagImportedNotesDesc?: string;
+        tagImportedNotesLabel?: string;
+        fromMerge?: string;
       }
     : EnSchema[K];
 } & {
