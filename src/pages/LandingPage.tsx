@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Smartphone, Tablet } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Cloud, FolderOpen, GitMerge, Sparkles, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../store/useAppStore';
 import { useCloudStore } from '../store/useCloudStore';
@@ -27,10 +27,9 @@ export const LandingPage: React.FC = () => {
   };
 
   return (
-    <div className="relative overflow-hidden pb-24 space-y-20">
-      {/* Ambient background glows */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[450px] bg-gradient-to-b from-blue-600/15 via-indigo-500/5 to-transparent blur-3xl pointer-events-none -z-10" />
-      <div className="absolute top-48 left-10 w-72 h-72 bg-blue-600/10 rounded-full blur-[100px] pointer-events-none -z-10" />
+    <div className="relative overflow-hidden pb-16 space-y-12">
+      {/* Background glow effects */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-gradient-to-b from-blue-600/10 via-indigo-500/5 to-transparent blur-3xl pointer-events-none -z-10" />
 
       <input
         ref={fileInputRef}
@@ -40,312 +39,193 @@ export const LandingPage: React.FC = () => {
         onChange={handleFileUpload}
       />
 
-      {/* ── SECTION 1: HERO HEADER & TRUST BADGE ───────────────────────── */}
-      <section className="pt-12 sm:pt-20 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto text-center space-y-6">
-        {/* Floating glassmorphic trust badge */}
-        <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold backdrop-blur-md shadow-sm">
-          <GoogleIcon name="verified_user" className="text-base text-emerald-500 dark:text-emerald-400" fill />
-          <span>{t('landing.privacyBadge')}</span>
+      {/* ── HERO SECTION ───────────────────────────────────────────── */}
+      <section className="pt-10 sm:pt-16 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto text-center space-y-5">
+        {/* Discreet Privacy Badge */}
+        <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 text-xs font-semibold backdrop-blur-md">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+          <span>{t('landing.privacyBadge', '100% Client-Side Privacy • In-Memory Processing')}</span>
         </div>
 
-        {/* Main Heading */}
-        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tight leading-[1.1]">
+        {/* Main Title */}
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white tracking-tight leading-[1.15]">
           {t('landing.heroTitle')}
         </h1>
 
-        {/* Subheadline & Crux copy */}
-        <p className="text-base sm:text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed font-normal">
+        {/* Concise Subtitle */}
+        <p className="text-sm sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
           {t('landing.heroSubtitle')}
         </p>
 
-        {/* Action Button Group */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+        {/* Active Library Bar if loaded */}
+        {summary && (
+          <div className="pt-2 max-w-md mx-auto">
+            <div className="rounded-2xl border border-blue-200 dark:border-blue-500/30 bg-blue-50/80 dark:bg-blue-500/10 p-3.5 flex items-center justify-between gap-3 text-left">
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                  {summary.name}
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {summary.notesCount} notes • {summary.userMarksCount} highlights
+                </div>
+              </div>
+              <Link
+                to="/explorer"
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold transition-all flex-shrink-0"
+              >
+                Explorer →
+              </Link>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* ── DUAL ACTION CARDS (FOCUSED & DIRECT) ────────────────────── */}
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {/* Card 1: Merge Two Backups (Primary Tool) */}
           <Link
             to="/merge"
-            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-7 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-all shadow-lg shadow-blue-600/30 hover:shadow-blue-600/40 hover:scale-[1.02] active:scale-[0.98]"
+            className="group relative rounded-3xl bg-white dark:bg-[#101625] border border-slate-200 dark:border-white/[0.08] hover:border-blue-500/50 p-6 sm:p-8 space-y-5 transition-all shadow-sm hover:shadow-xl hover:shadow-blue-950/10 flex flex-col justify-between"
           >
-            <GoogleIcon name="call_merge" className="text-lg" />
-            <span>{t('landing.mergeCta')}</span>
-            <ArrowRight className="w-4 h-4 ml-0.5" />
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-105 transition-transform">
+                <GitMerge className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                  {t('landing.mergeCta', 'Merge Two Libraries')}
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mt-1">
+                  Combine tablet and phone backups without losing notes, tags, or highlights. Smart conflict resolution included.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 flex items-center space-x-2 text-xs font-semibold text-blue-600 dark:text-blue-400">
+              <span>{t('landing.power1Link', 'Open Merge Tool')}</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
           </Link>
 
-          <button
-            type="button"
+          {/* Card 2: Open Single Library (Explorer / Sharing / Stats) */}
+          <div
             onClick={() => fileInputRef.current?.click()}
-            disabled={isLoading}
-            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-white/[0.1] font-semibold text-sm transition-all shadow-sm"
+            className="group cursor-pointer rounded-3xl bg-white dark:bg-[#101625] border border-slate-200 dark:border-white/[0.08] hover:border-sky-500/50 p-6 sm:p-8 space-y-5 transition-all shadow-sm hover:shadow-xl hover:shadow-sky-950/10 flex flex-col justify-between"
           >
-            <GoogleIcon name="folder_open" className="text-lg text-blue-600 dark:text-blue-400" />
-            <span>{t('landing.openLocal')}</span>
-          </button>
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-600 dark:text-sky-400 group-hover:scale-105 transition-transform">
+                <FolderOpen className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
+                  {t('landing.openLocalCardTitle', 'Open & Explore Library')}
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mt-1">
+                  Browse study notes, clean tags with Tag Doctor, inspect reading analytics, or selectively share notes with friends.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 flex items-center space-x-2 text-xs font-semibold text-sky-600 dark:text-sky-400">
+              <span>{t('landing.openLocalCardCta', 'Choose File from Computer')}</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── GOOGLE DRIVE & SAMPLE DEMO BAR ─────────────────────────── */}
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="rounded-2xl border border-slate-200/80 dark:border-white/[0.06] bg-slate-100/60 dark:bg-white/[0.02] p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center space-x-3 text-left">
+            <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-600 dark:text-blue-400 flex-shrink-0">
+              <Cloud className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+                <span>Google Drive Cloud Sync</span>
+                {isConnected && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/30">
+                    Connected ✓
+                  </span>
+                )}
+              </div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                Backup merged files to Drive and pull backups to any device without cables.
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
+            <button
+              type="button"
+              onClick={() => setShowCloudModal(true)}
+              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-white dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.08] hover:border-blue-500/40 text-xs font-semibold text-slate-800 dark:text-slate-200 transition-all text-center shadow-sm"
+            >
+              {isConnected ? t('landing.cloudCardCtaManage', 'Manage Backups') : t('landing.cloudCardCtaConnect', 'Connect Drive')}
+            </button>
+          </div>
         </div>
 
-        {/* Quick Demo Samples */}
-        <div className="pt-2 flex flex-wrap items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-          <span>{t('nav.loadSample')}:</span>
+        {/* Quick Demo links */}
+        <div className="pt-3 flex items-center justify-center space-x-2 text-xs text-slate-500">
+          <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+          <span>{t('nav.loadSample', 'Try with sample backup')}:</span>
           <button
             type="button"
             onClick={() => handleDemoClick('example')}
             disabled={isLoading}
-            className="px-2.5 py-1 rounded-lg bg-slate-200/70 dark:bg-white/[0.04] border border-slate-300 dark:border-white/[0.08] hover:border-blue-500/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium text-[11px]"
+            className="hover:text-blue-600 dark:hover:text-blue-400 underline font-medium text-[11px]"
           >
-            {t('landing.sampleA')}
+            {t('landing.sampleA', 'Sample A')}
           </button>
+          <span>•</span>
           <button
             type="button"
             onClick={() => handleDemoClick('example2')}
             disabled={isLoading}
-            className="px-2.5 py-1 rounded-lg bg-slate-200/70 dark:bg-white/[0.04] border border-slate-300 dark:border-white/[0.08] hover:border-blue-500/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium text-[11px]"
+            className="hover:text-blue-600 dark:hover:text-blue-400 underline font-medium text-[11px]"
           >
-            {t('landing.sampleB')}
+            {t('landing.sampleB', 'Sample B')}
           </button>
         </div>
       </section>
 
-      {/* ── SECTION 2: DUAL DOCK (LOCAL FILE vs GOOGLE DRIVE) ─────────── */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Card 1: Local Client-Side File */}
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            className="group cursor-pointer rounded-2xl bg-white dark:bg-[#111726]/80 border border-slate-200 dark:border-white/[0.08] hover:border-blue-500/50 p-7 space-y-4 transition-all shadow-sm hover:shadow-xl hover:shadow-blue-950/10 backdrop-blur-xl relative overflow-hidden"
-          >
-            <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-105 transition-transform">
-                <GoogleIcon name="folder_open" className="text-2xl" />
-              </div>
-              <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                {t('landing.privacy100')}
-              </span>
+      {/* ── 3 PILLARS OF SIMPLICITY ─────────────────────────────────── */}
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
+          <div className="p-4 rounded-2xl bg-white dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/[0.06] space-y-1.5 shadow-sm">
+            <div className="flex items-center space-x-2 text-slate-900 dark:text-white font-bold text-xs">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              <span>100% In-Browser Privacy</span>
             </div>
-
-            <div className="space-y-1">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                {t('landing.openLocalCardTitle')}
-              </h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                {t('landing.openLocalCardDesc')}
-              </p>
-            </div>
-
-            <div className="pt-2 flex items-center space-x-2 text-xs font-semibold text-blue-600 dark:text-blue-400">
-              <span>{t('landing.openLocalCardCta')}</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+              Your study notes and highlights are decrypted and processed strictly in your device's memory.
+            </p>
           </div>
 
-          {/* Card 2: Google Drive Cloud Sync */}
-          <div
-            onClick={() => setShowCloudModal(true)}
-            className="group cursor-pointer rounded-2xl bg-white dark:bg-[#111726]/80 border border-slate-200 dark:border-white/[0.08] hover:border-sky-500/50 p-7 space-y-4 transition-all shadow-sm hover:shadow-xl hover:shadow-sky-950/10 backdrop-blur-xl relative overflow-hidden"
-          >
-            <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-600 dark:text-sky-400 group-hover:scale-105 transition-transform">
-                <GoogleIcon name="cloud_sync" className="text-2xl" />
-              </div>
-              {isConnected ? (
-                <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center space-x-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
-                  <span>{t('landing.driveConnectedBadge')}</span>
-                </span>
-              ) : (
-                <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
-                  {t('landing.cloudStorageBadge')}
-                </span>
-              )}
+          <div className="p-4 rounded-2xl bg-white dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/[0.06] space-y-1.5 shadow-sm">
+            <div className="flex items-center space-x-2 text-slate-900 dark:text-white font-bold text-xs">
+              <CheckCircle2 className="w-4 h-4 text-blue-500" />
+              <span>Zero-Loss Deduplication</span>
             </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+              Notes on identical verses are unified, tags are merged, and identical highlights are safely combined.
+            </p>
+          </div>
 
-            <div className="space-y-1">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
-                {t('landing.cloudCardTitle')}
-              </h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                {t('landing.cloudCardDesc')}
-              </p>
+          <div className="p-4 rounded-2xl bg-white dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/[0.06] space-y-1.5 shadow-sm">
+            <div className="flex items-center space-x-2 text-slate-900 dark:text-white font-bold text-xs">
+              <CheckCircle2 className="w-4 h-4 text-indigo-500" />
+              <span>Universal Compatibility</span>
             </div>
-
-            <div className="pt-2 flex items-center space-x-2 text-xs font-semibold text-sky-600 dark:text-sky-400">
-              <span>{isConnected ? t('landing.cloudCardCtaManage') : t('landing.cloudCardCtaConnect')}</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+              Outputs official SHA-256 verified .jwlibrary archives importable into iOS, Android, and Windows.
+            </p>
           </div>
         </div>
       </section>
-
-      {/* ── SECTION 3: THE CRUX (WHY OFFICIAL RESTORE LEAVES YOU TRAPPED) ─ */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="rounded-3xl bg-slate-100/80 dark:bg-[#0e1422]/90 border border-slate-200 dark:border-white/[0.08] p-6 sm:p-10 space-y-8 backdrop-blur-xl">
-          <div className="text-center max-w-2xl mx-auto space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              {t('landing.cruxTitle')}
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-              {t('landing.cruxSubtitle')}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* The Trap */}
-            <div className="rounded-2xl border border-red-300 dark:border-red-900/40 bg-white/70 dark:bg-gradient-to-b dark:from-red-950/20 dark:to-transparent p-6 space-y-4 shadow-sm">
-              <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 font-bold text-sm">
-                <GoogleIcon name="warning" className="text-lg text-red-500" fill />
-                <span>{t('landing.trapTitle')}</span>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                {t('landing.trapDesc')}
-              </p>
-              <div className="bg-slate-50 dark:bg-[#0b0f19] border border-red-200 dark:border-red-900/30 rounded-xl p-4 text-xs space-y-2.5 text-slate-700 dark:text-slate-300">
-                <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-400">
-                  <Tablet className="w-4 h-4 text-slate-500 dark:text-slate-300" />
-                  <span>{t('landing.trapTablet')}</span>
-                </div>
-                <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-400">
-                  <Smartphone className="w-4 h-4 text-slate-500 dark:text-slate-300" />
-                  <span>{t('landing.trapPhone')}</span>
-                </div>
-                <div className="pt-2 border-t border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-300 font-medium">
-                  {t('landing.trapOutcome')}
-                </div>
-              </div>
-            </div>
-
-            {/* The Solution */}
-            <div className="rounded-2xl border border-blue-300 dark:border-blue-500/40 bg-white/70 dark:bg-gradient-to-b dark:from-blue-950/20 dark:to-transparent p-6 space-y-4 shadow-sm">
-              <div className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 font-bold text-sm">
-                <GoogleIcon name="check_circle" className="text-lg text-emerald-500 dark:text-emerald-400" fill />
-                <span>{t('landing.solutionTitle')}</span>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                {t('landing.solutionDesc')}
-              </p>
-              <div className="bg-slate-50 dark:bg-[#0b0f19] border border-blue-200 dark:border-blue-500/30 rounded-xl p-4 text-xs space-y-2.5 text-slate-700 dark:text-slate-300">
-                <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-400">
-                  <GoogleIcon name="check" className="text-base text-emerald-500 dark:text-emerald-400" />
-                  <span>{t('landing.solutionCheck1')}</span>
-                </div>
-                <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-400">
-                  <GoogleIcon name="check" className="text-base text-emerald-500 dark:text-emerald-400" />
-                  <span>{t('landing.solutionCheck2')}</span>
-                </div>
-                <div className="pt-2 border-t border-blue-200 dark:border-blue-500/30 text-emerald-600 dark:text-emerald-300 font-medium">
-                  {t('landing.solutionOutcome')}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── SECTION 4: BENTO GRID OF 4 SUPERPOWERS ────────────────────── */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            {t('landing.superpowersTitle')}
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            {t('landing.superpowersSubtitle')}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* 1. Multi-Library Merge */}
-          <div className="rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#111726]/75 p-6 space-y-3 hover:border-blue-500/40 transition-all shadow-sm hover:shadow-md backdrop-blur-xl">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-600 dark:text-blue-400">
-              <GoogleIcon name="call_merge" className="text-xl" />
-            </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">{t('landing.power1Title')}</h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              {t('landing.power1Desc')}
-            </p>
-            <div className="pt-2">
-              <Link to="/merge" className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center space-x-1">
-                <span>{t('landing.power1Link')}</span>
-                <ArrowRight className="w-3 h-3" />
-              </Link>
-            </div>
-          </div>
-
-          {/* 2. Selective Sharing */}
-          <div className="rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#111726]/75 p-6 space-y-3 hover:border-emerald-500/40 transition-all shadow-sm hover:shadow-md backdrop-blur-xl">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-              <GoogleIcon name="ios_share" className="text-xl" />
-            </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">{t('landing.power2Title')}</h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              {t('landing.power2Desc')}
-            </p>
-            <div className="pt-2">
-              <Link to="/share" className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline inline-flex items-center space-x-1">
-                <span>{t('landing.power2Link')}</span>
-                <ArrowRight className="w-3 h-3" />
-              </Link>
-            </div>
-          </div>
-
-          {/* 3. The Tag Manager */}
-          <div className="rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#111726]/75 p-6 space-y-3 hover:border-sky-500/40 transition-all shadow-sm hover:shadow-md backdrop-blur-xl">
-            <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-600 dark:text-sky-400">
-              <GoogleIcon name="label" className="text-xl" fill />
-            </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">{t('landing.power3Title')}</h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              {t('landing.power3Desc')}
-            </p>
-            <div className="pt-2">
-              <Link to="/explorer" className="text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline inline-flex items-center space-x-1">
-                <span>{t('landing.power3Link')}</span>
-                <ArrowRight className="w-3 h-3" />
-              </Link>
-            </div>
-          </div>
-
-          {/* 4. Reading Analytics */}
-          <div className="rounded-2xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#111726]/75 p-6 space-y-3 hover:border-purple-500/40 transition-all shadow-sm hover:shadow-md backdrop-blur-xl">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/25 flex items-center justify-center text-purple-600 dark:text-purple-400">
-              <GoogleIcon name="bar_chart" className="text-xl" fill />
-            </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">{t('landing.power4Title')}</h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              {t('landing.power4Desc')}
-            </p>
-            <div className="pt-2">
-              <Link to="/stats" className="text-xs font-semibold text-purple-600 dark:text-purple-400 hover:underline inline-flex items-center space-x-1">
-                <span>{t('landing.power4Link')}</span>
-                <ArrowRight className="w-3 h-3" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Active Library Bar */}
-      {summary && (
-        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-2xl border border-blue-200 dark:border-blue-500/40 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-500/15 dark:via-indigo-500/10 dark:to-transparent p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm backdrop-blur-xl">
-            <div className="flex items-center space-x-3.5 text-left">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-600 dark:text-blue-400 flex-shrink-0">
-                <GoogleIcon name="inventory_2" className="text-xl" />
-              </div>
-              <div>
-                <div className="text-sm font-bold text-slate-900 dark:text-white">
-                  {t('landing.activeLibraryBanner')}: {summary.name}
-                </div>
-                <div className="text-xs text-slate-600 dark:text-slate-300">
-                  {summary.notesCount} {t('nav.notes')} • {summary.userMarksCount} {t('nav.highlights')} • {summary.tagsCount} {t('nav.tags')} • {summary.deviceName}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2 w-full sm:w-auto">
-              <Link
-                to="/explorer"
-                className="w-full sm:w-auto px-5 py-2.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all shadow-md shadow-blue-600/20 text-center"
-              >
-                {t('landing.goToExplorer')}
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
     </div>
   );
 };
