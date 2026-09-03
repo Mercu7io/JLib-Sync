@@ -10,6 +10,8 @@ export const en = {
     analyticsDesc: 'Reading stats & metrics',
     share: 'Share',
     shareDesc: 'Selective export',
+    help: 'Help',
+    helpDesc: 'User guide & FAQs',
     openFile: 'Open File',
     openJwlibrary: 'Open .jwlibrary',
     loadSample: 'Load Sample',
@@ -155,6 +157,7 @@ export const en = {
     filterBookmarks: 'Bookmarks Only',
     filterAnswers: 'Question Answers Only',
     doctorBtn: 'Library Doctor',
+    tagManagerBtn: 'Tag Manager',
     cloudDriveBtn: 'Cloud Drive',
     saveBackupBtn: 'Save Backup',
     tagManagerTitle: 'Batch Tag & Topic Manager',
@@ -238,6 +241,23 @@ export const en = {
     encryptionSettings: 'Client-Side Encryption',
     encryptionWarning: 'Warning: If you lose your password, your encrypted backups cannot be recovered.',
   },
+  help: {
+    title: 'User Guide & Help',
+    subtitle: 'Everything you need to know about merging, exploring, and restoring your study libraries safely.',
+    step1Title: '1. Export your backups from JW Library',
+    step1Desc: 'Open JW Library on your phone and tablet. Go to Personal Study > Backup and Restore > Create a Backup, then save the .jwlibrary file.',
+    step2Title: '2. Merge them together on Panda JWL-Sync',
+    step2Desc: 'Drop your phone backup on the left and your tablet backup on the right. Our algorithm unifies notes on the same verses, consolidates tags, and avoids duplicates.',
+    step3Title: '3. Restore the merged backup',
+    step3Desc: 'Download your merged .jwlibrary file. Open JW Library on both devices and select Restore a Backup. Both devices now share your complete research!',
+    privacyTitle: '100% In-Browser Privacy Guarantee',
+    privacyDesc: 'Panda JWL-Sync runs completely on your device using WebAssembly SQLite. Your personal notes, highlights, and study tags are never sent to any server.',
+    faqTitle: 'Frequently Asked Questions',
+    faq1Q: 'Will my highlights or tags be lost?',
+    faq1A: 'No! Unlike the official restore which overwrites the entire database, Panda JWL-Sync combines records intelligently without deleting either side.',
+    faq2Q: 'What happens if I edited the same verse on both devices?',
+    faq2A: 'The app detects duplicate verse collisions and lets you choose whether to keep both notes or select your preferred version.',
+  },
   footer: {
     clientSide: '100% Client-Side & Private',
     zeroTelemetry: 'Zero Server Telemetry',
@@ -253,10 +273,21 @@ export const en = {
 
 type EnSchema = typeof en;
 export type TranslationSchema = {
-  [K in keyof EnSchema]: K extends 'cloud'
+  [K in keyof Omit<EnSchema, 'help'>]: K extends 'cloud'
     ? Omit<EnSchema['cloud'], 'clientIdMissingTitle' | 'clientIdMissingDesc'> & {
         clientIdMissingTitle?: string;
         clientIdMissingDesc?: string;
       }
+    : K extends 'explorer'
+    ? Omit<EnSchema['explorer'], 'tagManagerBtn'> & {
+        tagManagerBtn?: string;
+      }
+    : K extends 'nav'
+    ? Omit<EnSchema['nav'], 'help' | 'helpDesc'> & {
+        help?: string;
+        helpDesc?: string;
+      }
     : EnSchema[K];
+} & {
+  help?: Partial<EnSchema['help']>;
 };
