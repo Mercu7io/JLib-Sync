@@ -84,14 +84,20 @@ export function detectRealConflicts(dbA: Database, dbB: Database): IConflictItem
     });
   });
 
-  // 2. Load Notes with non-null content
+  // 2. Load Notes with non-empty content or title
   const rawNotesA = queryAll<IDbNote>(
     dbA,
-    'SELECT NoteId, Guid, LocationId, BlockIdentifier, BlockType, Title, Content, LastModified FROM Note WHERE Content IS NOT NULL'
+    `SELECT NoteId, Guid, LocationId, BlockIdentifier, BlockType, Title, Content, LastModified 
+     FROM Note 
+     WHERE (Content IS NOT NULL AND length(trim(Content)) > 0) 
+        OR (Title IS NOT NULL AND length(trim(Title)) > 0)`
   );
   const rawNotesB = queryAll<IDbNote>(
     dbB,
-    'SELECT NoteId, Guid, LocationId, BlockIdentifier, BlockType, Title, Content, LastModified FROM Note WHERE Content IS NOT NULL'
+    `SELECT NoteId, Guid, LocationId, BlockIdentifier, BlockType, Title, Content, LastModified 
+     FROM Note 
+     WHERE (Content IS NOT NULL AND length(trim(Content)) > 0) 
+        OR (Title IS NOT NULL AND length(trim(Title)) > 0)`
   );
 
   const detected: IConflictItem[] = [];
@@ -124,21 +130,22 @@ export function detectRealConflicts(dbA: Database, dbB: Database): IConflictItem
     }
   }
 
-  // 4. Second pass: Check GUID collisions for remaining notes
-  // If a note has the exact same GUID on both devices but DIFFERENT content:
+  // 4. Second pass: Check GUID collisions for remaining notes (case-insensitive)
+  // If a note has the exact same GUID on both devices but DIFFERENT content or title:
   // this is a true note edition collision!
   const guidMapB = new Map<string, IDbNote>();
   rawNotesB.forEach((n) => {
     if (!handledB.has(n.NoteId) && n.Guid) {
-      guidMapB.set(n.Guid, n);
+      guidMapB.set(n.Guid.trim().toLowerCase(), n);
     }
   });
 
   for (const nA of rawNotesA) {
     if (handledA.has(nA.NoteId) || !nA.Guid) continue;
-    const matchB = guidMapB.get(nA.Guid);
+    const cleanGuidA = nA.Guid.trim().toLowerCase();
+    const matchB = guidMapB.get(cleanGuidA);
     if (matchB) {
-      const pairKey = `guid_${nA.Guid}`;
+      const pairKey = `guid_${cleanGuidA}`;
       if (!seenConflictPairs.has(pairKey)) {
         seenConflictPairs.add(pairKey);
         handledA.add(nA.NoteId);
@@ -148,18 +155,21 @@ export function detectRealConflicts(dbA: Database, dbB: Database): IConflictItem
         const locB = matchB.LocationId ? locMapB.get(matchB.LocationId) : null;
         const anchorLabel = locA?.label || locB?.label || nA.Title || matchB.Title || 'Study Note';
 
+        const textA = [nA.Title?.trim(), nA.Content?.trim()].filter(Boolean).join(' — ');
+        const textB = [matchB.Title?.trim(), matchB.Content?.trim()].filter(Boolean).join(' — ');
+
         detected.push({
           id: nA.Guid,
           verseAnchor: anchorLabel,
-          sourceAText: nA.Content || '',
-          sourceBText: matchB.Content || '',
+          sourceAText: textA || nA.Content || '',
+          sourceBText: textB || matchB.Content || '',
           choice: 'both',
         });
       }
     }
   }
 
-  // 5. Third pass: Remaining unmatched notes sharing the same anchor AND same non-empty title
+  // 5. Third pass: Remaining unmatched notes sharing the same anchor
   const remainingA = rawNotesA.filter((n) => !handledA.has(n.NoteId));
   const remainingB = rawNotesB.filter((n) => !handledB.has(n.NoteId));
 
@@ -167,9 +177,11 @@ export function detectRealConflicts(dbA: Database, dbB: Database): IConflictItem
     if (handledA.has(nA.NoteId)) continue;
     const locInfoA = nA.LocationId ? locMapA.get(nA.LocationId) : null;
     const normTitleA = (nA.Title || '').trim().toLowerCase();
-    if (!normTitleA) continue; // Skip untitled notes: separate thoughts on same verse are kept, not collided
-
     const anchorA = `${locInfoA?.key || 'unknown'}_${nA.BlockType ?? 0}_${nA.BlockIdentifier ?? 0}`;
+    if (anchorA === 'unknown_0_0' && !normTitleA) {
+      // Independent note with no anchor and no title: cannot safely match across devices
+      continue;
+    }
 
     for (const nB of remainingB) {
       if (handledB.has(nB.NoteId)) continue;
@@ -177,18 +189,25 @@ export function detectRealConflicts(dbA: Database, dbB: Database): IConflictItem
       const normTitleB = (nB.Title || '').trim().toLowerCase();
       const anchorB = `${locInfoB?.key || 'unknown'}_${nB.BlockType ?? 0}_${nB.BlockIdentifier ?? 0}`;
 
-      if (anchorA === anchorB && normTitleA === normTitleB) {
+      // Match if same anchor on verse/publication or same non-empty title
+      const isSameAnchor = anchorA === anchorB && anchorA !== 'unknown_0_0';
+      const isSameTitle = normTitleA && normTitleB && normTitleA === normTitleB;
+
+      if (isSameAnchor || isSameTitle) {
         const pairKey = `pair_${nA.NoteId}_${nB.NoteId}`;
         if (!seenConflictPairs.has(pairKey)) {
           seenConflictPairs.add(pairKey);
           handledA.add(nA.NoteId);
           handledB.add(nB.NoteId);
 
+          const textA = [nA.Title?.trim(), nA.Content?.trim()].filter(Boolean).join(' — ');
+          const textB = [nB.Title?.trim(), nB.Content?.trim()].filter(Boolean).join(' — ');
+
           detected.push({
             id: nA.Guid || `${nA.NoteId}_${nB.NoteId}`,
-            verseAnchor: locInfoA?.label || nA.Title || 'Study Note',
-            sourceAText: nA.Content || '',
-            sourceBText: nB.Content || '',
+            verseAnchor: locInfoA?.label || locInfoB?.label || nA.Title || nB.Title || 'Study Note',
+            sourceAText: textA || nA.Content || '',
+            sourceBText: textB || nB.Content || '',
             choice: 'both',
           });
         }
