@@ -320,25 +320,6 @@ export const LandingPage: React.FC = () => {
         <p className="text-xs sm:text-base text-slate-600 dark:text-slate-300 max-w-xl mx-auto leading-relaxed">
           {t('merge.heroSubtitle', 'Combine your phone and tablet backups seamlessly into one unified archive.')}
         </p>
-
-        <div className="pt-1 flex items-center justify-center space-x-3 text-xs">
-          <button
-            type="button"
-            onClick={handleLoadDemoFiles}
-            className="inline-flex items-center space-x-1.5 text-blue-600 dark:text-blue-400 hover:underline font-semibold"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>{t('merge.loadDemoPair', 'Try with sample demo files')}</span>
-          </button>
-          <span className="text-slate-300 dark:text-slate-700">•</span>
-          <Link
-            to="/help"
-            className="inline-flex items-center space-x-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-          >
-            <HelpCircle className="w-3.5 h-3.5" />
-            <span>How to export?</span>
-          </Link>
-        </div>
       </section>
 
       {/* Error alert */}
@@ -685,6 +666,28 @@ export const LandingPage: React.FC = () => {
           </div>
         </section>
       )}
+
+      {/* ── DEMO PAIR & HELP LINKS (BELOW DROPZONES, JUST ABOVE FOOTER) ── */}
+      <section className="text-center pt-2 pb-6">
+        <div className="inline-flex items-center space-x-3 text-xs text-slate-500 dark:text-slate-400 bg-slate-100/70 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/[0.06] px-4 py-2 rounded-2xl backdrop-blur-md shadow-sm">
+          <button
+            type="button"
+            onClick={handleLoadDemoFiles}
+            className="inline-flex items-center space-x-1.5 text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>{t('merge.loadDemoPair', 'Load Demo Pair (Tablet & Phone)')}</span>
+          </button>
+          <span className="text-slate-300 dark:text-slate-700">•</span>
+          <Link
+            to="/help"
+            className="inline-flex items-center space-x-1 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium"
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-emerald-500" />
+            <span>How to export?</span>
+          </Link>
+        </div>
+      </section>
 
       {/* ── GOOGLE DRIVE CLOUD PICKER MODAL ────────────────────────── */}
       {cloudPickerTarget && (

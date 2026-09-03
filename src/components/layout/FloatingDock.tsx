@@ -49,9 +49,6 @@ export const FloatingDock: React.FC = () => {
             >
               <Icon className={`w-4 h-4 ${active ? 'animate-pulse' : ''}`} />
               <span className="tracking-wide">{item.label}</span>
-              {active && (
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-white dark:bg-blue-400" />
-              )}
             </NavLink>
           );
         })}

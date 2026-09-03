@@ -453,12 +453,12 @@ export const ExplorerPage: React.FC = () => {
   if (!activeDb || !summary) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 text-center space-y-6">
-        <div className="w-16 h-16 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500 mx-auto">
+        <div className="w-16 h-16 rounded-3xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400 mx-auto">
           <BookOpen className="w-8 h-8" />
         </div>
         <div className="space-y-2">
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('explorer.noLibraryLoaded')}</h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-xs text-slate-600 dark:text-slate-400">
             {t('explorer.noLibraryPrompt')}
           </p>
         </div>
@@ -467,10 +467,10 @@ export const ExplorerPage: React.FC = () => {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-3 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-semibold text-sm transition-colors shadow-sm"
+            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs tracking-wide transition-all shadow-md shadow-blue-600/30"
           >
             <Upload className="w-4 h-4" />
-            <span>{t('explorer.openFileBtn')}</span>
+            <span>{t('explorer.openFileBtn', 'Open .jwlibrary File')}</span>
           </button>
           <input
             ref={fileInputRef}
@@ -484,12 +484,23 @@ export const ExplorerPage: React.FC = () => {
           />
           <button
             type="button"
+            onClick={() => useCloudStore.getState().setShowCloudModal(true)}
+            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-white/[0.08] text-xs font-semibold transition-all shadow-sm"
+          >
+            <Cloud className="w-4 h-4 text-blue-500" />
+            <span>{t('merge.chooseFromDrive', 'Choose from Google Drive')}</span>
+          </button>
+        </div>
+
+        <div className="pt-4">
+          <button
+            type="button"
             onClick={loadDemoLibrary}
             disabled={isLoading}
-            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-3 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-sm font-medium transition-colors shadow-sm"
+            className="inline-flex items-center space-x-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-medium underline"
           >
-            <Sparkles className="w-4 h-4 text-orange-500 dark:text-orange-400" />
-            <span>{t('explorer.tryDemoBtn')}</span>
+            <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+            <span>{t('explorer.tryDemoBtn', 'Try Demo Library')}</span>
           </button>
         </div>
       </div>
