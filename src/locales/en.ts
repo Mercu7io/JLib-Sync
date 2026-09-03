@@ -220,6 +220,8 @@ export const en = {
     connectButton: 'Connect with Google Account',
     connectTitle: 'Connect Your Google Drive',
     connectDesc: 'Seamlessly store your merged libraries in your personal Google Drive and pull backups to any device without cables.',
+    clientIdMissingTitle: 'Google Client ID Not Configured',
+    clientIdMissingDesc: 'To connect Google Drive, configure VITE_GOOGLE_CLIENT_ID in your .env file or container environment.',
     zeroAccessTitle: 'Zero-Access Guarantee',
     zeroAccessDesc: 'Panda JWL-Sync uses Google’s strictly sandboxed drive.file scope. It can only see files it creates itself in your JW Sync folder.',
     backupNow: 'Save to Drive',
@@ -249,4 +251,12 @@ export const en = {
   },
 };
 
-export type TranslationSchema = typeof en;
+type EnSchema = typeof en;
+export type TranslationSchema = {
+  [K in keyof EnSchema]: K extends 'cloud'
+    ? Omit<EnSchema['cloud'], 'clientIdMissingTitle' | 'clientIdMissingDesc'> & {
+        clientIdMissingTitle?: string;
+        clientIdMissingDesc?: string;
+      }
+    : EnSchema[K];
+};

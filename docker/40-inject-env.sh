@@ -6,7 +6,8 @@ CLIENT_ID="${GOOGLE_CLIENT_ID:-$VITE_GOOGLE_CLIENT_ID}"
 
 cat <<EOF > /usr/share/nginx/html/env.js
 window.__ENV__ = {
-  GOOGLE_CLIENT_ID: "${CLIENT_ID}"
+  GOOGLE_CLIENT_ID: "${CLIENT_ID}",
+  VITE_GOOGLE_CLIENT_ID: "${CLIENT_ID}"
 };
 EOF
 

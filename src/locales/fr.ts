@@ -222,6 +222,8 @@ export const fr: TranslationSchema = {
     "connectButton": "Se connecter avec un compte Google",
     "connectTitle": "Connectez votre Google Drive",
     "connectDesc": "Stockez vos bibliothèques fusionnées sur votre Google Drive personnel et récupérez vos sauvegardes sur n’importe quel appareil sans câble.",
+    "clientIdMissingTitle": "Identifiant Google Client ID manquant",
+    "clientIdMissingDesc": "Pour activer la synchronisation Google Drive, configurez VITE_GOOGLE_CLIENT_ID dans votre fichier .env ou vos variables Docker.",
     "zeroAccessTitle": "Garantie zéro accès tiers",
     "zeroAccessDesc": "Panda JWL-Sync utilise le périmètre drive.file strictement sécurisé de Google. Il ne peut accéder qu’aux fichiers créés par lui-même dans votre dossier JW Sync.",
     "backupNow": "Sauvegarder sur Drive",

@@ -87,10 +87,13 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
     }
   },
 
-  connect: () => {
+  connect: async () => {
     try {
       set({ error: null });
-      driveManager.login();
+      await driveManager.login(async () => {
+        set({ isConnected: true, error: null });
+        await get().refreshBackups();
+      });
     } catch (err) {
       set({ error: (err as Error).message });
     }

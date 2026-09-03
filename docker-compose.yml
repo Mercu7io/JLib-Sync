@@ -2,6 +2,8 @@ services:
   panda-jwl-sync:
     container_name: panda-jwl-sync
     image: ghcr.io/mercu7io/jlib-sync:latest
+    env_file:
+      - .env
     # Optionnel : décommentez 'build' uniquement si vous souhaitez compiler vous-même le code source
     # build:
     #   context: .

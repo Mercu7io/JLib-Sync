@@ -17,9 +17,11 @@ import {
   CheckSquare,
   Square,
   Settings,
+  AlertCircle,
 } from 'lucide-react';
 import { useCloudStore } from '../../store/useCloudStore';
 import { useAppStore } from '../../store/useAppStore';
+import { getGoogleClientId } from '../../lib/cloud/googleDrive';
 import { useTranslation } from 'react-i18next';
 
 export const CloudSyncModal: React.FC = () => {
@@ -48,6 +50,7 @@ export const CloudSyncModal: React.FC = () => {
   } = useCloudStore();
 
   const { activeLibraryBytes, summary } = useAppStore();
+  const hasClientId = !!getGoogleClientId();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
@@ -268,7 +271,7 @@ export const CloudSyncModal: React.FC = () => {
                 )}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Manage, search, batch delete, and select backups from your Google Drive <code className="text-blue-600 dark:text-blue-400 font-semibold">JW Sync</code> folder.
+                {t('cloud.subtitle')}
               </p>
             </div>
           </div>
@@ -303,7 +306,7 @@ export const CloudSyncModal: React.FC = () => {
               onClick={clearError}
               className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white text-xs underline ml-2"
             >
-              Dismiss
+              {t('common.close', 'Dismiss')}
             </button>
           </div>
         )}
@@ -319,17 +322,30 @@ export const CloudSyncModal: React.FC = () => {
         {!isConnected ? (
           <div className="space-y-6 text-center py-6">
             <div className="max-w-md mx-auto space-y-2">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Connect Your Google Drive</h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">{t('cloud.connectTitle')}</h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Seamlessly store your merged libraries in your personal Google Drive and pull backups to any device without cables.
+                {t('cloud.connectDesc')}
               </p>
             </div>
+
+            {!hasClientId && (
+              <div className="max-w-md mx-auto p-3.5 bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 rounded-xl text-left text-xs text-amber-700 dark:text-amber-300 space-y-1">
+                <div className="font-semibold flex items-center space-x-1.5">
+                  <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                  <span>{t('cloud.clientIdMissingTitle', 'Google Client ID Not Configured')}</span>
+                </div>
+                <p className="text-[11px] text-amber-800 dark:text-amber-300/80 leading-relaxed">
+                  {t('cloud.clientIdMissingDesc', 'To connect Google Drive, configure VITE_GOOGLE_CLIENT_ID in your .env file or container environment.')}
+                </p>
+              </div>
+            )}
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
                 type="button"
                 onClick={connect}
-                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2.5 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-all shadow-lg shadow-blue-600/25"
+                disabled={!hasClientId}
+                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2.5 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm transition-all shadow-lg shadow-blue-600/25"
               >
                 <Cloud className="w-4 h-4" />
                 <span>{t('cloud.connectButton')}</span>
@@ -339,10 +355,10 @@ export const CloudSyncModal: React.FC = () => {
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] text-left text-xs text-slate-600 dark:text-slate-400 space-y-2">
               <div className="flex items-center space-x-2 text-slate-800 dark:text-slate-300 font-semibold">
                 <Lock className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>Zero-Access Guarantee</span>
+                <span>{t('cloud.zeroAccessTitle')}</span>
               </div>
               <p className="leading-relaxed">
-                Panda JWL-Sync uses Google’s strictly sandboxed <code className="text-slate-800 dark:text-slate-300 font-semibold">drive.file</code> scope. It can only see files it creates itself in your <code className="text-slate-800 dark:text-slate-300 font-semibold">JW Sync</code> folder.
+                {t('cloud.zeroAccessDesc')}
               </p>
             </div>
           </div>

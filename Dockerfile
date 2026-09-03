@@ -33,7 +33,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy dynamic runtime environment injection script
 COPY docker/40-inject-env.sh /docker-entrypoint.d/40-inject-env.sh
-RUN chmod +x /docker-entrypoint.d/40-inject-env.sh
+RUN sed -i 's/\r$//' /docker-entrypoint.d/40-inject-env.sh && chmod +x /docker-entrypoint.d/40-inject-env.sh
 
 # Expose standard HTTP port
 EXPOSE 80

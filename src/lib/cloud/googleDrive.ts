@@ -98,7 +98,20 @@ export class GoogleDriveManager {
     return null;
   }
 
+  private authSuccessCallback?: (token: string) => void;
+
+  hasTokenClient(): boolean {
+    return !!this.tokenClient;
+  }
+
+  isConfigured(): boolean {
+    return !!this.clientId;
+  }
+
   async init(onAuthSuccess?: (token: string) => void): Promise<void> {
+    if (onAuthSuccess) {
+      this.authSuccessCallback = onAuthSuccess;
+    }
     if (!this.clientId) {
       return;
     }
@@ -121,7 +134,7 @@ export class GoogleDriveManager {
         }
         const expiresIn = Number(tokenResponse.expires_in) || 3599;
         this.saveToken(tokenResponse.access_token, expiresIn);
-        onAuthSuccess?.(this.accessToken!);
+        this.authSuccessCallback?.(this.accessToken!);
       },
     });
 
@@ -129,7 +142,7 @@ export class GoogleDriveManager {
     const savedToken = this.getStoredToken();
     if (savedToken) {
       this.accessToken = savedToken;
-      onAuthSuccess?.(savedToken);
+      this.authSuccessCallback?.(savedToken);
     } else {
       // If token is expired but user was previously connected, attempt a silent token refresh
       const wasConnected = localStorage.getItem('jwsync_drive_connected');
@@ -141,12 +154,18 @@ export class GoogleDriveManager {
     }
   }
 
-  login(): void {
+  async login(onAuthSuccess?: (token: string) => void): Promise<void> {
+    if (onAuthSuccess) {
+      this.authSuccessCallback = onAuthSuccess;
+    }
     if (!this.clientId) {
-      throw new Error('Google Client ID is not configured in the environment (GOOGLE_CLIENT_ID / VITE_GOOGLE_CLIENT_ID).');
+      throw new Error('Google Client ID is missing. Please configure VITE_GOOGLE_CLIENT_ID or GOOGLE_CLIENT_ID in your .env file or Docker environment.');
     }
     if (!this.tokenClient) {
-      throw new Error('Google Drive client is not initialized.');
+      await this.init(this.authSuccessCallback);
+    }
+    if (!this.tokenClient) {
+      throw new Error('Google Drive client is not initialized. Please ensure Google services are accessible.');
     }
     this.tokenClient.requestAccessToken({ prompt: '' });
   }
