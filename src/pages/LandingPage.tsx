@@ -375,12 +375,14 @@ export const LandingPage: React.FC = () => {
                     Change
                   </button>
                 </div>
-                <div className="pt-2 border-t border-slate-200/60 dark:border-white/[0.04] text-[11px] text-slate-600 dark:text-slate-400 flex items-center space-x-2">
+                <div className="pt-2 border-t border-slate-200/60 dark:border-white/[0.04] text-[11px] text-slate-600 dark:text-slate-400 flex items-center space-x-1.5 flex-wrap">
                   <span className="font-semibold text-slate-800 dark:text-slate-200">{primaryFile.summary.notesCount}</span> notes
                   <span>•</span>
                   <span className="font-semibold text-slate-800 dark:text-slate-200">{primaryFile.summary.userMarksCount}</span> highlights
                   <span>•</span>
                   <span className="font-semibold text-slate-800 dark:text-slate-200">{primaryFile.summary.tagsCount}</span> tags
+                  <span>•</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{primaryFile.summary.playlistsCount}</span> playlists
                 </div>
               </div>
             )}
@@ -470,12 +472,14 @@ export const LandingPage: React.FC = () => {
                     Change
                   </button>
                 </div>
-                <div className="pt-2 border-t border-slate-200/60 dark:border-white/[0.04] text-[11px] text-slate-600 dark:text-slate-400 flex items-center space-x-2">
+                <div className="pt-2 border-t border-slate-200/60 dark:border-white/[0.04] text-[11px] text-slate-600 dark:text-slate-400 flex items-center space-x-1.5 flex-wrap">
                   <span className="font-semibold text-slate-800 dark:text-slate-200">{secondaryFile.summary.notesCount}</span> notes
                   <span>•</span>
                   <span className="font-semibold text-slate-800 dark:text-slate-200">{secondaryFile.summary.userMarksCount}</span> highlights
                   <span>•</span>
                   <span className="font-semibold text-slate-800 dark:text-slate-200">{secondaryFile.summary.tagsCount}</span> tags
+                  <span>•</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{secondaryFile.summary.playlistsCount}</span> playlists
                 </div>
               </div>
             )}

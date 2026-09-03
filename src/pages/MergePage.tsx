@@ -355,12 +355,14 @@ export const MergePage: React.FC = () => {
                   Change
                 </button>
               </div>
-              <div className="pt-1.5 border-t border-slate-200/60 dark:border-white/[0.04] text-[11px] text-slate-600 dark:text-slate-400 flex items-center space-x-2">
+              <div className="pt-1.5 border-t border-slate-200/60 dark:border-white/[0.04] text-[11px] text-slate-600 dark:text-slate-400 flex items-center space-x-1.5 flex-wrap">
                 <span>{primaryFile.summary.notesCount} notes</span>
                 <span>•</span>
                 <span>{primaryFile.summary.userMarksCount} highlights</span>
                 <span>•</span>
                 <span>{primaryFile.summary.tagsCount} tags</span>
+                <span>•</span>
+                <span>{primaryFile.summary.playlistsCount} playlists</span>
               </div>
             </div>
           )}
@@ -430,12 +432,14 @@ export const MergePage: React.FC = () => {
                   Change
                 </button>
               </div>
-              <div className="pt-1.5 border-t border-slate-200/60 dark:border-white/[0.04] text-[11px] text-slate-600 dark:text-slate-400 flex items-center space-x-2">
+              <div className="pt-1.5 border-t border-slate-200/60 dark:border-white/[0.04] text-[11px] text-slate-600 dark:text-slate-400 flex items-center space-x-1.5 flex-wrap">
                 <span>{secondaryFile.summary.notesCount} notes</span>
                 <span>•</span>
                 <span>{secondaryFile.summary.userMarksCount} highlights</span>
                 <span>•</span>
                 <span>{secondaryFile.summary.tagsCount} tags</span>
+                <span>•</span>
+                <span>{secondaryFile.summary.playlistsCount} playlists</span>
               </div>
             </div>
           )}

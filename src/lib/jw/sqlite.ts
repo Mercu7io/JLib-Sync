@@ -214,6 +214,25 @@ export function getLibrarySummary(
     return row ? row.c : 0;
   };
 
+  let tagsCount = 0;
+  let playlistsCount = 0;
+
+  if (tableExists(db, 'Tag')) {
+    if (columnExists(db, 'Tag', 'Type')) {
+      const tagRow = queryOne<{ c: number }>(db, 'SELECT COUNT(*) AS c FROM Tag WHERE Type = 1');
+      tagsCount = tagRow ? tagRow.c : 0;
+      const plRow = queryOne<{ c: number }>(db, 'SELECT COUNT(*) AS c FROM Tag WHERE Type = 2');
+      playlistsCount = plRow ? plRow.c : 0;
+    } else {
+      tagsCount = count('Tag');
+    }
+  }
+
+  // Fallback to PlaylistItem if no Tag Type=2 or no Tag table
+  if (playlistsCount === 0 && tableExists(db, 'PlaylistItem')) {
+    playlistsCount = count('PlaylistItem');
+  }
+
   return {
     name: manifest.name || 'Unknown Backup',
     deviceName: manifest.deviceName || manifest.userDataBackup?.deviceName || 'Unknown Device',
@@ -221,10 +240,10 @@ export function getLibrarySummary(
     creationDate: manifest.creationDate || '',
     notesCount: count('Note'),
     userMarksCount: count('UserMark'),
-    tagsCount: count('Tag'),
+    tagsCount,
     bookmarksCount: count('Bookmark'),
     inputFieldsCount: count('InputField'),
-    playlistsCount: count('PlaylistItem'),
+    playlistsCount,
     fileSizeBytes,
   };
 }
