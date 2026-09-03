@@ -31,6 +31,7 @@ import { HIGHLIGHT_COLORS } from '../lib/jw/tokenizer';
 import { createOrUpdateManifest } from '../lib/jw/manifest';
 import { packageJwLibrary } from '../lib/jw/zip';
 import { IHealthCheckResult } from '../lib/jw/types';
+import { useTranslation } from 'react-i18next';
 
 interface INoteCardItem {
   noteId: number;
@@ -78,6 +79,7 @@ export interface IBookmarkCardItem {
 }
 
 export const ExplorerPage: React.FC = () => {
+  const { t } = useTranslation();
   const {
     activeDb,
     activeManifest,
@@ -455,10 +457,9 @@ export const ExplorerPage: React.FC = () => {
           <BookOpen className="w-8 h-8" />
         </div>
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">No Library Loaded Yet</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('explorer.noLibraryLoaded')}</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Open a .jwlibrary backup from your device, or load our demo file to explore notes, search by meaning,
-            manage tags, and run health checks.
+            {t('explorer.noLibraryPrompt')}
           </p>
         </div>
 
@@ -469,7 +470,7 @@ export const ExplorerPage: React.FC = () => {
             className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-3 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-semibold text-sm transition-colors shadow-sm"
           >
             <Upload className="w-4 h-4" />
-            <span>Open .jwlibrary File</span>
+            <span>{t('explorer.openFileBtn')}</span>
           </button>
           <input
             ref={fileInputRef}
@@ -488,7 +489,7 @@ export const ExplorerPage: React.FC = () => {
             className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-3 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-sm font-medium transition-colors shadow-sm"
           >
             <Sparkles className="w-4 h-4 text-orange-500 dark:text-orange-400" />
-            <span>Try Demo Library</span>
+            <span>{t('explorer.tryDemoBtn')}</span>
           </button>
         </div>
       </div>
@@ -501,13 +502,13 @@ export const ExplorerPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center space-x-2">
-            <span>Study Explorer</span>
+            <span>{t('nav.explorer')}</span>
             <span className="text-xs px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-normal">
-              {filteredNotes.length} of {allNotes.length} notes
+              {filteredNotes.length} / {allNotes.length} {t('nav.notes')}
             </span>
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Active: <strong className="text-slate-800 dark:text-slate-200">{summary.name}</strong> • {summary.deviceName}
+            {summary.name} • {summary.deviceName}
           </p>
         </div>
 
@@ -518,7 +519,7 @@ export const ExplorerPage: React.FC = () => {
             className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-medium transition-colors shadow-sm"
           >
             <Tag className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" />
-            <span>Tag Manager ({allTags.length})</span>
+            <span>{t('explorer.tagManagerBtn')} ({allTags.length})</span>
           </button>
 
           <button
@@ -527,7 +528,7 @@ export const ExplorerPage: React.FC = () => {
             className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-medium transition-colors shadow-sm"
           >
             <Stethoscope className="w-3.5 h-3.5 text-orange-500 dark:text-orange-400" />
-            <span>Library Doctor</span>
+            <span>{t('explorer.doctorBtn')}</span>
           </button>
 
           <button
@@ -536,7 +537,7 @@ export const ExplorerPage: React.FC = () => {
             className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] text-xs font-medium transition-colors shadow-sm"
           >
             <Cloud className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" />
-            <span>Cloud Drive</span>
+            <span>{t('explorer.cloudDriveBtn')}</span>
           </button>
 
           <button
@@ -544,8 +545,8 @@ export const ExplorerPage: React.FC = () => {
             onClick={handleDownloadUpdatedBackup}
             className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold transition-colors shadow-sm"
           >
-            <Download className="w-3.5 h-3.5" />
-            <span>Save Backup</span>
+            <Download className="w-4 h-4" />
+            <span>{t('explorer.saveBackupBtn')}</span>
           </button>
         </div>
       </div>
@@ -558,7 +559,7 @@ export const ExplorerPage: React.FC = () => {
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder={isAiSearch ? 'Ask your library (e.g. "forgiving others", "faith during trials")...' : 'Search notes, titles, scriptures, tags, bookmarks...'}
+              placeholder={isAiSearch ? t('explorer.searchAiPlaceholder') : t('explorer.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-orange-500 shadow-sm"
@@ -585,7 +586,7 @@ export const ExplorerPage: React.FC = () => {
             title="Toggle AI Semantic Search"
           >
             <Sparkles className={`w-3.5 h-3.5 ${isAiSearch ? 'text-purple-500 dark:text-purple-400' : 'text-slate-400'}`} />
-            <span>Semantic AI</span>
+            <span>{t('explorer.semanticAiBtn')}</span>
           </button>
         </div>
 
@@ -596,11 +597,10 @@ export const ExplorerPage: React.FC = () => {
             onChange={(e) => setSelectedType(e.target.value as any)}
             className="w-full py-2 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-orange-500 shadow-sm"
           >
-            <option value="all">All Items ({allNotes.length + playlists.length + bookmarks.length})</option>
-            <option value="notes">Personal Notes Only</option>
-            <option value="highlights">Highlights with Notes</option>
-            <option value="bookmarks">Bookmarks ({bookmarks.length})</option>
-            <option value="playlists">Playlists ({playlists.length})</option>
+            <option value="all">{t('explorer.filterAll')} ({allNotes.length + playlists.length + bookmarks.length})</option>
+            <option value="notes">{t('explorer.filterNotes')}</option>
+            <option value="bookmarks">{t('explorer.filterBookmarks')} ({bookmarks.length})</option>
+            <option value="playlists">{t('explorer.filterPlaylists')} ({playlists.length})</option>
           </select>
         </div>
       </div>
@@ -997,7 +997,7 @@ export const ExplorerPage: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl max-w-lg w-full p-4 sm:p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Edit Note</h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">{t('explorer.editNote')}</h3>
               <button
                 type="button"
                 onClick={() => setEditingNote(null)}
@@ -1035,14 +1035,14 @@ export const ExplorerPage: React.FC = () => {
                 onClick={() => setEditingNote(null)}
                 className="px-3 py-1.5 rounded-md text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 type="button"
                 onClick={saveEditedNote}
                 className="px-4 py-1.5 rounded-md bg-orange-600 hover:bg-orange-500 text-white font-medium text-xs transition-colors shadow-sm"
               >
-                Save Changes
+                {t('explorer.saveChanges')}
               </button>
             </div>
           </div>
@@ -1056,7 +1056,7 @@ export const ExplorerPage: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
               <div className="flex items-center space-x-2 text-slate-900 dark:text-white font-bold">
                 <Stethoscope className="w-5 h-5 text-orange-500 dark:text-orange-400" />
-                <span>Library Doctor Diagnostics</span>
+                <span>{t('explorer.doctorTitle')}</span>
               </div>
               <button
                 type="button"
@@ -1098,9 +1098,9 @@ export const ExplorerPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => fixDoctorIssue(check.key, check.affectedIds)}
-                      className="px-3 py-1 bg-slate-200 hover:bg-orange-600 dark:bg-slate-800 text-slate-700 hover:text-white dark:text-slate-200 dark:hover:text-white rounded text-xs font-medium transition-colors flex-shrink-0"
+                      className="px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-500 text-white font-medium text-xs transition-colors flex-shrink-0 shadow-sm"
                     >
-                      Prune
+                      {t('explorer.doctorFixBtn')}
                     </button>
                   )}
                 </div>
@@ -1113,7 +1113,7 @@ export const ExplorerPage: React.FC = () => {
                 onClick={() => setShowDoctor(false)}
                 className="px-4 py-2 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-transparent text-xs font-medium"
               >
-                Close Doctor
+                {t('common.close')}
               </button>
             </div>
           </div>
@@ -1127,7 +1127,7 @@ export const ExplorerPage: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
               <div className="flex items-center space-x-2 text-slate-900 dark:text-white font-bold">
                 <Tag className="w-5 h-5 text-sky-500 dark:text-sky-400" />
-                <span>Tag & Topic Manager</span>
+                <span>{t('explorer.tagManagerTitle')}</span>
               </div>
               <button
                 type="button"
@@ -1157,14 +1157,14 @@ export const ExplorerPage: React.FC = () => {
                         onClick={handleRenameTag}
                         className="px-2 py-1 bg-orange-600 text-white rounded font-medium"
                       >
-                        Save
+                        {t('common.save')}
                       </button>
                       <button
                         type="button"
                         onClick={() => setRenamingTag(null)}
                         className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
                       >
-                        Cancel
+                        {t('common.cancel')}
                       </button>
                     </div>
                   ) : (
@@ -1182,7 +1182,7 @@ export const ExplorerPage: React.FC = () => {
                           }}
                           className="text-xs text-sky-600 dark:text-sky-400 hover:underline font-medium"
                         >
-                          Rename
+                          {t('explorer.renameTag')}
                         </button>
                         <button
                           type="button"

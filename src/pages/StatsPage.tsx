@@ -14,8 +14,10 @@ import { useAppStore } from '../store/useAppStore';
 import { queryAll } from '../lib/jw/sqlite';
 import { HIGHLIGHT_COLORS } from '../lib/jw/tokenizer';
 import { BIBLE_BOOKS } from '../lib/jw/locales';
+import { useTranslation } from 'react-i18next';
 
 export const StatsPage: React.FC = () => {
+  const { t } = useTranslation();
   const { activeDb, summary, loadDemoLibrary, isLoading } = useAppStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -100,9 +102,9 @@ export const StatsPage: React.FC = () => {
           <BarChart3 className="w-8 h-8" />
         </div>
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">No Study Statistics Available</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('stats.noDataTitle')}</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Open a .jwlibrary backup to view visual analytics on your highlight color categories, Bible reading distribution, and study trends.
+            {t('stats.noDataPrompt')}
           </p>
         </div>
 
@@ -113,7 +115,7 @@ export const StatsPage: React.FC = () => {
             className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-3 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-semibold text-sm transition-colors shadow-sm"
           >
             <Upload className="w-4 h-4" />
-            <span>Open .jwlibrary File</span>
+            <span>{t('stats.openFileBtn')}</span>
           </button>
           <input
             ref={fileInputRef}
@@ -132,7 +134,7 @@ export const StatsPage: React.FC = () => {
             className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-3 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-sm font-medium transition-colors shadow-sm"
           >
             <Sparkles className="w-4 h-4 text-orange-500 dark:text-orange-400" />
-            <span>Try Demo Library</span>
+            <span>{t('stats.tryDemoBtn')}</span>
           </button>
         </div>
       </div>
@@ -143,9 +145,9 @@ export const StatsPage: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
       {/* ── HEADER ────────────────────────────────────────────────────── */}
       <div className="space-y-1 border-b border-slate-200 dark:border-slate-800 pb-6">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">Study Analytics & Highlights</h1>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">{t('stats.title')}</h1>
         <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-          Visual breakdown of your research habits across {summary.name} ({summary.deviceName}).
+          {t('stats.subtitle')} {summary.name} ({summary.deviceName}).
         </p>
       </div>
 
@@ -154,7 +156,7 @@ export const StatsPage: React.FC = () => {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 sm:p-5 space-y-1 shadow-sm">
           <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
             <BookOpen className="w-4 h-4 text-orange-500 dark:text-orange-400" />
-            <span>Personal Notes</span>
+            <span>{t('stats.personalNotes')}</span>
           </div>
           <div className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">{summary.notesCount}</div>
         </div>
@@ -162,7 +164,7 @@ export const StatsPage: React.FC = () => {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 sm:p-5 space-y-1 shadow-sm">
           <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
             <Highlighter className="w-4 h-4 text-yellow-500 dark:text-yellow-400" />
-            <span>Highlights</span>
+            <span>{t('stats.highlights')}</span>
           </div>
           <div className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">{summary.userMarksCount}</div>
         </div>
@@ -170,7 +172,7 @@ export const StatsPage: React.FC = () => {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 sm:p-5 space-y-1 shadow-sm">
           <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
             <Tag className="w-4 h-4 text-sky-500 dark:text-sky-400" />
-            <span>Tags</span>
+            <span>{t('stats.tags')}</span>
           </div>
           <div className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">{summary.tagsCount}</div>
         </div>
@@ -178,7 +180,7 @@ export const StatsPage: React.FC = () => {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 sm:p-5 space-y-1 shadow-sm">
           <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
             <Bookmark className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
-            <span>Bookmarks</span>
+            <span>{t('stats.bookmarks')}</span>
           </div>
           <div className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">{summary.bookmarksCount}</div>
         </div>
@@ -186,7 +188,7 @@ export const StatsPage: React.FC = () => {
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 sm:p-5 space-y-1 col-span-2 sm:col-span-1 shadow-sm">
           <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
             <HelpCircle className="w-4 h-4 text-purple-500 dark:text-purple-400" />
-            <span>Question Answers</span>
+            <span>{t('stats.questionAnswers')}</span>
           </div>
           <div className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">{summary.inputFieldsCount}</div>
         </div>
@@ -195,9 +197,9 @@ export const StatsPage: React.FC = () => {
       {/* ── HIGHLIGHT COLORS BREAKDOWN ─────────────────────────────────── */}
       <div className="border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 p-6 space-y-6 shadow-sm">
         <div className="space-y-1">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">Highlights by Color & Intent</h2>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t('stats.highlightsByColor')}</h2>
           <p className="text-xs text-slate-600 dark:text-slate-400">
-            Adheres to the official study annotation convention (Yellow answers, Green principles, Blue tools, Pink heart, Orange actions, Purple warnings).
+            {t('stats.highlightsConvention')}
           </p>
         </div>
 
@@ -237,16 +239,16 @@ export const StatsPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Top Bible Books */}
         <div className="border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 p-6 space-y-4 shadow-sm">
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">Most Studied Bible Books</h3>
+          <h3 className="text-base font-bold text-slate-900 dark:text-white">{t('stats.mostStudiedBibleBooks')}</h3>
           {bibleBookStats.length === 0 ? (
-            <p className="text-xs text-slate-500">No scripture notes linked in this backup.</p>
+            <p className="text-xs text-slate-500">{t('stats.noScriptures')}</p>
           ) : (
             <div className="space-y-3">
               {bibleBookStats.map((b) => (
                 <div key={b.bookNumber} className="flex items-center justify-between text-xs">
                   <span className="text-slate-700 dark:text-slate-300 font-medium">{b.bookName}</span>
                   <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-orange-600 dark:text-orange-400 font-mono font-semibold">
-                    {b.count} notes
+                    {b.count} {t('stats.notesCountSuffix')}
                   </span>
                 </div>
               ))}
@@ -256,16 +258,16 @@ export const StatsPage: React.FC = () => {
 
         {/* Top Tags */}
         <div className="border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 p-6 space-y-4 shadow-sm">
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">Top Research Tags</h3>
+          <h3 className="text-base font-bold text-slate-900 dark:text-white">{t('stats.topResearchTags')}</h3>
           {topTags.length === 0 ? (
-            <p className="text-xs text-slate-500">No tags found in this backup.</p>
+            <p className="text-xs text-slate-500">{t('stats.noTags')}</p>
           ) : (
             <div className="space-y-3">
-              {topTags.map((t) => (
-                <div key={t.Name} className="flex items-center justify-between text-xs">
-                  <span className="text-slate-700 dark:text-slate-300 font-medium">#{t.Name}</span>
+              {topTags.map((tItem) => (
+                <div key={tItem.Name} className="flex items-center justify-between text-xs">
+                  <span className="text-slate-700 dark:text-slate-300 font-medium">#{tItem.Name}</span>
                   <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sky-600 dark:text-sky-400 font-mono font-semibold">
-                    {t.count} notes
+                    {tItem.count} {t('stats.notesCountSuffix')}
                   </span>
                 </div>
               ))}

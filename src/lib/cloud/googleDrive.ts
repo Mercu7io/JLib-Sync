@@ -11,17 +11,29 @@ export interface IDriveFile {
   createdTime?: string;
 }
 
-// Use Google Cloud OAuth Client ID from environment variables
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
-
 declare global {
   interface Window {
     google?: any;
+    __ENV__?: {
+      GOOGLE_CLIENT_ID?: string;
+      VITE_GOOGLE_CLIENT_ID?: string;
+    };
   }
 }
 
+// Retrieve Client ID from runtime Docker env, or fallback to build-time Vite env
+export const getGoogleClientId = (): string => {
+  if (typeof window !== 'undefined' && window.__ENV__) {
+    if (window.__ENV__.GOOGLE_CLIENT_ID) return window.__ENV__.GOOGLE_CLIENT_ID;
+    if (window.__ENV__.VITE_GOOGLE_CLIENT_ID) return window.__ENV__.VITE_GOOGLE_CLIENT_ID;
+  }
+  return import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+};
+
 export class GoogleDriveManager {
-  private clientId = GOOGLE_CLIENT_ID;
+  private get clientId(): string {
+    return getGoogleClientId();
+  }
   private accessToken: string | null = null;
   private folderId: string | null = null;
   private folderName = 'JW Sync';
@@ -87,6 +99,9 @@ export class GoogleDriveManager {
   }
 
   async init(onAuthSuccess?: (token: string) => void): Promise<void> {
+    if (!this.clientId) {
+      return;
+    }
     await this.loadGoogleScript();
 
     if (!window.google?.accounts?.oauth2) {
@@ -127,6 +142,9 @@ export class GoogleDriveManager {
   }
 
   login(): void {
+    if (!this.clientId) {
+      throw new Error('Google Client ID is not configured in the environment (GOOGLE_CLIENT_ID / VITE_GOOGLE_CLIENT_ID).');
+    }
     if (!this.tokenClient) {
       throw new Error('Google Drive client is not initialized.');
     }

@@ -17,8 +17,10 @@ import { queryAll, openDatabase, execute, exportDatabase } from '../lib/jw/sqlit
 import { createOrUpdateManifest } from '../lib/jw/manifest';
 import { packageJwLibrary } from '../lib/jw/zip';
 import { INote, ILocation, ITag, ITagMap } from '../lib/jw/types';
+import { useTranslation } from 'react-i18next';
 
 export const SharePage: React.FC = () => {
+  const { t } = useTranslation();
   const { activeDb, activeManifest, summary, loadDemoLibrary, isLoading } = useAppStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -288,9 +290,9 @@ export const SharePage: React.FC = () => {
           <Share2 className="w-8 h-8" />
         </div>
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Selective Note Sharing</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('share.noDataTitle')}</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Open your library to extract and export specific notes (under a chosen tag or date range) into a clean, standalone .jwlibrary package.
+            {t('share.noDataPrompt')}
           </p>
         </div>
 
@@ -301,7 +303,7 @@ export const SharePage: React.FC = () => {
             className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-3 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-semibold text-sm transition-colors shadow-sm"
           >
             <Upload className="w-4 h-4" />
-            <span>Open .jwlibrary File</span>
+            <span>{t('share.openFileBtn')}</span>
           </button>
           <input
             ref={fileInputRef}
@@ -320,7 +322,7 @@ export const SharePage: React.FC = () => {
             className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-3 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-sm font-medium transition-colors shadow-sm"
           >
             <Sparkles className="w-4 h-4 text-orange-500 dark:text-orange-400" />
-            <span>Try Demo Library</span>
+            <span>{t('share.tryDemoBtn')}</span>
           </button>
         </div>
       </div>
@@ -333,12 +335,11 @@ export const SharePage: React.FC = () => {
       <div className="space-y-1 border-b border-slate-200 dark:border-slate-800 pb-6">
         <div className="inline-flex items-center space-x-2 text-xs font-semibold text-orange-500 dark:text-orange-400 uppercase tracking-wider">
           <Share2 className="w-3.5 h-3.5" />
-          <span>Selective Note Sharing</span>
+          <span>{t('share.title')}</span>
         </div>
-        <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white">Share Just What You Want</h1>
+        <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white">{t('share.headline')}</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400 max-w-3xl">
-          Send a friend your notes under a specific tag or study project. The rest of your private personal library,
-          highlights, and bookmarks are completely omitted from the exported file.
+          {t('share.subtitle')}
         </p>
       </div>
 
@@ -346,28 +347,28 @@ export const SharePage: React.FC = () => {
       <div className="border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 p-4 sm:p-6 space-y-6 shadow-sm">
         <div className="space-y-3">
           <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-            1. Select Tags to Include
+            {t('share.selectTagsTitle')}
           </label>
 
           {availableTags.length === 0 ? (
-            <p className="text-xs text-slate-500">No tags found in active database.</p>
+            <p className="text-xs text-slate-500">{t('share.noTagsFound')}</p>
           ) : (
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-              {availableTags.map((t) => {
-                const isSelected = selectedTagNames.includes(t.Name);
+              {availableTags.map((tItem) => {
+                const isSelected = selectedTagNames.includes(tItem.Name);
                 return (
                   <button
-                    key={t.TagId}
+                    key={tItem.TagId}
                     type="button"
-                    onClick={() => toggleTagSelection(t.Name)}
+                    onClick={() => toggleTagSelection(tItem.Name)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors flex items-center space-x-1.5 ${
                       isSelected
                         ? 'bg-orange-600 border-orange-500 text-white shadow-sm'
                         : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-400'
                     }`}
                   >
-                    <span>#{t.Name}</span>
-                    <span className="text-[10px] opacity-75 font-mono">({t.count})</span>
+                    <span>#{tItem.Name}</span>
+                    <span className="text-[10px] opacity-75 font-mono">({tItem.count})</span>
                   </button>
                 );
               })}
@@ -379,7 +380,7 @@ export const SharePage: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-200 dark:border-slate-800">
           <div>
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Created From (Optional)
+              {t('share.createdFrom')}
             </label>
             <input
               type="date"
@@ -390,7 +391,7 @@ export const SharePage: React.FC = () => {
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Created To (Optional)
+              {t('share.createdTo')}
             </label>
             <input
               type="date"
@@ -404,7 +405,7 @@ export const SharePage: React.FC = () => {
         {/* Export Name */}
         <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
           <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-            Exported File Name
+            {t('share.exportFilename')}
           </label>
           <input
             type="text"
@@ -420,9 +421,8 @@ export const SharePage: React.FC = () => {
         <div className="flex items-center space-x-3">
           <Lock className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
           <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-            <strong className="text-slate-900 dark:text-white">Privacy Guarantee:</strong> Only the{' '}
-            <strong className="text-emerald-600 dark:text-emerald-400">{matchingNotes.length} matching notes</strong> and their required scriptures will be exported. The other{' '}
-            <strong className="text-slate-500 dark:text-slate-400">{allNotes.length - matchingNotes.length} notes</strong> will remain strictly private on this device.
+            <strong className="text-slate-900 dark:text-white">{t('share.privacyGuaranteeTitle')} </strong>
+            {t('share.privacyGuaranteeDesc')}
           </div>
         </div>
 
@@ -433,7 +433,7 @@ export const SharePage: React.FC = () => {
           className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3 rounded-lg bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white font-semibold text-xs transition-colors flex-shrink-0 shadow-sm"
         >
           <Download className="w-4 h-4" />
-          <span>{isExporting ? 'Packaging...' : `Export ${matchingNotes.length} Notes (.jwlibrary)`}</span>
+          <span>{isExporting ? t('share.packaging') : t('share.exportNotesBtn', { count: matchingNotes.length })}</span>
         </button>
       </div>
 
@@ -441,7 +441,7 @@ export const SharePage: React.FC = () => {
       <div className="space-y-3">
         <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
           <span className="font-semibold text-slate-700 dark:text-slate-300">
-            Previewing Export Bundle ({matchingNotes.length} notes)
+            {t('share.previewBundle', { count: matchingNotes.length })}
           </span>
         </div>
 
@@ -453,20 +453,20 @@ export const SharePage: React.FC = () => {
             >
               <div className="space-y-0.5 truncate">
                 <div className="font-semibold text-slate-900 dark:text-white truncate">
-                  {note.Title || '(Untitled Note)'}
+                  {note.Title || t('share.untitledNote')}
                 </div>
                 <div className="text-slate-500 dark:text-slate-400 text-[11px] truncate">
-                  {note.locationTitle || 'Personal Note'} • {note.Content?.slice(0, 70)}...
+                  {note.locationTitle || t('explorer.personalNote')} • {note.Content?.slice(0, 70)}...
                 </div>
               </div>
 
               <div className="flex items-center space-x-1 flex-shrink-0">
-                {note.tags.map((t: string) => (
+                {note.tags.map((tItem: string) => (
                   <span
-                    key={t}
+                    key={tItem}
                     className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 text-[10px]"
                   >
-                    #{t}
+                    #{tItem}
                   </span>
                 ))}
               </div>

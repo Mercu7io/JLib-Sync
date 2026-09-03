@@ -298,21 +298,17 @@ export const MergePage: React.FC = () => {
         {/* Trust Anchor */}
         <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold backdrop-blur-md shadow-sm">
           <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <span>100% Client-Side. Your data never leaves your computer.</span>
+          <span>{t('landing.privacyBadge')}</span>
         </div>
 
         {/* Headline */}
         <h1 className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-          Merge your{' '}
-          <span className="bg-gradient-to-r from-blue-600 via-sky-500 to-indigo-600 dark:from-blue-400 dark:via-sky-400 dark:to-indigo-400 bg-clip-text text-transparent">
-            .jwlibrary files
-          </span>{' '}
-          instantly.
+          {t('merge.heroTitle')}
         </h1>
 
         {/* Subheadline */}
         <p className="text-xs sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed font-normal">
-          Combine your notes, highlights, and bookmarks from multiple devices seamlessly.
+          {t('merge.heroSubtitle')}
         </p>
 
         <div className="pt-1">
@@ -322,7 +318,7 @@ export const MergePage: React.FC = () => {
             className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] text-xs font-medium transition-all shadow-sm"
           >
             <Sparkles className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
-            <span>Load Demo Pair (Tablet & Phone)</span>
+            <span>{t('merge.loadDemoPair')}</span>
           </button>
         </div>
       </div>
@@ -341,15 +337,15 @@ export const MergePage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               <Smartphone className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span>Source A (Primary Base)</span>
+              <span>{t('merge.sourceA')}</span>
             </div>
             {primaryFile ? (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center space-x-1">
                 <Check className="w-3 h-3" />
-                <span>Loaded</span>
+                <span>{t('common.loaded')}</span>
               </span>
             ) : (
-              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">Required</span>
+              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">{t('common.required')}</span>
             )}
           </div>
 
@@ -369,7 +365,7 @@ export const MergePage: React.FC = () => {
               <div className="w-12 h-12 rounded-xl bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] group-hover:border-blue-500/30 flex items-center justify-center mx-auto text-slate-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors shadow-sm">
                 <Upload className="w-5 h-5" />
               </div>
-              <div className="text-sm font-bold text-slate-900 dark:text-white">Drop .jwlibrary here or browse</div>
+              <div className="text-sm font-bold text-slate-900 dark:text-white">{t('merge.dropHere')}</div>
               <div className="text-xs text-slate-500">e.g. Phone backup or baseline library</div>
             </div>
           ) : (
@@ -400,19 +396,19 @@ export const MergePage: React.FC = () => {
               <div className="grid grid-cols-5 gap-1 pt-2 border-t border-slate-200 dark:border-white/[0.06] text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 text-center">
                 <div>
                   <span className="block font-bold text-slate-900 dark:text-white text-xs">{primaryFile.summary.notesCount}</span>
-                  Notes
+                  {t('nav.notes')}
                 </div>
                 <div>
                   <span className="block font-bold text-slate-900 dark:text-white text-xs">{primaryFile.summary.userMarksCount}</span>
-                  Highlights
+                  {t('nav.highlights')}
                 </div>
                 <div>
                   <span className="block font-bold text-slate-900 dark:text-white text-xs">{primaryFile.summary.tagsCount}</span>
-                  Tags
+                  {t('nav.tags')}
                 </div>
                 <div>
                   <span className="block font-bold text-slate-900 dark:text-white text-xs">{primaryFile.summary.bookmarksCount}</span>
-                  Bookmarks
+                  {t('merge.bookmarks')}
                 </div>
                 <div>
                   <span className="block font-bold text-slate-900 dark:text-white text-xs">{primaryFile.summary.playlistsCount}</span>
@@ -430,7 +426,7 @@ export const MergePage: React.FC = () => {
               className="w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.02] dark:hover:bg-white/[0.06] border border-slate-200 dark:border-white/[0.06] text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-center space-x-2 transition-all hover:border-blue-500/30"
             >
               <Cloud className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              <span>{isConnected ? 'Choose from Google Drive' : 'Connect Google Drive'}</span>
+              <span>{isConnected ? t('merge.chooseFromDrive') : t('nav.connectDrive')}</span>
             </button>
           </div>
         </div>
@@ -453,15 +449,15 @@ export const MergePage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               <Tablet className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-              <span>Source B (Second Device)</span>
+              <span>{t('merge.sourceB')}</span>
             </div>
             {secondaryFile ? (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center space-x-1">
                 <Check className="w-3 h-3" />
-                <span>Loaded</span>
+                <span>{t('common.loaded')}</span>
               </span>
             ) : (
-              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">Required</span>
+              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">{t('common.required')}</span>
             )}
           </div>
 
@@ -481,7 +477,7 @@ export const MergePage: React.FC = () => {
               <div className="w-12 h-12 rounded-xl bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] group-hover:border-sky-500/30 flex items-center justify-center mx-auto text-slate-500 dark:text-slate-400 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors shadow-sm">
                 <Upload className="w-5 h-5" />
               </div>
-              <div className="text-sm font-bold text-slate-900 dark:text-white">Drop .jwlibrary here or browse</div>
+              <div className="text-sm font-bold text-slate-900 dark:text-white">{t('merge.dropHere')}</div>
               <div className="text-xs text-slate-500">e.g. Tablet backup or newer study file</div>
             </div>
           ) : (
@@ -512,19 +508,19 @@ export const MergePage: React.FC = () => {
               <div className="grid grid-cols-5 gap-1 pt-2 border-t border-slate-200 dark:border-white/[0.06] text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 text-center">
                 <div>
                   <span className="block font-bold text-slate-900 dark:text-white text-xs">{secondaryFile.summary.notesCount}</span>
-                  Notes
+                  {t('nav.notes')}
                 </div>
                 <div>
                   <span className="block font-bold text-slate-900 dark:text-white text-xs">{secondaryFile.summary.userMarksCount}</span>
-                  Highlights
+                  {t('nav.highlights')}
                 </div>
                 <div>
                   <span className="block font-bold text-slate-900 dark:text-white text-xs">{secondaryFile.summary.tagsCount}</span>
-                  Tags
+                  {t('nav.tags')}
                 </div>
                 <div>
                   <span className="block font-bold text-slate-900 dark:text-white text-xs">{secondaryFile.summary.bookmarksCount}</span>
-                  Bookmarks
+                  {t('merge.bookmarks')}
                 </div>
                 <div>
                   <span className="block font-bold text-slate-900 dark:text-white text-xs">{secondaryFile.summary.playlistsCount}</span>
@@ -542,7 +538,7 @@ export const MergePage: React.FC = () => {
               className="w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.02] dark:hover:bg-white/[0.06] border border-slate-200 dark:border-white/[0.06] text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-center space-x-2 transition-all hover:border-sky-500/30"
             >
               <Cloud className="w-3.5 h-3.5 text-sky-600 dark:text-blue-400" />
-              <span>{isConnected ? 'Choose from Google Drive' : 'Connect Google Drive'}</span>
+              <span>{isConnected ? t('merge.chooseFromDrive') : t('nav.connectDrive')}</span>
             </button>
           </div>
         </div>
@@ -557,31 +553,31 @@ export const MergePage: React.FC = () => {
               <div className="text-2xl font-black text-slate-900 dark:text-white">
                 {primaryFile.summary.notesCount + secondaryFile.summary.notesCount}
               </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Total Notes Found</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{t('merge.notesFound')}</div>
             </div>
             <div className="bg-white dark:bg-[#111726]/80 border border-slate-200 dark:border-white/[0.08] rounded-2xl p-4 backdrop-blur-xl shadow-sm">
               <div className="text-2xl font-black text-blue-600 dark:text-blue-400">
                 {primaryFile.summary.userMarksCount + secondaryFile.summary.userMarksCount}
               </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Highlights to Combine</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{t('merge.highlightsCombine')}</div>
             </div>
             <div className="bg-white dark:bg-[#111726]/80 border border-slate-200 dark:border-white/[0.08] rounded-2xl p-4 backdrop-blur-xl shadow-sm">
               <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
                 {primaryFile.summary.tagsCount + secondaryFile.summary.tagsCount}
               </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Tags to Consolidate</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{t('merge.tagsConsolidate')}</div>
             </div>
             <div className="bg-white dark:bg-[#111726]/80 border border-slate-200 dark:border-white/[0.08] rounded-2xl p-4 backdrop-blur-xl shadow-sm">
               <div className="text-2xl font-black text-purple-600 dark:text-purple-400">
                 {primaryFile.summary.bookmarksCount + secondaryFile.summary.bookmarksCount}
               </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Bookmarks</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{t('merge.bookmarks')}</div>
             </div>
             <div className="bg-white dark:bg-[#111726]/80 border border-slate-200 dark:border-white/[0.08] rounded-2xl p-4 backdrop-blur-xl col-span-2 sm:col-span-1 shadow-sm">
               <div className="text-2xl font-black text-amber-600 dark:text-amber-400">
                 {primaryFile.summary.playlistsCount + secondaryFile.summary.playlistsCount}
               </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Playlists to Merge</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{t('merge.playlistsMerge')}</div>
             </div>
           </div>
 
@@ -676,7 +672,7 @@ export const MergePage: React.FC = () => {
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-200/50 dark:bg-white/[0.02]'
                         }`}
                       >
-                        Combine Both Notes (Recommended)
+                        {t('merge.combineBoth')}
                       </button>
                     </div>
                   </div>
@@ -689,7 +685,7 @@ export const MergePage: React.FC = () => {
           <div className="bg-white dark:bg-[#111726]/80 border border-slate-200 dark:border-white/[0.08] rounded-2xl p-5 backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
             <div className="w-full sm:w-auto">
               <label htmlFor="merged-filename-input" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Merged Archive Filename
+                {t('merge.outputFilename')}
               </label>
               <input
                 id="merged-filename-input"
@@ -735,7 +731,7 @@ export const MergePage: React.FC = () => {
         <div className="rounded-3xl border border-emerald-500/40 bg-white dark:bg-[#0e1422]/90 p-6 sm:p-8 space-y-6 backdrop-blur-xl shadow-lg animate-in zoom-in-95 duration-200">
           <div className="flex items-center space-x-3 text-emerald-600 dark:text-emerald-400">
             <CheckCircle2 className="w-6 h-6 flex-shrink-0" />
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">Merge Completed Successfully!</h2>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">{t('merge.successTitle')}</h2>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 py-2">
@@ -816,15 +812,15 @@ export const MergePage: React.FC = () => {
         </div>
       )}
 
-      {/* ── CLOUD PICKER MODAL (WHEN SELECTING FILE FOR SOURCE A OR B) ─── */}
+      {/* ── GOOGLE DRIVE CLOUD FILE PICKER MODAL ───────────────────────── */}
       {cloudPickerTarget && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#0e1422] border border-slate-200 dark:border-white/[0.12] rounded-2xl max-w-lg w-full p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/[0.08]">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111726] border border-slate-200 dark:border-white/[0.1] rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/[0.06]">
               <div className="flex items-center space-x-2 text-sm font-bold text-slate-900 dark:text-white">
                 <Cloud className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <span>
-                  Select Backup for {cloudPickerTarget === 'primary' ? 'Source A' : 'Source B'}
+                  {t('merge.selectBackupFor')} {cloudPickerTarget === 'primary' ? 'Source A' : 'Source B'}
                 </span>
               </div>
               <button
@@ -839,11 +835,11 @@ export const MergePage: React.FC = () => {
             {isDownloadingCloud ? (
               <div className="py-10 text-center space-y-3">
                 <RefreshCw className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin mx-auto" />
-                <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">Downloading backup from Google Drive...</p>
+                <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">{t('merge.downloadingCloud')}</p>
               </div>
             ) : backups.length === 0 ? (
               <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400 space-y-2">
-                <p>No backups found in your Google Drive &ldquo;JW Sync&rdquo; folder.</p>
+                <p>{t('merge.noCloudBackups')}</p>
               </div>
             ) : (
               <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">

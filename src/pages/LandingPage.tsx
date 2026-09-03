@@ -115,21 +115,21 @@ export const LandingPage: React.FC = () => {
                 <GoogleIcon name="folder_open" className="text-2xl" />
               </div>
               <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                100% Private
+                {t('landing.privacy100')}
               </span>
             </div>
 
             <div className="space-y-1">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                Open Local .jwlibrary File
+                {t('landing.openLocalCardTitle')}
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Drag & drop or browse a backup file directly from your computer. Processed entirely in-memory using WebAssembly SQLite.
+                {t('landing.openLocalCardDesc')}
               </p>
             </div>
 
             <div className="pt-2 flex items-center space-x-2 text-xs font-semibold text-blue-600 dark:text-blue-400">
-              <span>Select File from Disk</span>
+              <span>{t('landing.openLocalCardCta')}</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -146,26 +146,26 @@ export const LandingPage: React.FC = () => {
               {isConnected ? (
                 <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center space-x-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
-                  <span>Drive Connected</span>
+                  <span>{t('landing.driveConnectedBadge')}</span>
                 </span>
               ) : (
                 <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
-                  Cloud Storage
+                  {t('landing.cloudStorageBadge')}
                 </span>
               )}
             </div>
 
             <div className="space-y-1">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
-                Connect Google Drive Sync
+                {t('landing.cloudCardTitle')}
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Save merged libraries to your personal Google Drive, batch delete old versions, and select 2 cloud files to merge instantly.
+                {t('landing.cloudCardDesc')}
               </p>
             </div>
 
             <div className="pt-2 flex items-center space-x-2 text-xs font-semibold text-sky-600 dark:text-sky-400">
-              <span>{isConnected ? 'Manage Cloud Backups' : 'Connect Account'}</span>
+              <span>{isConnected ? t('landing.cloudCardCtaManage') : t('landing.cloudCardCtaConnect')}</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -177,10 +177,10 @@ export const LandingPage: React.FC = () => {
         <div className="rounded-3xl bg-slate-100/80 dark:bg-[#0e1422]/90 border border-slate-200 dark:border-white/[0.08] p-6 sm:p-10 space-y-8 backdrop-blur-xl">
           <div className="text-center max-w-2xl mx-auto space-y-2">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Why Official Restore Leaves You Trapped
+              {t('landing.cruxTitle')}
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-              Restoring a backup is a full swap, not a merge. If you study on both your phone and tablet, one always gets deleted.
+              {t('landing.cruxSubtitle')}
             </p>
           </div>
 
@@ -189,22 +189,22 @@ export const LandingPage: React.FC = () => {
             <div className="rounded-2xl border border-red-300 dark:border-red-900/40 bg-white/70 dark:bg-gradient-to-b dark:from-red-950/20 dark:to-transparent p-6 space-y-4 shadow-sm">
               <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 font-bold text-sm">
                 <GoogleIcon name="warning" className="text-lg text-red-500" fill />
-                <span>Default Restore (Destructive Full Swap)</span>
+                <span>{t('landing.trapTitle')}</span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                You prepared your Watchtower comments on your tablet at home, but took meeting notes on your phone.
+                {t('landing.trapDesc')}
               </p>
               <div className="bg-slate-50 dark:bg-[#0b0f19] border border-red-200 dark:border-red-900/30 rounded-xl p-4 text-xs space-y-2.5 text-slate-700 dark:text-slate-300">
                 <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-400">
                   <Tablet className="w-4 h-4 text-slate-500 dark:text-slate-300" />
-                  <span>Tablet: 42 Watchtower highlights & comments</span>
+                  <span>{t('landing.trapTablet')}</span>
                 </div>
                 <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-400">
                   <Smartphone className="w-4 h-4 text-slate-500 dark:text-slate-300" />
-                  <span>Phone: 18 Midweek meeting notes & cross-refs</span>
+                  <span>{t('landing.trapPhone')}</span>
                 </div>
                 <div className="pt-2 border-t border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-300 font-medium">
-                  Outcome: Restoring one deletes the other. You lose personal research.
+                  {t('landing.trapOutcome')}
                 </div>
               </div>
             </div>
@@ -213,22 +213,22 @@ export const LandingPage: React.FC = () => {
             <div className="rounded-2xl border border-blue-300 dark:border-blue-500/40 bg-white/70 dark:bg-gradient-to-b dark:from-blue-950/20 dark:to-transparent p-6 space-y-4 shadow-sm">
               <div className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 font-bold text-sm">
                 <GoogleIcon name="check_circle" className="text-lg text-emerald-500 dark:text-emerald-400" fill />
-                <span>Panda JWL-Sync (Non-Destructive Merge)</span>
+                <span>{t('landing.solutionTitle')}</span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                Combines both databases into one verified package that JW Library restores without losing either side.
+                {t('landing.solutionDesc')}
               </p>
               <div className="bg-slate-50 dark:bg-[#0b0f19] border border-blue-200 dark:border-blue-500/30 rounded-xl p-4 text-xs space-y-2.5 text-slate-700 dark:text-slate-300">
                 <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-400">
                   <GoogleIcon name="check" className="text-base text-emerald-500 dark:text-emerald-400" />
-                  <span>Matches identical verses & paragraphs automatically</span>
+                  <span>{t('landing.solutionCheck1')}</span>
                 </div>
                 <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-400">
                   <GoogleIcon name="check" className="text-base text-emerald-500 dark:text-emerald-400" />
-                  <span>Consolidates tags and preserves teaching media</span>
+                  <span>{t('landing.solutionCheck2')}</span>
                 </div>
                 <div className="pt-2 border-t border-blue-200 dark:border-blue-500/30 text-emerald-600 dark:text-emerald-300 font-medium">
-                  Outcome: 60 notes & highlights combined. Both devices stay synchronized.
+                  {t('landing.solutionOutcome')}
                 </div>
               </div>
             </div>
@@ -328,10 +328,10 @@ export const LandingPage: React.FC = () => {
               </div>
               <div>
                 <div className="text-sm font-bold text-slate-900 dark:text-white">
-                  Active Library Loaded: {summary.name}
+                  {t('landing.activeLibraryBanner')}: {summary.name}
                 </div>
                 <div className="text-xs text-slate-600 dark:text-slate-300">
-                  {summary.notesCount} notes • {summary.userMarksCount} highlights • {summary.tagsCount} tags • {summary.deviceName}
+                  {summary.notesCount} {t('nav.notes')} • {summary.userMarksCount} {t('nav.highlights')} • {summary.tagsCount} {t('nav.tags')} • {summary.deviceName}
                 </div>
               </div>
             </div>
@@ -340,7 +340,7 @@ export const LandingPage: React.FC = () => {
                 to="/explorer"
                 className="w-full sm:w-auto px-5 py-2.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all shadow-md shadow-blue-600/20 text-center"
               >
-                Go to Study Explorer →
+                {t('landing.goToExplorer')}
               </Link>
             </div>
           </div>

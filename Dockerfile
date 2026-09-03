@@ -31,6 +31,10 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # Copy custom nginx configuration (SPA routing + WASM MIME types)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+# Copy dynamic runtime environment injection script
+COPY docker/40-inject-env.sh /docker-entrypoint.d/40-inject-env.sh
+RUN chmod +x /docker-entrypoint.d/40-inject-env.sh
+
 # Expose standard HTTP port
 EXPOSE 80
 
