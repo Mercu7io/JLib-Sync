@@ -6,6 +6,7 @@ import { useCloudStore } from '../../store/useCloudStore';
 import { SUPPORTED_LANGUAGES } from '../../lib/jw/locales';
 import { getThemePreference, setThemePreference, ThemeMode } from '../../lib/theme';
 import { GoogleIcon } from '../common/GoogleIcon';
+import { usePWAInstall } from '../../hooks/usePWAInstall';
 
 export const Navbar: React.FC = () => {
   const {
@@ -24,6 +25,7 @@ export const Navbar: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [theme, setTheme] = useState<ThemeMode>(getThemePreference());
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+  const { isInstallable, installPWA } = usePWAInstall();
   const location = useLocation();
 
   useEffect(() => {
@@ -242,6 +244,19 @@ export const Navbar: React.FC = () => {
                   </select>
                 </div>
               </div>
+
+              {/* Install PWA Button on Desktop */}
+              {isInstallable && (
+                <button
+                  type="button"
+                  onClick={installPWA}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-sm transition-all"
+                  title="Install Panda JWL-Sync on your computer"
+                >
+                  <GoogleIcon name="download" className="text-sm" />
+                  <span className="hidden xl:inline">Install App</span>
+                </button>
+              )}
             </div>
 
             {/* Mobile Right Controls (Compact & Ultra Responsive, < 1024px) */}
@@ -329,6 +344,29 @@ export const Navbar: React.FC = () => {
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {/* Install PWA Banner in Mobile Drawer */}
+            {isInstallable && (
+              <button
+                type="button"
+                onClick={() => {
+                  installPWA();
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white font-bold text-xs shadow-md active:scale-98 transition-transform"
+              >
+                <div className="flex items-center space-x-2.5">
+                  <div className="p-1.5 rounded-xl bg-white/20">
+                    <GoogleIcon name="install_mobile" className="text-xl" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-bold text-xs">Install Panda JWL-Sync</div>
+                    <div className="text-[10px] text-blue-100 font-normal">Works offline & from your home screen</div>
+                  </div>
+                </div>
+                <span className="px-2.5 py-1 rounded-lg bg-white/20 text-[11px] font-semibold">Install</span>
+              </button>
+            )}
 
             {/* Active Library Status Card */}
             {activeLibraryFile && summary ? (
