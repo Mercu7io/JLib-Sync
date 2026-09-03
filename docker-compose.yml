@@ -1,0 +1,18 @@
+services:
+  panda-jwl-sync:
+    container_name: panda-jwl-sync
+    image: ghcr.io/mercu7io/jlib-sync:latest
+    # Optionnel : décommentez 'build' uniquement si vous souhaitez compiler vous-même le code source
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    #   args:
+    #     VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-753688786468-i2jvkcjmevbk5tdqqsujgooed7afm8qu.apps.googleusercontent.com}
+    ports:
+      - "${PORT:-8080}:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost/ || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3

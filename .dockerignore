@@ -1,0 +1,16 @@
+node_modules
+dist
+.git
+.gitignore
+.vscode
+.idea
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+scratch
+*.tmp
+AI_CONTEXT.md
+walkthrough.md
+implementation_plan.md

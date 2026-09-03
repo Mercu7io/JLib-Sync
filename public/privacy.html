@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Panda JWL-Sync</title>
+    <style>
+        body { 
+            font-family: system-ui, -apple-system, sans-serif; 
+            line-height: 1.6; 
+            margin: 0; 
+            padding: 0; 
+            color: #cbd5e1; 
+            background: #0b0f17; 
+        }
+        .header {
+            background: #0e1422;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+        }
+        .back-link {
+            color: #60a5fa;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            transition: color 0.2s;
+        }
+        .back-link:hover {
+            color: #93c5fd;
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 2rem auto; 
+            background: #0e1422; 
+            padding: 2.5rem; 
+            border-radius: 12px; 
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); 
+        }
+        h1 { color: #f8fafc; font-size: 1.875rem; margin-top: 0; }
+        h2 { color: #f1f5f9; font-size: 1.25rem; margin-top: 2rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; }
+        p { margin-bottom: 1rem; color: #94a3b8; }
+        strong { color: #e2e8f0; }
+        code { background: rgba(255,255,255,0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.875em; color: #f8fafc; }
+        a { color: #60a5fa; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="/" class="back-link">
+            <svg style="width:16px;height:16px;margin-right:8px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Back to Panda JWL-Sync
+        </a>
+    </div>
+    <div class="container">
+        <h1>Privacy Policy</h1>
+        <p><strong>Last Updated:</strong> September 2026</p>
+        
+        <h2>1. 100% Client-Side Processing</h2>
+        <p>Panda JWL-Sync is designed with a strict privacy-first architecture. All parsing, merging, and modification of your <code>.jwlibrary</code> backups happens entirely within your web browser using WebAssembly. Your personal study notes, highlights, and database files are <strong>never</strong> transmitted to our servers.</p>
+        
+        <h2>2. Google Drive Integration (Optional)</h2>
+        <p>If you choose to use the optional Cloud Sync feature, you will authenticate directly with Google Drive. We use the restricted <code>drive.file</code> scope, which means the application can <strong>only</strong> access, create, or modify files within a specific "JW Sync" folder that it creates. It cannot read your other personal files on Google Drive.</p>
+        <p>Your authentication tokens are stored locally in your browser and are never sent to our servers.</p>
+        
+        <h2>3. Data Collection & Analytics</h2>
+        <p>We do not collect any telemetry, usage analytics, or personal information. There is no backend server infrastructure recording your activity.</p>
+        
+        <h2>4. Cookies & Local Storage</h2>
+        <p>The application uses your browser's Local Storage purely for maintaining your Google Drive connection state (if used) and persisting your local UI preferences (like theme or filter settings). No tracking cookies are used.</p>
+        
+        <h2>5. Disclaimer</h2>
+        <p><strong>Panda JWL-Sync has no affiliation, connection, endorsement, or official link with Jehovah's Witnesses, JW.org, JW Library, or any related organization.</strong></p>
+        
+        <h2>6. Contact</h2>
+        <p>As this is an open-source, client-side utility, all code can be inspected publicly. For any concerns regarding privacy or data handling, you may review the source code directly.</p>
+    </div>
+</body>
+</html>
