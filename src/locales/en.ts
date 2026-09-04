@@ -20,6 +20,9 @@ export const en = {
     close: 'Close',
     driveCloud: 'Drive Cloud',
     driveConnected: 'Google Drive Connected ✓',
+    driveOffline: 'Drive Offline',
+    uploadToDrive: 'Upload to Drive',
+    driveSynced: 'Drive Synced ✓',
     connectDrive: 'Connect Google Drive Cloud',
     manage: 'Manage',
     installApp: 'Install App',
@@ -295,6 +298,35 @@ export const en = {
     decryptAndLoad: 'Decrypt & Load',
     encryptionSettings: 'Client-Side Encryption',
     encryptionWarning: 'Warning: If you lose your password, your encrypted backups cannot be recovered.',
+    enterPasswordDesc: 'Enter password to decrypt {{fileName}}',
+    encryptionPassword: 'Encryption Password',
+    rememberPassword: 'Remember Password',
+    sessionOnly: "Only this session (Don't save)",
+    oneDay: '1 Day',
+    oneWeek: '1 Week',
+    oneMonth: '1 Month',
+    oneYear: '1 Year',
+    saveSettings: 'Save Settings',
+    crossDeviceNotifications: 'Cross-Device Notifications',
+    crossDeviceNotificationsDesc: 'Show a notification badge when new backups are uploaded from your other devices.',
+    newestFirst: 'Newest First',
+    oldestFirst: 'Oldest First',
+    selectAll: 'Select All ({{count}})',
+    selectedCount: '{{count}} selected',
+    mergeSelected: 'Merge 2 Selected Files',
+    deleteSelected: 'Delete Selected ({{count}})',
+    confirmBatchDelete: 'Are you sure you want to permanently delete {{count}} backup(s) from Google Drive?',
+    confirmDeleteOne: 'Delete "{{name}}" from Google Drive?',
+    noBackupsMatch: 'No backups match your search query.',
+    noBackupsFound: 'No backups found in Google Drive yet.',
+    disconnect: 'Disconnect',
+    fromOtherDevice: 'From another device',
+    recent: 'Recent',
+    enterPasswordFirst: 'Please enter an encryption password in the settings first.',
+    alreadyInCloud: 'Already Saved in Cloud ✓',
+    uploading: 'Uploading...',
+    refreshList: 'Refresh list',
+    encryptionSettingsTitle: 'Encryption Settings',
   },
   help: {
     title: 'User Guide & Help',
@@ -342,16 +374,12 @@ export const en = {
 
 type EnSchema = typeof en;
 export type TranslationSchema = {
-  [K in keyof Omit<EnSchema, 'help' | 'stats' | 'explorer' | 'merge' | 'nav'>]: K extends 'cloud'
-    ? Omit<EnSchema['cloud'], 'clientIdMissingTitle' | 'clientIdMissingDesc'> & {
-        clientIdMissingTitle?: string;
-        clientIdMissingDesc?: string;
-      }
-    : EnSchema[K];
+  [K in keyof Omit<EnSchema, 'help' | 'stats' | 'explorer' | 'merge' | 'nav' | 'cloud'>]: EnSchema[K];
 } & {
   help?: Partial<EnSchema['help']>;
   stats?: Partial<EnSchema['stats']>;
   explorer?: Partial<EnSchema['explorer']>;
   merge?: Partial<EnSchema['merge']>;
   nav?: Partial<EnSchema['nav']>;
+  cloud?: Partial<EnSchema['cloud']>;
 };

@@ -3,14 +3,19 @@
  */
 
 import { create } from 'zustand';
-import { driveManager, IDriveFile } from '../lib/cloud/googleDrive';
+import { driveManager, IDriveFile, getLocalDeviceId, getLocalDeviceName } from '../lib/cloud/googleDrive';
 import { useAppStore } from './useAppStore';
 import { packageJwLibrary } from '../lib/jw/zip';
 import { CloudCrypto } from '../lib/cloud/crypto';
 
 interface ICloudState {
   isConnected: boolean;
+  isOnline: boolean;
   backups: IDriveFile[];
+  knownCloudShas: string[];
+  unreadCloudBackupsCount: number;
+  unseenBackups: IDriveFile[];
+  deviceSyncNotificationsEnabled: boolean;
   isLoading: boolean;
   isUploading: boolean;
   statusMessage: string;
@@ -29,6 +34,9 @@ interface ICloudState {
   downloadCloudFile: (fileId: string, fileName: string) => Promise<File>;
   setShowCloudModal: (show: boolean) => void;
   clearError: () => void;
+  setDeviceSyncNotificationsEnabled: (enabled: boolean) => void;
+  acknowledgeCloudBackups: () => void;
+  isShaInCloud: (sha?: string | null) => boolean;
 
   // Encryption
   encryptionEnabled: boolean;
@@ -38,6 +46,7 @@ interface ICloudState {
 }
 
 const LOCAL_STORAGE_ENC_KEY = 'jwsync_cloud_enc';
+const LOCAL_STORAGE_NOTIFS_KEY = 'jwsync_cloud_notifications';
 
 const loadEncryptionConfig = () => {
   try {
@@ -45,7 +54,6 @@ const loadEncryptionConfig = () => {
     if (!raw) return { encryptionEnabled: false, encryptionPassword: null, passwordExpiresAt: null };
     const parsed = JSON.parse(raw);
     if (parsed.passwordExpiresAt && Date.now() > parsed.passwordExpiresAt) {
-      // Keep enabled state, but drop the expired password
       return { encryptionEnabled: parsed.encryptionEnabled, encryptionPassword: null, passwordExpiresAt: null };
     }
     return {
@@ -58,9 +66,22 @@ const loadEncryptionConfig = () => {
   }
 };
 
+const getInitialNotificationsEnabled = () => {
+  try {
+    return localStorage.getItem(LOCAL_STORAGE_NOTIFS_KEY) !== 'false';
+  } catch {
+    return true;
+  }
+};
+
 export const useCloudStore = create<ICloudState>((set, get) => ({
   isConnected: false,
+  isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
   backups: [],
+  knownCloudShas: [],
+  unreadCloudBackupsCount: 0,
+  unseenBackups: [],
+  deviceSyncNotificationsEnabled: getInitialNotificationsEnabled(),
   isLoading: false,
   isUploading: false,
   statusMessage: '',
@@ -75,13 +96,39 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
     set(config);
   },
 
+  setDeviceSyncNotificationsEnabled: (enabled: boolean) => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_NOTIFS_KEY, enabled ? 'true' : 'false');
+    } catch (_) {}
+    set((state) => ({
+      deviceSyncNotificationsEnabled: enabled,
+      unreadCloudBackupsCount: enabled ? state.unseenBackups.length : 0,
+    }));
+  },
+
+  acknowledgeCloudBackups: () => {
+    try {
+      localStorage.setItem('jwsync_last_ack_cloud_time', Date.now().toString());
+    } catch (_) {}
+    set({ unreadCloudBackupsCount: 0, unseenBackups: [] });
+  },
+
+  isShaInCloud: (sha?: string | null) => {
+    if (!sha) return false;
+    return get().knownCloudShas.includes(sha);
+  },
+
   initCloud: async () => {
+    if (typeof window !== 'undefined' && !(window as any).__JWSYNC_NET_INIT__) {
+      (window as any).__JWSYNC_NET_INIT__ = true;
+      window.addEventListener('online', () => set({ isOnline: true }));
+      window.addEventListener('offline', () => set({ isOnline: false }));
+    }
     try {
       await driveManager.init(async () => {
         set({ isConnected: true, error: null });
         await get().refreshBackups();
       });
-      // driveManager.trySilentReconnect(); // Removed to prevent automatic popups on load
     } catch (err) {
       console.warn('Cloud init error:', err);
     }
@@ -101,7 +148,13 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
 
   disconnect: () => {
     driveManager.logout();
-    set({ isConnected: false, backups: [] });
+    set({
+      isConnected: false,
+      backups: [],
+      knownCloudShas: [],
+      unreadCloudBackupsCount: 0,
+      unseenBackups: [],
+    });
   },
 
   refreshBackups: async () => {
@@ -109,16 +162,38 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
     try {
       set({ isLoading: true, statusMessage: 'Listing cloud backups...' });
       const backups = await driveManager.listBackups();
-      set({ backups, isLoading: false, statusMessage: '' });
+      const shas = backups.map((b) => b.sha256).filter(Boolean) as string[];
+
+      // Multi-device notification check
+      const myDeviceId = getLocalDeviceId();
+      let lastAckTime = 0;
+      try {
+        lastAckTime = Number(localStorage.getItem('jwsync_last_ack_cloud_time') || 0);
+      } catch (_) {}
+
+      const unseen = backups.filter((b) => {
+        if (!b.deviceId || b.deviceId === myDeviceId) return false;
+        const time = b.createdTime ? new Date(b.createdTime).getTime() : 0;
+        return time > lastAckTime;
+      });
+
+      const notifsEnabled = get().deviceSyncNotificationsEnabled;
+
+      set({
+        backups,
+        knownCloudShas: shas,
+        unseenBackups: unseen,
+        unreadCloudBackupsCount: notifsEnabled ? unseen.length : 0,
+        isLoading: false,
+        statusMessage: '',
+      });
     } catch (err) {
       set({ isLoading: false, statusMessage: '', error: (err as Error).message });
     }
   },
 
-
-
   backupCurrentLibrary: async (customName?: string) => {
-    const { activeLibraryBytes, activeManifest, summary, extraFiles } = useAppStore.getState();
+    const { activeLibraryBytes, activeManifest, activeSha256, summary, extraFiles } = useAppStore.getState();
     if (!activeLibraryBytes || !activeManifest) {
       throw new Error('No active library loaded to backup.');
     }
@@ -142,7 +217,11 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
       }
 
       set({ statusMessage: 'Uploading to Google Drive...' });
-      await driveManager.uploadBackup(name, blob);
+      await driveManager.uploadBackup(name, blob, {
+        sha256: activeSha256 || undefined,
+        deviceId: getLocalDeviceId(),
+        deviceName: getLocalDeviceName(),
+      });
       await get().refreshBackups();
       set({ isUploading: false, statusMessage: 'Backup uploaded successfully!' });
       setTimeout(() => set({ statusMessage: '' }), 4000);

@@ -9,6 +9,7 @@ import { Database } from 'sql.js';
 import { IManifest, ILibrarySummary } from '../lib/jw/types';
 import { extractJwLibrary } from '../lib/jw/zip';
 import { openDatabase, getLibrarySummary } from '../lib/jw/sqlite';
+import { computeSha256 } from '../lib/jw/hash';
 
 import i18n, { getInitialLanguage } from '../i18n';
 
@@ -17,6 +18,7 @@ interface IAppState {
   activeLibraryBytes: Uint8Array | null;
   activeManifest: IManifest | null;
   activeDb: Database | null;
+  activeSha256: string | null;
   extraFiles: Map<string, Uint8Array>;
   summary: ILibrarySummary | null;
   isLoading: boolean;
@@ -38,6 +40,7 @@ export const useAppStore = create<IAppState>((set, get) => ({
   activeLibraryBytes: null,
   activeManifest: null,
   activeDb: null,
+  activeSha256: null,
   extraFiles: new Map(),
   summary: null,
   isLoading: false,
@@ -64,12 +67,14 @@ export const useAppStore = create<IAppState>((set, get) => ({
       }
 
       const summary = getLibrarySummary(db, manifest, fileSizeBytes);
+      const activeSha256 = await computeSha256(dbBytes);
 
       set({
         activeLibraryFile: fileOrBlob,
         activeLibraryBytes: dbBytes,
         activeManifest: manifest,
         activeDb: db,
+        activeSha256,
         extraFiles,
         summary,
         isLoading: false,
@@ -119,6 +124,7 @@ export const useAppStore = create<IAppState>((set, get) => ({
       activeLibraryBytes: null,
       activeManifest: null,
       activeDb: null,
+      activeSha256: null,
       extraFiles: new Map(),
       summary: null,
       error: null,
@@ -142,11 +148,13 @@ export const useAppStore = create<IAppState>((set, get) => ({
       }
 
       const summary = getLibrarySummary(newDb, finalManifest, dbBytes.byteLength);
+      const activeSha256 = await computeSha256(dbBytes);
 
       set({
         activeLibraryBytes: dbBytes,
         activeDb: newDb,
         activeManifest: finalManifest,
+        activeSha256,
         summary,
         isLoading: false,
         loadingMessage: '',

@@ -9,6 +9,47 @@ export interface IDriveFile {
   name: string;
   size?: string;
   createdTime?: string;
+  sha256?: string;
+  deviceId?: string;
+  deviceName?: string;
+  appProperties?: Record<string, string>;
+}
+
+export interface IJwSyncIndexBackup {
+  fileId: string;
+  fileName: string;
+  sha256: string;
+  size?: number;
+  deviceId?: string;
+  deviceName?: string;
+  uploadedAt: string;
+}
+
+export interface IJwSyncIndex {
+  version: number;
+  lastUpdated: string;
+  backups: IJwSyncIndexBackup[];
+}
+
+export function getLocalDeviceId(): string {
+  if (typeof localStorage === 'undefined') return 'device_unknown';
+  let id = localStorage.getItem('jwsync_device_id');
+  if (!id) {
+    id = 'dev_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now().toString(36);
+    localStorage.setItem('jwsync_device_id', id);
+  }
+  return id;
+}
+
+export function getLocalDeviceName(): string {
+  if (typeof navigator === 'undefined') return 'Unknown Device';
+  const ua = navigator.userAgent;
+  if (/iPad|iPhone|iPod/.test(ua)) return 'iOS Device';
+  if (/Android/.test(ua)) return 'Android Device';
+  if (/Windows/.test(ua)) return 'Windows PC';
+  if (/Macintosh|Mac OS/.test(ua)) return 'Mac';
+  if (/Linux/.test(ua)) return 'Linux';
+  return 'Web Browser';
 }
 
 declare global {
@@ -37,6 +78,7 @@ export class GoogleDriveManager {
   private accessToken: string | null = null;
   private folderId: string | null = null;
   private folderName = 'JW Sync';
+  private indexFileName = '.jwsync_index.json';
   private tokenClient: any = null;
   private baseUrl = 'https://www.googleapis.com/drive/v3';
   private scope = 'https://www.googleapis.com/auth/drive.file';
@@ -248,32 +290,147 @@ export class GoogleDriveManager {
     return id;
   }
 
+  async findIndexFile(): Promise<string | null> {
+    if (!this.folderId) await this.ensureSyncFolder();
+    const query = encodeURIComponent(
+      `name='${this.indexFileName}' and '${this.folderId}' in parents and trashed=false`
+    );
+    const data = await this.request(`/files?q=${query}&fields=files(id,name)`);
+    if (data.files && data.files.length > 0) {
+      return data.files[0].id;
+    }
+    return null;
+  }
+
+  async fetchIndex(): Promise<IJwSyncIndex | null> {
+    try {
+      const fileId = await this.findIndexFile();
+      if (!fileId) return null;
+      const buffer = await this.downloadBackup(fileId);
+      const text = new TextDecoder().decode(buffer);
+      return JSON.parse(text) as IJwSyncIndex;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  async saveIndex(index: IJwSyncIndex): Promise<void> {
+    if (!this.folderId) await this.ensureSyncFolder();
+    index.lastUpdated = new Date().toISOString();
+    const content = JSON.stringify(index, null, 2);
+    const blob = new Blob([content], { type: 'application/json' });
+
+    const fileId = await this.findIndexFile();
+    if (fileId) {
+      const uploadUrl = `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`;
+      await fetch(uploadUrl, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${this.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: blob,
+      });
+    } else {
+      const metadata = { name: this.indexFileName, parents: [this.folderId] };
+      const fileInfo = await this.request('/files', {
+        method: 'POST',
+        body: JSON.stringify(metadata),
+      });
+      const uploadUrl = `https://www.googleapis.com/upload/drive/v3/files/${fileInfo.id}?uploadType=media`;
+      await fetch(uploadUrl, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${this.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: blob,
+      });
+    }
+  }
+
   async listBackups(): Promise<IDriveFile[]> {
     if (!this.folderId) await this.ensureSyncFolder();
-    const query = encodeURIComponent(`'${this.folderId}' in parents and trashed=false`);
-    const data = await this.request(
-      `/files?q=${query}&fields=files(id,name,size,createdTime)&orderBy=createdTime desc`
+    const query = encodeURIComponent(
+      `'${this.folderId}' in parents and trashed=false and name!='${this.indexFileName}'`
     );
-    return data.files || [];
+    const data = await this.request(
+      `/files?q=${query}&fields=files(id,name,size,createdTime,appProperties)&orderBy=createdTime desc`
+    );
+    const driveFiles: IDriveFile[] = data.files || [];
+
+    // Also fetch index to supplement metadata
+    let index: IJwSyncIndex | null = null;
+    try {
+      index = await this.fetchIndex();
+    } catch (_) {}
+
+    const indexMap = new Map<string, IJwSyncIndexBackup>();
+    if (index && index.backups) {
+      for (const b of index.backups) {
+        indexMap.set(b.fileId, b);
+      }
+    }
+
+    return driveFiles.map((f) => {
+      const idx = indexMap.get(f.id);
+      return {
+        ...f,
+        sha256: f.appProperties?.sha256 || idx?.sha256,
+        deviceId: f.appProperties?.deviceId || idx?.deviceId,
+        deviceName: f.appProperties?.deviceName || idx?.deviceName,
+      };
+    });
   }
 
   async deleteBackup(fileId: string): Promise<void> {
     await this.request(`/files/${fileId}`, { method: 'DELETE' });
+    try {
+      const index = await this.fetchIndex();
+      if (index && index.backups) {
+        index.backups = index.backups.filter((b) => b.fileId !== fileId);
+        await this.saveIndex(index);
+      }
+    } catch (_) {}
   }
 
   async batchDeleteBackups(fileIds: string[]): Promise<void> {
+    const set = new Set(fileIds);
     for (const id of fileIds) {
       try {
-        await this.deleteBackup(id);
+        await this.request(`/files/${id}`, { method: 'DELETE' });
       } catch (err) {
         console.warn(`Failed to delete file ${id}:`, err);
       }
     }
+    try {
+      const index = await this.fetchIndex();
+      if (index && index.backups) {
+        index.backups = index.backups.filter((b) => !set.has(b.fileId));
+        await this.saveIndex(index);
+      }
+    } catch (_) {}
   }
 
-  async uploadBackup(name: string, blob: Blob): Promise<IDriveFile> {
+  async uploadBackup(
+    name: string,
+    blob: Blob,
+    extraMetadata?: { sha256?: string; deviceId?: string; deviceName?: string }
+  ): Promise<IDriveFile> {
     if (!this.folderId) await this.ensureSyncFolder();
-    const metadata = { name, parents: [this.folderId] };
+
+    const appProperties: Record<string, string> = {
+      uploadedAt: new Date().toISOString(),
+    };
+    if (extraMetadata?.sha256) appProperties.sha256 = extraMetadata.sha256;
+    if (extraMetadata?.deviceId) appProperties.deviceId = extraMetadata.deviceId;
+    if (extraMetadata?.deviceName) appProperties.deviceName = extraMetadata.deviceName;
+
+    const metadata = {
+      name,
+      parents: [this.folderId],
+      appProperties,
+    };
     const fileInfo = await this.request('/files', {
       method: 'POST',
       body: JSON.stringify(metadata),
@@ -292,7 +449,35 @@ export class GoogleDriveManager {
     if (!response.ok) {
       throw new Error(`Upload to Google Drive failed: ${response.statusText}`);
     }
-    return await response.json();
+    const uploadedFile = await response.json();
+
+    // Update .jwsync_index.json
+    try {
+      let index = await this.fetchIndex();
+      if (!index) {
+        index = { version: 1, lastUpdated: new Date().toISOString(), backups: [] };
+      }
+      index.backups = index.backups.filter((b) => b.fileId !== fileInfo.id);
+      index.backups.unshift({
+        fileId: fileInfo.id,
+        fileName: name,
+        sha256: extraMetadata?.sha256 || '',
+        size: blob.size,
+        deviceId: extraMetadata?.deviceId || getLocalDeviceId(),
+        deviceName: extraMetadata?.deviceName || getLocalDeviceName(),
+        uploadedAt: new Date().toISOString(),
+      });
+      await this.saveIndex(index);
+    } catch (err) {
+      console.warn('Failed to update cloud index:', err);
+    }
+
+    return {
+      ...uploadedFile,
+      sha256: extraMetadata?.sha256,
+      deviceId: extraMetadata?.deviceId || getLocalDeviceId(),
+      deviceName: extraMetadata?.deviceName || getLocalDeviceName(),
+    };
   }
 
   async downloadBackup(fileId: string): Promise<ArrayBuffer> {

@@ -88,9 +88,11 @@ export const ExplorerPage: React.FC = () => {
     updateActiveDatabase,
     loadDemoLibrary,
     isLoading,
+    activeSha256,
   } = useAppStore();
 
-  const { setShowCloudModal } = useCloudStore();
+  const { setShowCloudModal, isConnected, isShaInCloud } = useCloudStore();
+  const isCurrentInCloud = activeSha256 ? isShaInCloud(activeSha256) : false;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -545,10 +547,28 @@ export const ExplorerPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setShowCloudModal(true)}
-            className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] text-xs font-medium transition-colors shadow-sm"
+            className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md border text-xs font-medium transition-colors shadow-sm ${
+              isConnected && isCurrentInCloud
+                ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                : isConnected && !isCurrentInCloud
+                ? 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30 font-semibold'
+                : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/[0.08]'
+            }`}
           >
-            <Cloud className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" />
-            <span>{t('explorer.cloudDriveBtn')}</span>
+            {isConnected && isCurrentInCloud ? (
+              <Cloud className="w-3.5 h-3.5 text-emerald-500" />
+            ) : isConnected && !isCurrentInCloud ? (
+              <Upload className="w-3.5 h-3.5 text-blue-500" />
+            ) : (
+              <Cloud className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" />
+            )}
+            <span>
+              {isConnected && isCurrentInCloud
+                ? t('nav.driveSynced', 'Drive Synced ✓')
+                : isConnected && !isCurrentInCloud
+                ? t('nav.uploadToDrive', 'Upload to Drive')
+                : t('explorer.cloudDriveBtn')}
+            </span>
           </button>
 
           <button

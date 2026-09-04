@@ -16,6 +16,8 @@ import {
   BookOpen,
   BarChart3,
   Type,
+  Upload,
+  WifiOff,
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { useCloudStore } from '../../store/useCloudStore';
@@ -29,6 +31,7 @@ export const Navbar: React.FC = () => {
   const {
     summary,
     activeLibraryFile,
+    activeSha256,
     isLoading,
     loadingMessage,
     loadLibrary,
@@ -37,7 +40,16 @@ export const Navbar: React.FC = () => {
     setSelectedLanguage,
   } = useAppStore();
 
-  const { isConnected, setShowCloudModal, initCloud } = useCloudStore();
+  const {
+    isConnected,
+    isOnline,
+    unreadCloudBackupsCount,
+    isShaInCloud,
+    backupCurrentLibrary,
+    isUploading,
+    setShowCloudModal,
+    initCloud,
+  } = useCloudStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<ThemeMode>(getThemePreference());
@@ -83,6 +95,14 @@ export const Navbar: React.FC = () => {
       document.body.style.overflow = '';
     };
   }, [mobileMenuOpen]);
+
+  const isCurrentFileInCloud = activeSha256 ? isShaInCloud(activeSha256) : false;
+
+  const handleQuickCloudUpload = async () => {
+    try {
+      await backupCurrentLibrary();
+    } catch (_) {}
+  };
 
   const handleThemeChange = (newTheme: ThemeMode) => {
     setTheme(newTheme);
@@ -168,17 +188,33 @@ export const Navbar: React.FC = () => {
 
               {/* Active Library Indicator or Quick Open */}
               {activeLibraryFile && summary ? (
-                <div className="flex items-center space-x-2 bg-blue-500/10 dark:bg-blue-500/15 border border-blue-500/30 rounded-xl px-3 py-1.5 text-xs text-blue-700 dark:text-blue-300">
-                  <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 animate-pulse" />
-                  <span className="font-semibold truncate max-w-[130px]">{summary.name}</span>
-                  <button
-                    type="button"
-                    onClick={closeLibrary}
-                    className="text-blue-400 hover:text-red-500 transition-colors p-0.5"
-                    title={t('nav.close', 'Close')}
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 bg-blue-500/10 dark:bg-blue-500/15 border border-blue-500/30 rounded-xl px-3 py-1.5 text-xs text-blue-700 dark:text-blue-300">
+                    <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 animate-pulse" />
+                    <span className="font-semibold truncate max-w-[130px]">{summary.name}</span>
+                    <button
+                      type="button"
+                      onClick={closeLibrary}
+                      className="text-blue-400 hover:text-red-500 transition-colors p-0.5"
+                      title={t('nav.close', 'Close')}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Quick Upload Button if not in Cloud */}
+                  {isConnected && !isCurrentFileInCloud && (
+                    <button
+                      type="button"
+                      onClick={handleQuickCloudUpload}
+                      disabled={isUploading}
+                      className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-sm transition-all animate-in fade-in"
+                      title={t('nav.uploadToDrive', 'Upload to Drive')}
+                    >
+                      <Upload className={`w-3.5 h-3.5 ${isUploading ? 'animate-bounce' : ''}`} />
+                      <span>{isUploading ? t('cloud.uploading', 'Uploading...') : t('nav.uploadToDrive', 'Upload to Drive')}</span>
+                    </button>
+                  )}
                 </div>
               ) : (
                 <button
@@ -193,20 +229,52 @@ export const Navbar: React.FC = () => {
                 </button>
               )}
 
-              {/* Google Cloud Sync Button */}
+              {/* Google Cloud Sync Button with Offline & Notification Support */}
               <button
                 type="button"
                 onClick={() => setShowCloudModal(true)}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                className={`relative flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
                   isConnected
-                    ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                    ? isOnline
+                      ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                      : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30'
                     : 'bg-slate-100/80 hover:bg-slate-200/80 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-white/[0.08]'
                 }`}
-                title="Google Drive Cloud Sync"
+                title={
+                  isConnected
+                    ? isOnline
+                      ? 'Google Drive Connected'
+                      : 'Google Drive Offline'
+                    : 'Google Drive Cloud Sync'
+                }
               >
-                <Cloud className={`w-3.5 h-3.5 flex-shrink-0 ${isConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`} />
-                <span>{isConnected ? 'Drive Connected' : t('nav.driveCloud', 'Drive Cloud')}</span>
-                {isConnected && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                {isConnected && !isOnline ? (
+                  <WifiOff className="w-3.5 h-3.5 flex-shrink-0 text-amber-500" />
+                ) : (
+                  <Cloud
+                    className={`w-3.5 h-3.5 flex-shrink-0 ${
+                      isConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'
+                    }`}
+                  />
+                )}
+                <span>
+                  {isConnected
+                    ? isOnline
+                      ? t('nav.driveConnected', 'Drive Connected')
+                      : t('nav.driveOffline', 'Drive Offline')
+                    : t('nav.driveCloud', 'Drive Cloud')}
+                </span>
+                {isConnected && isOnline && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                )}
+                {isConnected && !isOnline && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                )}
+                {isConnected && isOnline && unreadCloudBackupsCount > 0 && (
+                  <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-blue-600 text-white animate-pulse">
+                    +{unreadCloudBackupsCount}
+                  </span>
+                )}
               </button>
 
               {/* Unified Preferences / Settings Dropdown */}
@@ -367,14 +435,25 @@ export const Navbar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowCloudModal(true)}
-                className={`p-2 rounded-xl border text-xs font-semibold transition-all ${
+                className={`relative p-2 rounded-xl border text-xs font-semibold transition-all ${
                   isConnected
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600'
+                    ? isOnline
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600'
+                      : 'bg-amber-500/10 border-amber-500/30 text-amber-600'
                     : 'bg-slate-100 dark:bg-white/[0.04] border-slate-200/80 dark:border-white/[0.08] text-slate-600 dark:text-slate-400'
                 }`}
-                title="Google Drive Cloud"
+                title={isConnected ? (isOnline ? 'Google Drive Connected' : 'Google Drive Offline') : 'Google Drive Cloud'}
               >
-                <Cloud className="w-4 h-4" />
+                {isConnected && !isOnline ? (
+                  <WifiOff className="w-4 h-4 text-amber-500" />
+                ) : (
+                  <Cloud className="w-4 h-4" />
+                )}
+                {isConnected && isOnline && unreadCloudBackupsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-bold flex items-center justify-center animate-pulse">
+                    {unreadCloudBackupsCount}
+                  </span>
+                )}
               </button>
 
               <button

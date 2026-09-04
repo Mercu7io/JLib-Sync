@@ -18,10 +18,12 @@ import {
   Square,
   Settings,
   AlertCircle,
+  Bell,
+  CheckCircle2,
 } from 'lucide-react';
 import { useCloudStore } from '../../store/useCloudStore';
 import { useAppStore } from '../../store/useAppStore';
-import { getGoogleClientId } from '../../lib/cloud/googleDrive';
+import { getGoogleClientId, getLocalDeviceId } from '../../lib/cloud/googleDrive';
 import { useTranslation } from 'react-i18next';
 
 export const CloudSyncModal: React.FC = () => {
@@ -47,9 +49,13 @@ export const CloudSyncModal: React.FC = () => {
     encryptionEnabled,
     encryptionPassword,
     setEncryptionConfig,
+    deviceSyncNotificationsEnabled,
+    setDeviceSyncNotificationsEnabled,
+    acknowledgeCloudBackups,
+    isShaInCloud,
   } = useCloudStore();
 
-  const { activeLibraryBytes, summary } = useAppStore();
+  const { activeLibraryBytes, activeSha256, summary } = useAppStore();
   const hasClientId = !!getGoogleClientId();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,11 +63,12 @@ export const CloudSyncModal: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [customBackupName, setCustomBackupName] = useState('');
 
-  // Encryption Settings UI
+  // Encryption & Notification Settings UI
   const [showSettings, setShowSettings] = useState(false);
   const [encToggle, setEncToggle] = useState(encryptionEnabled);
   const [encPass, setEncPass] = useState(encryptionPassword || '');
   const [encDuration, setEncDuration] = useState<number>(0);
+  const [notifsToggle, setNotifsToggle] = useState(deviceSyncNotificationsEnabled);
 
   // Decryption Prompt UI
   const [promptFileId, setPromptFileId] = useState<string | null>(null);
@@ -70,10 +77,22 @@ export const CloudSyncModal: React.FC = () => {
   const [decryptPass, setDecryptPass] = useState('');
   const [decryptError, setDecryptError] = useState('');
 
+  // Clear cross-device notification count when modal is opened
+  useEffect(() => {
+    acknowledgeCloudBackups();
+  }, [acknowledgeCloudBackups]);
+
   useEffect(() => {
     setEncToggle(encryptionEnabled);
     setEncPass(encryptionPassword || '');
   }, [encryptionEnabled, encryptionPassword]);
+
+  useEffect(() => {
+    setNotifsToggle(deviceSyncNotificationsEnabled);
+  }, [deviceSyncNotificationsEnabled]);
+
+  const isCurrentInCloud = activeSha256 ? isShaInCloud(activeSha256) : false;
+  const myDeviceId = getLocalDeviceId();
 
   // Filter and sort backups
   const filteredBackups = useMemo(() => {
@@ -108,7 +127,10 @@ export const CloudSyncModal: React.FC = () => {
     if (selectedIds.length === 0) return;
     if (
       window.confirm(
-        `Are you sure you want to permanently delete ${selectedIds.length} backup(s) from Google Drive?`
+        t('cloud.confirmBatchDelete', {
+          count: selectedIds.length,
+          defaultValue: `Are you sure you want to permanently delete ${selectedIds.length} backup(s) from Google Drive?`,
+        })
       )
     ) {
       await batchDeleteBackups(selectedIds);
@@ -139,7 +161,7 @@ export const CloudSyncModal: React.FC = () => {
       if (err.message === 'PASSWORD_REQUIRED' || err.message.includes('Decryption failed')) {
         setShowCloudModal(true);
         setPromptAction('merge');
-        setPromptFileId(selectedIds[0]); // Hacky, ideally we ask for both if needed
+        setPromptFileId(selectedIds[0]);
         setDecryptError('Decryption required for merge.');
       } else {
         alert('Error downloading cloud files for merge: ' + err.message);
@@ -151,7 +173,7 @@ export const CloudSyncModal: React.FC = () => {
     try {
       if (encToggle && !encPass) {
         setShowSettings(true);
-        alert('Please enter an encryption password in the settings first.');
+        alert(t('cloud.enterPasswordFirst', 'Please enter an encryption password in the settings first.'));
         return;
       }
       await backupCurrentLibrary(customBackupName.trim() || undefined);
@@ -161,6 +183,7 @@ export const CloudSyncModal: React.FC = () => {
 
   const handleSaveSettings = () => {
     setEncryptionConfig(encToggle, encToggle ? encPass : null, encToggle ? encDuration : 0);
+    setDeviceSyncNotificationsEnabled(notifsToggle);
     setShowSettings(false);
   };
 
@@ -180,9 +203,8 @@ export const CloudSyncModal: React.FC = () => {
   const handleDecryptSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!promptFileId || !promptFileName) return;
-    
-    // Temporarily set password in store for this operation
-    setEncryptionConfig(true, decryptPass, 0); // Temporary session config
+
+    setEncryptionConfig(true, decryptPass, 0);
     setDecryptError('');
 
     try {
@@ -191,39 +213,47 @@ export const CloudSyncModal: React.FC = () => {
         setPromptFileId(null);
         setDecryptPass('');
       } else {
-        // Retry merge
         await handleMergeSelected();
         setPromptFileId(null);
         setDecryptPass('');
       }
     } catch (err: any) {
       setDecryptError('Decryption failed. Incorrect password?');
-      setEncryptionConfig(encryptionEnabled, encryptionPassword, 0); // Revert
+      setEncryptionConfig(encryptionEnabled, encryptionPassword, 0);
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div className="bg-white dark:bg-[#0e1422] border border-slate-200 dark:border-white/[0.12] text-slate-900 dark:text-white rounded-2xl max-w-2xl w-full p-4 sm:p-7 space-y-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-        
         {/* Decryption Overlay */}
         {promptFileId && (
           <div className="absolute inset-0 z-50 bg-white/95 dark:bg-[#0e1422]/95 backdrop-blur-sm rounded-2xl flex items-center justify-center p-4 sm:p-6">
-            <form onSubmit={handleDecryptSubmit} className="w-full max-w-sm space-y-4 bg-slate-50 dark:bg-white/[0.03] p-5 sm:p-6 rounded-xl border border-slate-200 dark:border-white/[0.08] shadow-2xl">
+            <form
+              onSubmit={handleDecryptSubmit}
+              className="w-full max-w-sm space-y-4 bg-slate-50 dark:bg-white/[0.03] p-5 sm:p-6 rounded-xl border border-slate-200 dark:border-white/[0.08] shadow-2xl"
+            >
               <div className="text-center space-y-2">
                 <div className="w-12 h-12 rounded-full bg-blue-500/20 mx-auto flex items-center justify-center text-blue-600 dark:text-blue-400 mb-4">
                   <Key className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Encrypted File</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Enter password to decrypt {promptFileName}</p>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  {t('cloud.encryptedFile', 'Encrypted File')}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {t('cloud.enterPasswordDesc', {
+                    fileName: promptFileName,
+                    defaultValue: `Enter password to decrypt ${promptFileName}`,
+                  })}
+                </p>
               </div>
-              
+
               <div className="space-y-1">
                 <input
                   type="password"
                   value={decryptPass}
-                  onChange={e => setDecryptPass(e.target.value)}
-                  placeholder="Encryption Password"
+                  onChange={(e) => setDecryptPass(e.target.value)}
+                  placeholder={t('cloud.encryptionPassword', 'Encryption Password')}
                   className="w-full bg-white dark:bg-[#0b0f17] border border-slate-300 dark:border-white/[0.1] rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-slate-200 focus:border-blue-500 focus:outline-none"
                   autoFocus
                 />
@@ -240,14 +270,14 @@ export const CloudSyncModal: React.FC = () => {
                   }}
                   className="flex-1 py-2 rounded-xl border border-slate-300 dark:border-white/[0.1] text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.05]"
                 >
-                  Cancel
+                  {t('common.cancel', 'Cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={!decryptPass}
                   className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-xs font-semibold text-white shadow-md"
                 >
-                  Decrypt & Load
+                  {t('cloud.decryptAndLoad', 'Decrypt & Load')}
                 </button>
               </div>
             </form>
@@ -270,9 +300,7 @@ export const CloudSyncModal: React.FC = () => {
                   </span>
                 )}
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {t('cloud.subtitle')}
-              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{t('cloud.subtitle')}</p>
             </div>
           </div>
 
@@ -281,8 +309,12 @@ export const CloudSyncModal: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowSettings(!showSettings)}
-                className={`p-1.5 rounded-lg transition-colors ${showSettings ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.06]'}`}
-                title="Encryption Settings"
+                className={`p-1.5 rounded-lg transition-colors ${
+                  showSettings
+                    ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400'
+                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.06]'
+                }`}
+                title={t('cloud.encryptionSettingsTitle', 'Encryption Settings')}
               >
                 <Settings className="w-5 h-5" />
               </button>
@@ -322,7 +354,9 @@ export const CloudSyncModal: React.FC = () => {
         {!isConnected ? (
           <div className="space-y-6 text-center py-6">
             <div className="max-w-md mx-auto space-y-2">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">{t('cloud.connectTitle')}</h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                {t('cloud.connectTitle')}
+              </h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                 {t('cloud.connectDesc')}
               </p>
@@ -335,7 +369,10 @@ export const CloudSyncModal: React.FC = () => {
                   <span>{t('cloud.clientIdMissingTitle', 'Google Client ID Not Configured')}</span>
                 </div>
                 <p className="text-[11px] text-amber-800 dark:text-amber-300/80 leading-relaxed">
-                  {t('cloud.clientIdMissingDesc', 'To connect Google Drive, configure VITE_GOOGLE_CLIENT_ID in your .env file or container environment.')}
+                  {t(
+                    'cloud.clientIdMissingDesc',
+                    'To connect Google Drive, configure VITE_GOOGLE_CLIENT_ID in your .env file or container environment.'
+                  )}
                 </p>
               </div>
             )}
@@ -357,28 +394,41 @@ export const CloudSyncModal: React.FC = () => {
                 <Lock className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>{t('cloud.zeroAccessTitle')}</span>
               </div>
-              <p className="leading-relaxed">
-                {t('cloud.zeroAccessDesc')}
-              </p>
+              <p className="leading-relaxed">{t('cloud.zeroAccessDesc')}</p>
             </div>
           </div>
         ) : (
           /* ── CONNECTED VIEW ─────────────────────────────────────────── */
           <div className="space-y-5">
-
-            {/* Encryption Settings Panel */}
+            {/* Settings Panel */}
             {showSettings && (
               <div className="p-4 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.1] space-y-4 animate-in slide-in-from-top-2 shadow-sm">
+                {/* 1. Client-Side Encryption Toggle */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Client-Side Encryption</h3>
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                      {t('cloud.encryptionSettings', 'Client-Side Encryption')}
+                    </h3>
                   </div>
                   <label className="flex items-center cursor-pointer">
                     <div className="relative">
-                      <input type="checkbox" className="sr-only" checked={encToggle} onChange={() => setEncToggle(!encToggle)} />
-                      <div className={`block w-10 h-6 rounded-full transition-colors ${encToggle ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
-                      <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${encToggle ? 'transform translate-x-4' : ''}`}></div>
+                      <input
+                        type="checkbox"
+                        className="sr-only"
+                        checked={encToggle}
+                        onChange={() => setEncToggle(!encToggle)}
+                      />
+                      <div
+                        className={`block w-10 h-6 rounded-full transition-colors ${
+                          encToggle ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'
+                        }`}
+                      ></div>
+                      <div
+                        className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${
+                          encToggle ? 'transform translate-x-4' : ''
+                        }`}
+                      ></div>
                     </div>
                   </label>
                 </div>
@@ -386,44 +436,90 @@ export const CloudSyncModal: React.FC = () => {
                 {encToggle && (
                   <div className="space-y-3 pt-2">
                     <p className="text-xs text-amber-700 dark:text-amber-400/90 leading-relaxed bg-amber-50 dark:bg-amber-500/10 p-2.5 rounded-lg border border-amber-200 dark:border-amber-500/20">
-                      <strong>Warning:</strong> If you lose your password, your encrypted backups cannot be recovered.
+                      <strong>Warning:</strong>{' '}
+                      {t(
+                        'cloud.encryptionWarning',
+                        'If you lose your password, your encrypted backups cannot be recovered.'
+                      )}
                     </p>
-                    
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1.5">
-                        <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">Encryption Password</label>
+                        <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                          {t('cloud.encryptionPassword', 'Encryption Password')}
+                        </label>
                         <input
                           type="password"
                           value={encPass}
-                          onChange={e => setEncPass(e.target.value)}
+                          onChange={(e) => setEncPass(e.target.value)}
                           placeholder="SuperSecretPassword"
                           className="w-full bg-white dark:bg-[#0b0f17] border border-slate-300 dark:border-white/[0.1] rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-200 focus:border-blue-500 focus:outline-none"
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">Remember Password</label>
+                        <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                          {t('cloud.rememberPassword', 'Remember Password')}
+                        </label>
                         <select
                           value={encDuration}
-                          onChange={e => setEncDuration(Number(e.target.value))}
+                          onChange={(e) => setEncDuration(Number(e.target.value))}
                           className="w-full bg-white dark:bg-[#0b0f17] border border-slate-300 dark:border-white/[0.1] rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-200 focus:border-blue-500 focus:outline-none"
                         >
-                          <option value={0}>Only this session (Don't save)</option>
-                          <option value={86400000}>1 Day</option>
-                          <option value={604800000}>1 Week</option>
-                          <option value={2592000000}>1 Month</option>
-                          <option value={31536000000}>1 Year</option>
+                          <option value={0}>{t('cloud.sessionOnly', "Only this session (Don't save)")}</option>
+                          <option value={86400000}>{t('cloud.oneDay', '1 Day')}</option>
+                          <option value={604800000}>{t('cloud.oneWeek', '1 Week')}</option>
+                          <option value={2592000000}>{t('cloud.oneMonth', '1 Month')}</option>
+                          <option value={31536000000}>{t('cloud.oneYear', '1 Year')}</option>
                         </select>
                       </div>
                     </div>
                   </div>
                 )}
-                
+
+                {/* 2. Cross-Device Notifications Toggle */}
+                <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-white/[0.08]">
+                  <div className="space-y-0.5 max-w-[80%]">
+                    <div className="flex items-center space-x-2">
+                      <Bell className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      <h4 className="text-xs font-semibold text-slate-900 dark:text-white">
+                        {t('cloud.crossDeviceNotifications', 'Cross-Device Notifications')}
+                      </h4>
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      {t(
+                        'cloud.crossDeviceNotificationsDesc',
+                        'Show a notification badge when new backups are uploaded from your other devices.'
+                      )}
+                    </p>
+                  </div>
+                  <label className="flex items-center cursor-pointer">
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        className="sr-only"
+                        checked={notifsToggle}
+                        onChange={() => setNotifsToggle(!notifsToggle)}
+                      />
+                      <div
+                        className={`block w-10 h-6 rounded-full transition-colors ${
+                          notifsToggle ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'
+                        }`}
+                      ></div>
+                      <div
+                        className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${
+                          notifsToggle ? 'transform translate-x-4' : ''
+                        }`}
+                      ></div>
+                    </div>
+                  </label>
+                </div>
+
                 <div className="flex justify-end pt-2">
                   <button
                     onClick={handleSaveSettings}
                     className="px-4 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors"
                   >
-                    Save Settings
+                    {t('cloud.saveSettings', 'Save Settings')}
                   </button>
                 </div>
               </div>
@@ -434,12 +530,22 @@ export const CloudSyncModal: React.FC = () => {
               <div className="p-4 rounded-xl bg-gradient-to-r from-blue-500/10 via-emerald-500/5 to-transparent border border-blue-500/25 space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-1.5" title="Will be encrypted">
-                      <span>Save Active Library to Cloud</span>
+                    <span
+                      className="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-1.5"
+                      title="Active library"
+                    >
+                      <span>{t('cloud.saveActiveTitle', 'Save Active Library to Cloud')}</span>
                       {encryptionEnabled && <Lock className="w-3 h-3 text-amber-500" />}
+                      {isCurrentInCloud && (
+                        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                          <span>{t('cloud.alreadyInCloud', 'Already Saved in Cloud ✓')}</span>
+                        </span>
+                      )}
                     </span>
                     <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                      {summary?.name} • {summary?.notesCount} notes • {summary?.tagsCount} tags
+                      {summary?.name} • {summary?.notesCount} {t('nav.notes', 'notes')} •{' '}
+                      {summary?.tagsCount} {t('nav.tags', 'tags')}
                     </span>
                   </div>
 
@@ -447,10 +553,24 @@ export const CloudSyncModal: React.FC = () => {
                     type="button"
                     onClick={handleUploadClick}
                     disabled={isUploading}
-                    className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-all shadow-md shadow-blue-600/20 disabled:opacity-50"
+                    className={`inline-flex items-center space-x-1.5 px-4 py-2 rounded-lg text-white text-xs font-semibold transition-all shadow-md disabled:opacity-50 ${
+                      isCurrentInCloud
+                        ? 'bg-slate-700 hover:bg-slate-600'
+                        : 'bg-blue-600 hover:bg-blue-500 shadow-blue-600/20'
+                    }`}
                   >
-                    {encryptionEnabled ? <Lock className="w-3.5 h-3.5" /> : <Upload className="w-3.5 h-3.5" />}
-                    <span>{isUploading ? 'Uploading...' : encryptionEnabled ? 'Encrypt & Upload' : 'Save to Drive'}</span>
+                    {encryptionEnabled ? (
+                      <Lock className="w-3.5 h-3.5" />
+                    ) : (
+                      <Upload className="w-3.5 h-3.5" />
+                    )}
+                    <span>
+                      {isUploading
+                        ? t('cloud.uploading', 'Uploading...')
+                        : encryptionEnabled
+                        ? t('cloud.encryptAndUpload', 'Encrypt & Upload')
+                        : t('cloud.backupNow', 'Save to Drive')}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -466,7 +586,7 @@ export const CloudSyncModal: React.FC = () => {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search cloud backups by name..."
+                    placeholder={t('cloud.searchPlaceholder', 'Search cloud backups by name...')}
                     className="w-full bg-slate-50 dark:bg-[#0b0f17] border border-slate-300 dark:border-white/[0.1] rounded-xl pl-9 pr-3.5 py-2 text-xs text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500"
                   />
                   {searchQuery && (
@@ -490,8 +610,18 @@ export const CloudSyncModal: React.FC = () => {
                       onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}
                       className="bg-transparent text-slate-800 dark:text-slate-300 text-xs focus:outline-none cursor-pointer"
                     >
-                      <option value="newest" className="bg-white dark:bg-[#0e1422] text-slate-900 dark:text-slate-100">Newest First</option>
-                      <option value="oldest" className="bg-white dark:bg-[#0e1422] text-slate-900 dark:text-slate-100">Oldest First</option>
+                      <option
+                        value="newest"
+                        className="bg-white dark:bg-[#0e1422] text-slate-900 dark:text-slate-100"
+                      >
+                        {t('cloud.newestFirst', 'Newest First')}
+                      </option>
+                      <option
+                        value="oldest"
+                        className="bg-white dark:bg-[#0e1422] text-slate-900 dark:text-slate-100"
+                      >
+                        {t('cloud.oldestFirst', 'Oldest First')}
+                      </option>
                     </select>
                   </div>
 
@@ -500,7 +630,7 @@ export const CloudSyncModal: React.FC = () => {
                     onClick={refreshBackups}
                     disabled={isLoading}
                     className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] transition-colors"
-                    title="Refresh list"
+                    title={t('cloud.refreshList', 'Refresh list')}
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-blue-500' : ''}`} />
                   </button>
@@ -520,11 +650,22 @@ export const CloudSyncModal: React.FC = () => {
                     ) : (
                       <Square className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                     )}
-                    <span>Select All ({filteredBackups.length})</span>
+                    <span>
+                      {t('cloud.selectAll', {
+                        count: filteredBackups.length,
+                        defaultValue: `Select All (${filteredBackups.length})`,
+                      })}
+                    </span>
                   </button>
 
                   {selectedIds.length > 0 && (
-                    <span className="text-slate-500">• {selectedIds.length} selected</span>
+                    <span className="text-slate-500">
+                      •{' '}
+                      {t('cloud.selectedCount', {
+                        count: selectedIds.length,
+                        defaultValue: `${selectedIds.length} selected`,
+                      })}
+                    </span>
                   )}
                 </div>
 
@@ -537,7 +678,7 @@ export const CloudSyncModal: React.FC = () => {
                       className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition-all"
                     >
                       <GitMerge className="w-3.5 h-3.5" />
-                      <span>Merge 2 Selected Files</span>
+                      <span>{t('cloud.mergeSelected', 'Merge 2 Selected Files')}</span>
                     </button>
                   )}
 
@@ -549,7 +690,12 @@ export const CloudSyncModal: React.FC = () => {
                       className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-300 border border-red-500/30 text-xs font-semibold transition-all"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      <span>Delete Selected ({selectedIds.length})</span>
+                      <span>
+                        {t('cloud.deleteSelected', {
+                          count: selectedIds.length,
+                          defaultValue: `Delete Selected (${selectedIds.length})`,
+                        })}
+                      </span>
                     </button>
                   )}
 
@@ -558,7 +704,7 @@ export const CloudSyncModal: React.FC = () => {
                     onClick={disconnect}
                     className="text-slate-500 hover:text-red-500 text-xs underline pl-2"
                   >
-                    Disconnect
+                    {t('cloud.disconnect', 'Disconnect')}
                   </button>
                 </div>
               </div>
@@ -568,7 +714,9 @@ export const CloudSyncModal: React.FC = () => {
                 <div className="text-center py-10 border border-slate-200 dark:border-white/[0.06] rounded-xl bg-slate-50 dark:bg-white/[0.01] space-y-2">
                   <HardDrive className="w-8 h-8 text-slate-400 dark:text-slate-600 mx-auto" />
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {searchQuery ? 'No backups match your search query.' : 'No backups found in Google Drive yet.'}
+                    {searchQuery
+                      ? t('cloud.noBackupsMatch', 'No backups match your search query.')
+                      : t('cloud.noBackupsFound', 'No backups found in Google Drive yet.')}
                   </p>
                 </div>
               ) : (
@@ -576,6 +724,8 @@ export const CloudSyncModal: React.FC = () => {
                   {filteredBackups.map((b) => {
                     const isSelected = selectedIds.includes(b.id);
                     const isEncrypted = b.name.endsWith('.enc');
+                    const isFromOther = b.deviceId && b.deviceId !== myDeviceId;
+
                     return (
                       <div
                         key={b.id}
@@ -599,16 +749,27 @@ export const CloudSyncModal: React.FC = () => {
                           </button>
 
                           <div className="space-y-0.5 truncate flex-1 min-w-0">
-                            <div className="font-semibold text-slate-800 dark:text-slate-200 truncate flex items-center space-x-1.5" title={isEncrypted ? 'Encrypted' : undefined}>
-                              {isEncrypted && <Lock className="w-3 h-3 text-amber-500 flex-shrink-0" />}
+                            <div
+                              className="font-semibold text-slate-800 dark:text-slate-200 truncate flex items-center space-x-1.5"
+                              title={isEncrypted ? 'Encrypted' : undefined}
+                            >
+                              {isEncrypted && (
+                                <Lock className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                              )}
                               <span className="truncate">{b.name}</span>
                             </div>
-                            <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center space-x-2">
+                            <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center space-x-2 flex-wrap">
                               <span>
-                                {b.createdTime ? new Date(b.createdTime).toLocaleString() : 'Recent'}
+                                {b.createdTime
+                                  ? new Date(b.createdTime).toLocaleString()
+                                  : t('cloud.recent', 'Recent')}
                               </span>
-                              {b.size && (
-                                <span>• {(parseInt(b.size, 10) / 1024).toFixed(1)} KB</span>
+                              {b.size && <span>• {(parseInt(b.size, 10) / 1024).toFixed(1)} KB</span>}
+                              {isFromOther && (
+                                <span className="inline-flex items-center space-x-1 px-1.5 py-0.2 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-[10px] font-medium">
+                                  <span>{t('cloud.fromOtherDevice', 'From another device')}</span>
+                                  {b.deviceName && <span>({b.deviceName})</span>}
+                                </span>
                               )}
                             </div>
                           </div>
@@ -620,24 +781,39 @@ export const CloudSyncModal: React.FC = () => {
                             onClick={() => handleRestoreClick(b)}
                             disabled={isLoading}
                             className={`inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${
-                              isEncrypted 
+                              isEncrypted
                                 ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30'
                                 : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30'
                             }`}
                           >
-                            {isEncrypted ? <Unlock className="w-3.5 h-3.5" /> : <Download className="w-3.5 h-3.5" />}
-                            <span>{isEncrypted ? 'Decrypt' : 'Load'}</span>
+                            {isEncrypted ? (
+                              <Unlock className="w-3.5 h-3.5" />
+                            ) : (
+                              <Download className="w-3.5 h-3.5" />
+                            )}
+                            <span>
+                              {isEncrypted
+                                ? t('cloud.decrypt', 'Decrypt')
+                                : t('cloud.load', 'Load')}
+                            </span>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => {
-                              if (window.confirm(`Delete "${b.name}" from Google Drive?`)) {
+                              if (
+                                window.confirm(
+                                  t('cloud.confirmDeleteOne', {
+                                    name: b.name,
+                                    defaultValue: `Delete "${b.name}" from Google Drive?`,
+                                  })
+                                )
+                              ) {
                                 deleteCloudBackup(b.id);
                               }
                             }}
                             className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
-                            title="Delete from cloud"
+                            title={t('cloud.deleteFromCloud', 'Delete from Google Drive')}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
