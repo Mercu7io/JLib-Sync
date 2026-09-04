@@ -133,14 +133,14 @@ export const Navbar: React.FC = () => {
           <div className="flex items-center justify-between h-[64px] min-h-[64px] gap-4">
             
             {/* ── Brand Logo & Title ───────────────────────────────── */}
-            <Link to="/" className="flex items-center space-x-2.5 group flex-shrink-0">
+            <Link to="/" className="flex items-center space-x-2 sm:space-x-2.5 group flex-shrink-0 min-w-0">
               <img
                 src="/logo.jpg"
                 alt="Panda JWL-Sync"
-                className="w-8 h-8 rounded-xl object-cover ring-1 ring-black/10 dark:ring-white/20 shadow-sm group-hover:scale-105 transition-transform"
+                className="w-8 h-8 rounded-xl object-cover ring-1 ring-black/10 dark:ring-white/20 shadow-sm group-hover:scale-105 transition-transform flex-shrink-0"
               />
               <span className="font-bold text-base sm:text-lg tracking-tight text-slate-900 dark:text-white flex items-center space-x-1">
-                <span>Panda</span>
+                <span className={activeLibraryFile && summary ? 'hidden min-[480px]:inline' : 'inline'}>Panda</span>
                 <span className="text-blue-600 dark:text-blue-400">JWL-Sync</span>
               </span>
             </Link>
@@ -464,11 +464,39 @@ export const Navbar: React.FC = () => {
             </div>
 
             {/* ── Mobile Header Controls (< md) ──────────────────── */}
-            <div className="flex md:hidden items-center space-x-2">
+            <div className="flex md:hidden items-center space-x-1.5 sm:space-x-2 min-w-0">
+              {/* Active Library Indicator on Mobile */}
+              {activeLibraryFile && summary && (
+                <div
+                  className="flex items-center space-x-1.5 bg-blue-500/10 dark:bg-blue-500/15 border border-blue-500/30 rounded-xl px-2.5 py-1.5 text-xs text-blue-700 dark:text-blue-300 max-w-[120px] min-[360px]:max-w-[145px] min-[420px]:max-w-[180px] min-w-0 shadow-sm"
+                  title={activeLibraryFile instanceof File && activeLibraryFile.name && activeLibraryFile.name !== summary.name
+                    ? `${summary.name} (${activeLibraryFile.name})`
+                    : summary.name}
+                >
+                  <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 animate-pulse" />
+                  <span
+                    className="font-semibold truncate text-xs"
+                    title={activeLibraryFile instanceof File && activeLibraryFile.name && activeLibraryFile.name !== summary.name
+                      ? `${summary.name} (${activeLibraryFile.name})`
+                      : summary.name}
+                  >
+                    {summary.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={closeLibrary}
+                    className="text-blue-400 hover:text-red-500 transition-colors p-0.5 flex-shrink-0 ml-0.5"
+                    title={t('nav.close', 'Close')}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={() => setShowCloudModal(true)}
-                className={`relative p-2 rounded-xl border text-xs font-semibold transition-all ${
+                className={`relative p-2 rounded-xl border text-xs font-semibold transition-all flex-shrink-0 ${
                   isConnected
                     ? isOnline
                       ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600'
@@ -505,7 +533,7 @@ export const Navbar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/[0.08] text-slate-800 dark:text-slate-200"
+                className="p-2 rounded-xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/[0.08] text-slate-800 dark:text-slate-200 flex-shrink-0"
                 aria-label="Menu"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -548,6 +576,73 @@ export const Navbar: React.FC = () => {
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {/* Active library status card or Quick Open in mobile drawer */}
+            {activeLibraryFile && summary ? (
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-blue-500/10 dark:bg-blue-500/15 border border-blue-500/30">
+                <div className="flex items-center space-x-2.5 min-w-0">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0 animate-pulse" />
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                      {t('landing.activeLibraryBanner', 'Active Library Loaded')}
+                    </p>
+                    <p
+                      className="text-xs font-bold text-blue-900 dark:text-blue-100 truncate"
+                      title={activeLibraryFile instanceof File && activeLibraryFile.name && activeLibraryFile.name !== summary.name
+                        ? `${summary.name} (${activeLibraryFile.name})`
+                        : summary.name}
+                    >
+                      {summary.name}
+                    </p>
+                    {summary.deviceName && (
+                      <p className="text-[10px] text-blue-700/80 dark:text-blue-300/80 truncate">
+                        {summary.deviceName}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center space-x-1.5 flex-shrink-0 ml-2">
+                  {isConnected && !isCurrentFileInCloud && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleQuickCloudUpload();
+                        setMobileMenuOpen(false);
+                      }}
+                      disabled={isUploading}
+                      className="p-2 rounded-xl bg-blue-600 text-white shadow-sm hover:bg-blue-500 transition-colors"
+                      title={t('nav.uploadToDrive', 'Upload to Drive')}
+                    >
+                      <Upload className={`w-3.5 h-3.5 ${isUploading ? 'animate-bounce' : ''}`} />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeLibrary();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="p-2 rounded-xl text-blue-500 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                    title={t('nav.close', 'Close')}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  fileInputRef.current?.click();
+                  setMobileMenuOpen(false);
+                }}
+                disabled={isLoading}
+                className="w-full flex items-center justify-center space-x-2 p-2.5 rounded-xl bg-slate-100/80 hover:bg-slate-200/80 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-white/[0.08] text-xs font-semibold transition-all"
+              >
+                <FolderOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span>{t('nav.openFile', 'Open File')}</span>
+              </button>
+            )}
 
             {/* Mobile Navigation links */}
             <nav className="space-y-1">
