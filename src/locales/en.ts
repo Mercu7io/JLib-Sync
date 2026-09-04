@@ -33,6 +33,10 @@ export const en = {
     light: 'Light',
     dark: 'Dark',
     system: 'System',
+    textSize: 'Text Size',
+    textSizeNormal: 'Normal',
+    textSizeLarge: 'Large',
+    textSizeXLarge: 'Huge',
     notes: 'notes',
     tags: 'tags',
     highlights: 'highlights',
@@ -338,15 +342,10 @@ export const en = {
 
 type EnSchema = typeof en;
 export type TranslationSchema = {
-  [K in keyof Omit<EnSchema, 'help' | 'stats' | 'explorer' | 'merge'>]: K extends 'cloud'
+  [K in keyof Omit<EnSchema, 'help' | 'stats' | 'explorer' | 'merge' | 'nav'>]: K extends 'cloud'
     ? Omit<EnSchema['cloud'], 'clientIdMissingTitle' | 'clientIdMissingDesc'> & {
         clientIdMissingTitle?: string;
         clientIdMissingDesc?: string;
-      }
-    : K extends 'nav'
-    ? Omit<EnSchema['nav'], 'help' | 'helpDesc'> & {
-        help?: string;
-        helpDesc?: string;
       }
     : EnSchema[K];
 } & {
@@ -354,4 +353,5 @@ export type TranslationSchema = {
   stats?: Partial<EnSchema['stats']>;
   explorer?: Partial<EnSchema['explorer']>;
   merge?: Partial<EnSchema['merge']>;
+  nav?: Partial<EnSchema['nav']>;
 };

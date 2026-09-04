@@ -80,3 +80,54 @@ export function initThemeWatcher(onChange?: (isDark: boolean) => void): () => vo
   }
   return () => {};
 }
+
+/**
+ * Text Size Manager
+ * Supports 'normal', 'large' (default), and 'xlarge'.
+ */
+export type TextSizeMode = 'normal' | 'large' | 'xlarge';
+
+const TEXT_SIZE_COOKIE_NAME = 'text_size';
+
+/**
+ * Reads the text size preference from cookie or localStorage.
+ * Defaults to 'large' (larger by default).
+ */
+export function getTextSizePreference(): TextSizeMode {
+  if (typeof document === 'undefined') return 'large';
+  try {
+    const match = document.cookie.match(new RegExp('(^|;\\s*)' + TEXT_SIZE_COOKIE_NAME + '=([^;]+)'));
+    if (match) {
+      const val = decodeURIComponent(match[2].trim().toLowerCase());
+      if (val === 'normal' || val === 'large' || val === 'xlarge') {
+        return val as TextSizeMode;
+      }
+    }
+    const saved = localStorage.getItem('jwsync_text_size');
+    if (saved === 'normal' || saved === 'large' || saved === 'xlarge') {
+      return saved as TextSizeMode;
+    }
+  } catch (_) {}
+  return 'large';
+}
+
+/**
+ * Saves the text size preference to cookie and localStorage, and applies it to <html>.
+ */
+export function setTextSizePreference(size: TextSizeMode): void {
+  if (typeof document === 'undefined') return;
+  try {
+    document.cookie = `${TEXT_SIZE_COOKIE_NAME}=${encodeURIComponent(size)};path=/;max-age=31536000;SameSite=Lax`;
+    localStorage.setItem('jwsync_text_size', size);
+  } catch (_) {}
+  applyTextSize(size);
+}
+
+/**
+ * Applies the 'data-text-size' attribute to <html>.
+ */
+export function applyTextSize(size: TextSizeMode): void {
+  if (typeof document === 'undefined') return;
+  document.documentElement.setAttribute('data-text-size', size);
+}
+

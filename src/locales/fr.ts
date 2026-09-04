@@ -35,6 +35,10 @@ export const fr: TranslationSchema = {
     "light": "Clair",
     "dark": "Sombre",
     "system": "Système",
+    "textSize": "Taille du texte",
+    "textSizeNormal": "Normale",
+    "textSizeLarge": "Grande",
+    "textSizeXLarge": "Très grande",
     "notes": "notes",
     "tags": "étiquettes",
     "highlights": "surlignages"

@@ -15,11 +15,12 @@ import {
   GitMerge,
   BookOpen,
   BarChart3,
+  Type,
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { useCloudStore } from '../../store/useCloudStore';
 import { SUPPORTED_LANGUAGES } from '../../lib/jw/locales';
-import { getThemePreference, setThemePreference, ThemeMode } from '../../lib/theme';
+import { getThemePreference, setThemePreference, ThemeMode, getTextSizePreference, setTextSizePreference, TextSizeMode } from '../../lib/theme';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 import { useTranslation } from 'react-i18next';
 
@@ -40,6 +41,7 @@ export const Navbar: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<ThemeMode>(getThemePreference());
+  const [textSize, setTextSize] = useState<TextSizeMode>(getTextSizePreference());
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const { isInstallable, installPWA } = usePWAInstall();
@@ -85,6 +87,11 @@ export const Navbar: React.FC = () => {
   const handleThemeChange = (newTheme: ThemeMode) => {
     setTheme(newTheme);
     setThemePreference(newTheme);
+  };
+
+  const handleTextSizeChange = (newSize: TextSizeMode) => {
+    setTextSize(newSize);
+    setTextSizePreference(newSize);
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -262,6 +269,57 @@ export const Navbar: React.FC = () => {
                         >
                           <Monitor className="w-3.5 h-3.5" />
                           <span>{t('nav.system', 'Auto')}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Text size selector */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
+                          <Type className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{t('nav.textSize', 'Text Size')}</span>
+                        </label>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-white/[0.04] p-1 rounded-xl border border-slate-200/60 dark:border-white/[0.06]">
+                        <button
+                          type="button"
+                          onClick={() => handleTextSizeChange('normal')}
+                          className={`flex items-center justify-center space-x-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                            textSize === 'normal'
+                              ? 'bg-white dark:bg-white/[0.1] text-blue-600 dark:text-blue-400 shadow-sm'
+                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                          }`}
+                          title={t('nav.textSizeNormal', 'Normal')}
+                        >
+                          <span className="text-[11px]">A</span>
+                          <span>{t('nav.textSizeNormal', 'Normal')}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleTextSizeChange('large')}
+                          className={`flex items-center justify-center space-x-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                            textSize === 'large'
+                              ? 'bg-white dark:bg-white/[0.1] text-blue-600 dark:text-blue-400 shadow-sm'
+                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                          }`}
+                          title={t('nav.textSizeLarge', 'Large')}
+                        >
+                          <span className="text-sm font-bold">A</span>
+                          <span>{t('nav.textSizeLarge', 'Large')}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleTextSizeChange('xlarge')}
+                          className={`flex items-center justify-center space-x-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                            textSize === 'xlarge'
+                              ? 'bg-white dark:bg-white/[0.1] text-blue-600 dark:text-blue-400 shadow-sm'
+                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                          }`}
+                          title={t('nav.textSizeXLarge', 'Huge')}
+                        >
+                          <span className="text-base font-black">A</span>
+                          <span>{t('nav.textSizeXLarge', 'Huge')}</span>
                         </button>
                       </div>
                     </div>
@@ -446,6 +504,46 @@ export const Navbar: React.FC = () => {
                 >
                   <Monitor className="w-3.5 h-3.5" />
                   <span>{t('nav.system', 'Auto')}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Text size selector in mobile drawer */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center space-x-1.5">
+                <Type className="w-3.5 h-3.5 text-slate-400" />
+                <span>{t('nav.textSize', 'Text Size')}</span>
+              </label>
+              <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-white/[0.04] p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => handleTextSizeChange('normal')}
+                  className={`flex items-center justify-center space-x-1 py-2 rounded-lg text-xs font-semibold ${
+                    textSize === 'normal' ? 'bg-white dark:bg-white/[0.1] text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500'
+                  }`}
+                >
+                  <span className="text-[11px]">A</span>
+                  <span>{t('nav.textSizeNormal', 'Normal')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTextSizeChange('large')}
+                  className={`flex items-center justify-center space-x-1 py-2 rounded-lg text-xs font-semibold ${
+                    textSize === 'large' ? 'bg-white dark:bg-white/[0.1] text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500'
+                  }`}
+                >
+                  <span className="text-sm font-bold">A</span>
+                  <span>{t('nav.textSizeLarge', 'Large')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTextSizeChange('xlarge')}
+                  className={`flex items-center justify-center space-x-1 py-2 rounded-lg text-xs font-semibold ${
+                    textSize === 'xlarge' ? 'bg-white dark:bg-white/[0.1] text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500'
+                  }`}
+                >
+                  <span className="text-base font-black">A</span>
+                  <span>{t('nav.textSizeXLarge', 'Huge')}</span>
                 </button>
               </div>
             </div>

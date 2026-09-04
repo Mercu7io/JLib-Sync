@@ -10,13 +10,14 @@ import { SharePage } from './pages/SharePage';
 import { HelpPage } from './pages/HelpPage';
 import { CloudSyncModal } from './components/cloud/CloudSyncModal';
 import { useCloudStore } from './store/useCloudStore';
-import { applyTheme, getThemePreference, initThemeWatcher } from './lib/theme';
+import { applyTheme, getThemePreference, initThemeWatcher, applyTextSize, getTextSizePreference } from './lib/theme';
 
 export const App: React.FC = () => {
   const { showCloudModal } = useCloudStore();
 
   React.useEffect(() => {
     applyTheme(getThemePreference());
+    applyTextSize(getTextSizePreference());
     const cleanup = initThemeWatcher();
     return cleanup;
   }, []);

@@ -26,6 +26,9 @@
           } else {
             document.documentElement.classList.remove('dark');
           }
+          var tm = document.cookie.match(/(^|;\s*)text_size=([^;]+)/);
+          var textSize = tm ? decodeURIComponent(tm[2]) : (localStorage.getItem('jwsync_text_size') || 'large');
+          document.documentElement.setAttribute('data-text-size', textSize);
         } catch (_) {}
       })();
     </script>
