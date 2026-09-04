@@ -83,32 +83,46 @@ export function initThemeWatcher(onChange?: (isDark: boolean) => void): () => vo
 
 /**
  * Text Size Manager
- * Supports 'normal', 'large' (default), and 'xlarge'.
+ * Supports 5 progressive scaling levels:
+ * Level 1: 14px (Compact)
+ * Level 2: 15.5px (Normal)
+ * Level 3: 17.5px (Large — Default)
+ * Level 4: 19.5px (Extra Large)
+ * Level 5: 21.5px (Huge / Accessibility)
  */
-export type TextSizeMode = 'normal' | 'large' | 'xlarge';
+export type TextSizeLevel = 1 | 2 | 3 | 4 | 5;
+export type TextSizeMode = TextSizeLevel | 'small' | 'normal' | 'large' | 'xlarge' | 'xxlarge';
 
 const TEXT_SIZE_COOKIE_NAME = 'text_size';
 
+export function normalizeTextSize(val: unknown): TextSizeLevel {
+  if (val === 1 || val === '1' || val === 'small') return 1;
+  if (val === 2 || val === '2' || val === 'normal') return 2;
+  if (val === 3 || val === '3' || val === 'large') return 3;
+  if (val === 4 || val === '4' || val === 'xlarge') return 4;
+  if (val === 5 || val === '5' || val === 'xxlarge') return 5;
+  const num = parseInt(String(val), 10);
+  if (num >= 1 && num <= 5) return num as TextSizeLevel;
+  return 3; // Default is 3 (Large)
+}
+
 /**
  * Reads the text size preference from cookie or localStorage.
- * Defaults to 'large' (larger by default).
+ * Defaults to 3 (Large).
  */
-export function getTextSizePreference(): TextSizeMode {
-  if (typeof document === 'undefined') return 'large';
+export function getTextSizePreference(): TextSizeLevel {
+  if (typeof document === 'undefined') return 3;
   try {
     const match = document.cookie.match(new RegExp('(^|;\\s*)' + TEXT_SIZE_COOKIE_NAME + '=([^;]+)'));
     if (match) {
-      const val = decodeURIComponent(match[2].trim().toLowerCase());
-      if (val === 'normal' || val === 'large' || val === 'xlarge') {
-        return val as TextSizeMode;
-      }
+      return normalizeTextSize(decodeURIComponent(match[2].trim().toLowerCase()));
     }
     const saved = localStorage.getItem('jwsync_text_size');
-    if (saved === 'normal' || saved === 'large' || saved === 'xlarge') {
-      return saved as TextSizeMode;
+    if (saved) {
+      return normalizeTextSize(saved);
     }
   } catch (_) {}
-  return 'large';
+  return 3;
 }
 
 /**
@@ -116,11 +130,12 @@ export function getTextSizePreference(): TextSizeMode {
  */
 export function setTextSizePreference(size: TextSizeMode): void {
   if (typeof document === 'undefined') return;
+  const level = normalizeTextSize(size);
   try {
-    document.cookie = `${TEXT_SIZE_COOKIE_NAME}=${encodeURIComponent(size)};path=/;max-age=31536000;SameSite=Lax`;
-    localStorage.setItem('jwsync_text_size', size);
+    document.cookie = `${TEXT_SIZE_COOKIE_NAME}=${level};path=/;max-age=31536000;SameSite=Lax`;
+    localStorage.setItem('jwsync_text_size', String(level));
   } catch (_) {}
-  applyTextSize(size);
+  applyTextSize(level);
 }
 
 /**
@@ -128,6 +143,7 @@ export function setTextSizePreference(size: TextSizeMode): void {
  */
 export function applyTextSize(size: TextSizeMode): void {
   if (typeof document === 'undefined') return;
-  document.documentElement.setAttribute('data-text-size', size);
+  const level = normalizeTextSize(size);
+  document.documentElement.setAttribute('data-text-size', String(level));
 }
 

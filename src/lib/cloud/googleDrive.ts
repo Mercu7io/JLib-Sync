@@ -68,7 +68,7 @@ export const getGoogleClientId = (): string => {
     if (window.__ENV__.GOOGLE_CLIENT_ID) return window.__ENV__.GOOGLE_CLIENT_ID;
     if (window.__ENV__.VITE_GOOGLE_CLIENT_ID) return window.__ENV__.VITE_GOOGLE_CLIENT_ID;
   }
-  return import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+  return (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID || '';
 };
 
 export class GoogleDriveManager {
@@ -105,6 +105,11 @@ export class GoogleDriveManager {
     });
   }
 
+  private authSuccessCallback?: (token: string) => void;
+  private sessionExpiredCallback?: () => void;
+  private isInitializing = false;
+  private isInitialized = false;
+
   private saveToken(token: string, expiresInSec = 3599): void {
     this.accessToken = token;
     // Set expiry with a 2-minute safety buffer
@@ -126,6 +131,31 @@ export class GoogleDriveManager {
     } catch (_) {}
   }
 
+  handleSessionExpired(): void {
+    this.accessToken = null;
+    this.folderId = null;
+    try {
+      localStorage.removeItem('jwsync_drive_token');
+      localStorage.removeItem('jwsync_drive_token_expires_at');
+      // Intentionally keep 'jwsync_drive_connected' = 'true' so the UI displays the reconnect prompt
+    } catch (_) {}
+    this.sessionExpiredCallback?.();
+  }
+
+  wasPreviouslyConnected(): boolean {
+    try {
+      return localStorage.getItem('jwsync_drive_connected') === 'true';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  isSessionExpired(): boolean {
+    if (this.isConnected()) return false;
+    if (!this.wasPreviouslyConnected()) return false;
+    return this.getStoredToken() === null;
+  }
+
   getStoredToken(): string | null {
     try {
       const token = localStorage.getItem('jwsync_drive_token');
@@ -140,8 +170,6 @@ export class GoogleDriveManager {
     return null;
   }
 
-  private authSuccessCallback?: (token: string) => void;
-
   hasTokenClient(): boolean {
     return !!this.tokenClient;
   }
@@ -150,49 +178,68 @@ export class GoogleDriveManager {
     return !!this.clientId;
   }
 
-  async init(onAuthSuccess?: (token: string) => void): Promise<void> {
+  async init(onAuthSuccess?: (token: string) => void, onSessionExpired?: () => void): Promise<void> {
     if (onAuthSuccess) {
       this.authSuccessCallback = onAuthSuccess;
+    }
+    if (onSessionExpired) {
+      this.sessionExpiredCallback = onSessionExpired;
+    }
+    if (this.isInitialized) {
+      const savedToken = this.getStoredToken();
+      if (savedToken) {
+        this.accessToken = savedToken;
+        this.authSuccessCallback?.(savedToken);
+      } else if (this.wasPreviouslyConnected()) {
+        this.sessionExpiredCallback?.();
+      }
+      return;
+    }
+    if (this.isInitializing) {
+      return;
     }
     if (!this.clientId) {
       return;
     }
-    await this.loadGoogleScript();
+    this.isInitializing = true;
+    try {
+      await this.loadGoogleScript();
 
-    if (!window.google?.accounts?.oauth2) {
-      throw new Error('Google Identity Services not ready.');
-    }
-
-    this.tokenClient = window.google.accounts.oauth2.initTokenClient({
-      client_id: this.clientId,
-      scope: this.scope,
-      callback: (tokenResponse: any) => {
-        if (tokenResponse.error) {
-          if (tokenResponse.type === 'no_session' || tokenResponse.error === 'user_logged_out') {
-            this.clearStoredToken();
-            return;
-          }
-          throw tokenResponse;
-        }
-        const expiresIn = Number(tokenResponse.expires_in) || 3599;
-        this.saveToken(tokenResponse.access_token, expiresIn);
-        this.authSuccessCallback?.(this.accessToken!);
-      },
-    });
-
-    // Check if we have an active, non-expired token in localStorage
-    const savedToken = this.getStoredToken();
-    if (savedToken) {
-      this.accessToken = savedToken;
-      this.authSuccessCallback?.(savedToken);
-    } else {
-      // If token is expired but user was previously connected, attempt a silent token refresh
-      const wasConnected = localStorage.getItem('jwsync_drive_connected');
-      if (wasConnected === 'true') {
-        try {
-          this.tokenClient.requestAccessToken({ prompt: '' });
-        } catch (_) {}
+      if (!window.google?.accounts?.oauth2) {
+        throw new Error('Google Identity Services not ready.');
       }
+
+      this.tokenClient = window.google.accounts.oauth2.initTokenClient({
+        client_id: this.clientId,
+        scope: this.scope,
+        callback: (tokenResponse: any) => {
+          if (tokenResponse.error) {
+            if (tokenResponse.type === 'no_session' || tokenResponse.error === 'user_logged_out' || tokenResponse.error === 'access_denied') {
+              this.handleSessionExpired();
+              return;
+            }
+            throw tokenResponse;
+          }
+          const expiresIn = Number(tokenResponse.expires_in) || 3599;
+          this.saveToken(tokenResponse.access_token, expiresIn);
+          this.authSuccessCallback?.(this.accessToken!);
+        },
+      });
+
+      this.isInitialized = true;
+
+      // Check if we have an active, non-expired token in localStorage
+      const savedToken = this.getStoredToken();
+      if (savedToken) {
+        this.accessToken = savedToken;
+        this.authSuccessCallback?.(savedToken);
+      } else if (this.wasPreviouslyConnected()) {
+        // Token is expired, but user was previously connected.
+        // DO NOT open any automatic popup! Just notify state.
+        this.handleSessionExpired();
+      }
+    } finally {
+      this.isInitializing = false;
     }
   }
 
@@ -204,24 +251,13 @@ export class GoogleDriveManager {
       throw new Error('Google Client ID is missing. Please configure VITE_GOOGLE_CLIENT_ID or GOOGLE_CLIENT_ID in your .env file or Docker environment.');
     }
     if (!this.tokenClient) {
-      await this.init(this.authSuccessCallback);
+      await this.init(this.authSuccessCallback, this.sessionExpiredCallback);
     }
     if (!this.tokenClient) {
       throw new Error('Google Drive client is not initialized. Please ensure Google services are accessible.');
     }
+    // Explicit user gesture: request access token with prompt: '' (select account/confirm without re-consent if already granted)
     this.tokenClient.requestAccessToken({ prompt: '' });
-  }
-
-  trySilentReconnect(onAuthSuccess?: (token: string) => void): void {
-    if (!this.tokenClient) return;
-    const wasConnected = localStorage.getItem('jwsync_drive_connected');
-    if (wasConnected === 'true') {
-      try {
-        this.tokenClient.requestAccessToken({ prompt: '' });
-      } catch (_) {
-        // silent token failed
-      }
-    }
   }
 
   logout(): void {
@@ -251,7 +287,7 @@ export class GoogleDriveManager {
     const response = await fetch(url, { ...options, headers });
     if (!response.ok) {
       if (response.status === 401) {
-        this.logout();
+        this.handleSessionExpired();
         throw new Error('Session expired. Please reconnect to Google Drive.');
       }
       throw new Error(`Google Drive API error (${response.status}): ${response.statusText}`);
@@ -383,6 +419,28 @@ export class GoogleDriveManager {
     });
   }
 
+  async renameBackup(fileId: string, newName: string): Promise<IDriveFile> {
+    const updated = await this.request(`/files/${fileId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name: newName }),
+    });
+
+    try {
+      const index = await this.fetchIndex();
+      if (index && index.backups) {
+        const item = index.backups.find((b) => b.fileId === fileId);
+        if (item) {
+          item.fileName = newName;
+          await this.saveIndex(index);
+        }
+      }
+    } catch (err) {
+      console.warn(`Failed to update cloud index for file ${fileId}:`, err);
+    }
+
+    return updated;
+  }
+
   async deleteBackup(fileId: string): Promise<void> {
     await this.request(`/files/${fileId}`, { method: 'DELETE' });
     try {
@@ -415,7 +473,8 @@ export class GoogleDriveManager {
   async uploadBackup(
     name: string,
     blob: Blob,
-    extraMetadata?: { sha256?: string; deviceId?: string; deviceName?: string }
+    extraMetadata?: { sha256?: string; deviceId?: string; deviceName?: string },
+    onProgress?: (percent: number) => void
   ): Promise<IDriveFile> {
     if (!this.folderId) await this.ensureSyncFolder();
 
@@ -437,19 +496,57 @@ export class GoogleDriveManager {
     });
 
     const uploadUrl = `https://www.googleapis.com/upload/drive/v3/files/${fileInfo.id}?uploadType=media`;
-    const response = await fetch(uploadUrl, {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${this.accessToken}`,
-        'Content-Type': blob.type || 'application/octet-stream',
-      },
-      body: blob,
-    });
 
-    if (!response.ok) {
-      throw new Error(`Upload to Google Drive failed: ${response.statusText}`);
+    let uploadedFile: any;
+    if (typeof XMLHttpRequest !== 'undefined') {
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PATCH', uploadUrl);
+        xhr.setRequestHeader('Authorization', `Bearer ${this.accessToken}`);
+        xhr.setRequestHeader('Content-Type', blob.type || 'application/octet-stream');
+
+        if (xhr.upload && onProgress) {
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable && e.total > 0) {
+              const percent = Math.min(99, Math.round((e.loaded / e.total) * 100));
+              onProgress(percent);
+            }
+          };
+        }
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              uploadedFile = JSON.parse(xhr.responseText);
+              onProgress?.(100);
+              resolve();
+            } catch (e) {
+              reject(new Error('Failed to parse Google Drive response'));
+            }
+          } else {
+            reject(new Error(`Upload to Google Drive failed: ${xhr.statusText || xhr.status}`));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error('Network error during Google Drive upload'));
+        xhr.send(blob);
+      });
+    } else {
+      const response = await fetch(uploadUrl, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${this.accessToken}`,
+          'Content-Type': blob.type || 'application/octet-stream',
+        },
+        body: blob,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Upload to Google Drive failed: ${response.statusText}`);
+      }
+      uploadedFile = await response.json();
+      onProgress?.(100);
     }
-    const uploadedFile = await response.json();
 
     // Update .jwsync_index.json
     try {

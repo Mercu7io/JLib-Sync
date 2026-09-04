@@ -30,7 +30,13 @@ interface IAppState {
   loadLibrary: (fileOrBlob: File | Blob, customName?: string) => Promise<void>;
   loadDemoLibrary: (demoKey?: any) => Promise<void>;
   closeLibrary: () => void;
-  updateActiveDatabase: (dbBytes: Uint8Array, manifest?: IManifest) => Promise<void>;
+  updateActiveDatabase: (
+    dbBytes: Uint8Array,
+    manifest?: IManifest,
+    extraFiles?: Map<string, Uint8Array>,
+    fileOrBlob?: File | Blob
+  ) => Promise<void>;
+  setIsLoading: (loading: boolean, message?: string) => void;
   setSelectedLanguage: (lang: string) => void;
   clearError: () => void;
 }
@@ -48,14 +54,27 @@ export const useAppStore = create<IAppState>((set, get) => ({
   error: null,
   selectedLanguage: getInitialLanguage(),
 
+  setIsLoading: (loading: boolean, message?: string) => {
+    set({
+      isLoading: loading,
+      loadingMessage: loading ? (message || '') : '',
+    });
+  },
+
   loadLibrary: async (fileOrBlob: File | Blob, customName?: string) => {
     try {
-      set({ isLoading: true, loadingMessage: 'Unpacking .jwlibrary archive...', error: null });
+      set({ isLoading: true, loadingMessage: 'Unpacking .jwlibrary archive (10%)...', error: null });
 
       const name = customName || (fileOrBlob instanceof File ? fileOrBlob.name : 'backup.jwlibrary');
-      const { manifest, dbBytes, fileSizeBytes, extraFiles } = await extractJwLibrary(fileOrBlob, name);
+      const { manifest, dbBytes, fileSizeBytes, extraFiles } = await extractJwLibrary(
+        fileOrBlob,
+        name,
+        (p) => {
+          set({ loadingMessage: `${p.stage} (${p.percent}%)` });
+        }
+      );
 
-      set({ loadingMessage: 'Initializing SQLite WebAssembly...' });
+      set({ loadingMessage: 'Initializing SQLite WebAssembly (96%)...' });
       const db = await openDatabase(dbBytes);
 
       // Free previous database if any
@@ -131,7 +150,12 @@ export const useAppStore = create<IAppState>((set, get) => ({
     });
   },
 
-  updateActiveDatabase: async (dbBytes: Uint8Array, manifest?: IManifest) => {
+  updateActiveDatabase: async (
+    dbBytes: Uint8Array,
+    manifest?: IManifest,
+    extraFiles?: Map<string, Uint8Array>,
+    fileOrBlob?: File | Blob
+  ) => {
     try {
       set({ isLoading: true, loadingMessage: 'Reloading updated database...' });
       const newDb = await openDatabase(dbBytes);
@@ -147,14 +171,22 @@ export const useAppStore = create<IAppState>((set, get) => ({
         throw new Error('No active manifest to update.');
       }
 
-      const summary = getLibrarySummary(newDb, finalManifest, dbBytes.byteLength);
+      const finalExtraFiles = extraFiles !== undefined ? extraFiles : get().extraFiles;
+      const finalFileOrBlob = fileOrBlob !== undefined ? fileOrBlob : get().activeLibraryFile;
+      const sizeBytes = finalFileOrBlob
+        ? (finalFileOrBlob instanceof File ? finalFileOrBlob.size : finalFileOrBlob.size)
+        : dbBytes.byteLength;
+
+      const summary = getLibrarySummary(newDb, finalManifest, sizeBytes);
       const activeSha256 = await computeSha256(dbBytes);
 
       set({
+        activeLibraryFile: finalFileOrBlob,
         activeLibraryBytes: dbBytes,
         activeDb: newDb,
         activeManifest: finalManifest,
         activeSha256,
+        extraFiles: finalExtraFiles,
         summary,
         isLoading: false,
         loadingMessage: '',

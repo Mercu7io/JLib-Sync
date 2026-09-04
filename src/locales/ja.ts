@@ -237,7 +237,16 @@ export const ja: TranslationSchema = {
     "cancel": "Cancel",
     "decryptAndLoad": "Decrypt & Load",
     "encryptionSettings": "Client-Side Encryption",
-    "encryptionWarning": "Warning: If you lose your password, your encrypted backups cannot be recovered."
+    "encryptionWarning": "Warning: If you lose your password, your encrypted backups cannot be recovered.",
+    "rename": "名前を変更",
+    "renameBackupTitle": "クラウドバックアップの名前を変更",
+    "renameBackupDesc": "このバックアップの新しいファイル名を入力してください:",
+    "renameSuccess": "バックアップの名前が正常に変更されました",
+    "renameErrorEmpty": "ファイル名を空にすることはできません",
+    "renameErrorInvalidChars": "ファイル名に使用できない文字が含まれています",
+    "renameErrorSame": "新しい名前は現在の名前と同じです",
+    "renameErrorTooLong": "ファイル名が長すぎます",
+    "extensionPreserved": "拡張子 {{ext}} は自動的に保持されます"
   },
   "footer": {
     "clientSide": "100% クライアント側 SQLite (WASM)",

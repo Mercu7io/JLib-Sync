@@ -237,7 +237,16 @@ export const nl: TranslationSchema = {
     "cancel": "Cancel",
     "decryptAndLoad": "Decrypt & Load",
     "encryptionSettings": "Client-Side Encryption",
-    "encryptionWarning": "Warning: If you lose your password, your encrypted backups cannot be recovered."
+    "encryptionWarning": "Warning: If you lose your password, your encrypted backups cannot be recovered.",
+    "rename": "Hernoemen",
+    "renameBackupTitle": "Cloudback-up hernoemen",
+    "renameBackupDesc": "Voer een nieuwe bestandsnaam in voor deze back-up:",
+    "renameSuccess": "Back-up succesvol hernoemd",
+    "renameErrorEmpty": "Bestandsnaam mag niet leeg zijn",
+    "renameErrorInvalidChars": "Bestandsnaam bevat ongeldige tekens",
+    "renameErrorSame": "De nieuwe naam is identiek aan de huidige naam",
+    "renameErrorTooLong": "Bestandsnaam is te lang",
+    "extensionPreserved": "De extensie {{ext}} wordt automatisch behouden"
   },
   "footer": {
     "clientSide": "100% Client-Side SQLite (WASM)",

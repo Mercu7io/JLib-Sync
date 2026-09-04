@@ -16,15 +16,19 @@ import {
   Tablet,
   X,
   RefreshCw,
+  RotateCcw,
+  Loader2,
   Sliders,
   HelpCircle,
   Tag,
 } from 'lucide-react';
 import { extractJwLibrary } from '../lib/jw/zip';
 import { openDatabase, getLibrarySummary, queryAll } from '../lib/jw/sqlite';
+import { computeSha256 } from '../lib/jw/hash';
 import { mergeJwLibraries, IMergeResult } from '../lib/jw/merge';
-import { IManifest, ILibrarySummary, IMergeProgress, TagManagerMap } from '../lib/jw/types';
+import { IManifest, ILibrarySummary, IMergeProgress, TagManagerMap, IMergeDetailedNote } from '../lib/jw/types';
 import { detectRealConflicts, IConflictItem } from '../lib/jw/conflicts';
+import { MergeDetailedBreakdown } from '../components/merge/MergeDetailedBreakdown';
 import { useAppStore } from '../store/useAppStore';
 import { useCloudStore } from '../store/useCloudStore';
 import { IDriveFile } from '../lib/cloud/googleDrive';
@@ -36,12 +40,13 @@ interface ILoadedFileState {
   manifest: IManifest;
   summary: ILibrarySummary;
   extraFiles: Map<string, Uint8Array>;
+  sha256: string;
 }
 
 export const LandingPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { updateActiveDatabase } = useAppStore();
+  const { updateActiveDatabase, setIsLoading: setAppIsLoading } = useAppStore();
   const {
     isConnected,
     backups,
@@ -49,11 +54,26 @@ export const LandingPage: React.FC = () => {
     connect,
     downloadCloudFile,
     backupCurrentLibrary,
+    backupFileDirectly,
+    isShaInCloud,
     isUploading,
   } = useCloudStore();
 
   const [primaryFile, setPrimaryFile] = useState<ILoadedFileState | null>(null);
   const [secondaryFile, setSecondaryFile] = useState<ILoadedFileState | null>(null);
+  const [isLoadingPrimary, setIsLoadingPrimary] = useState<boolean>(false);
+  const [isLoadingSecondary, setIsLoadingSecondary] = useState<boolean>(false);
+  const [primaryProgress, setPrimaryProgress] = useState<{ stage: string; percent: number } | null>(null);
+  const [secondaryProgress, setSecondaryProgress] = useState<{ stage: string; percent: number } | null>(null);
+  const [isOpenInAppLoading, setIsOpenInAppLoading] = useState<boolean>(false);
+  const [isLoadingAppPrimary, setIsLoadingAppPrimary] = useState<boolean>(false);
+  const [isLoadingAppSecondary, setIsLoadingAppSecondary] = useState<boolean>(false);
+  const [isUploadingPrimary, setIsUploadingPrimary] = useState<boolean>(false);
+  const [isUploadingSecondary, setIsUploadingSecondary] = useState<boolean>(false);
+  const [uploadProgressPrimary, setUploadProgressPrimary] = useState<number | null>(null);
+  const [uploadProgressSecondary, setUploadProgressSecondary] = useState<number | null>(null);
+  const [isDraggingPrimary, setIsDraggingPrimary] = useState<boolean>(false);
+  const [isDraggingSecondary, setIsDraggingSecondary] = useState<boolean>(false);
   const [outputName, setOutputName] = useState<string>('Merge_Merged_Study.jwlibrary');
 
   // Conflict Resolution State
@@ -73,8 +93,67 @@ export const LandingPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [cloudSaveSuccess, setCloudSaveSuccess] = useState<boolean>(false);
 
+  // Detailed View, Exclusion & Note Override State
+  const [showDetails, setShowDetails] = useState<boolean>(false);
+  const [candidateNotes, setCandidateNotes] = useState<IMergeDetailedNote[]>([]);
+  const [candidateDuplicates, setCandidateDuplicates] = useState<IMergeDetailedNote[]>([]);
+  const [excludedNoteGuids, setExcludedNoteGuids] = useState<Set<string>>(new Set());
+  const [lastMergedExcludedGuids, setLastMergedExcludedGuids] = useState<Set<string>>(new Set());
+  const [noteOverrides, setNoteOverrides] = useState<Record<string, { title?: string; content?: string }>>({});
+  const [lastMergedNoteOverrides, setLastMergedNoteOverrides] = useState<Record<string, { title?: string; content?: string }>>({});
+
   const primaryInputRef = useRef<HTMLInputElement>(null);
   const secondaryInputRef = useRef<HTMLInputElement>(null);
+  const primaryLoadingRef = useRef<boolean>(false);
+  const secondaryLoadingRef = useRef<boolean>(false);
+  const resultRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to success result when merge completes
+  useEffect(() => {
+    if (mergeResult) {
+      resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [mergeResult]);
+
+  const toggleNoteExclusion = (guid: string) => {
+    setExcludedNoteGuids((prev) => {
+      const next = new Set(prev);
+      if (next.has(guid)) {
+        next.delete(guid);
+      } else {
+        next.add(guid);
+      }
+      return next;
+    });
+  };
+
+  const handleSetNoteOverride = (guid: string, override: { title?: string; content?: string } | null) => {
+    setNoteOverrides((prev) => {
+      const next = { ...prev };
+      if (!override) {
+        delete next[guid];
+      } else {
+        next[guid] = override;
+      }
+      return next;
+    });
+  };
+
+  const hasUnsavedChanges =
+    excludedNoteGuids.size !== lastMergedExcludedGuids.size ||
+    Array.from(excludedNoteGuids).some((g) => !lastMergedExcludedGuids.has(g)) ||
+    JSON.stringify(noteOverrides) !== JSON.stringify(lastMergedNoteOverrides);
+
+  const resetMergeDetailsState = () => {
+    setMergeResult(null);
+    setShowDetails(false);
+    setCandidateNotes([]);
+    setCandidateDuplicates([]);
+    setExcludedNoteGuids(new Set());
+    setLastMergedExcludedGuids(new Set());
+    setNoteOverrides({});
+    setLastMergedNoteOverrides({});
+  };
 
   // Check if preloaded from CloudSyncModal
   useEffect(() => {
@@ -93,24 +172,82 @@ export const LandingPage: React.FC = () => {
   }, []);
 
   const loadPrimary = async (file: File) => {
-    setErrorMessage(null);
-    const { manifest, dbBytes, fileSizeBytes, extraFiles } = await extractJwLibrary(file);
-    const db = await openDatabase(dbBytes);
-    const summary = getLibrarySummary(db, manifest, fileSizeBytes);
-    db.close();
+    try {
+      primaryLoadingRef.current = true;
+      setIsLoadingPrimary(true);
+      setPrimaryProgress({ stage: t('merge.progressUnpacking', 'Unpacking backup archive...'), percent: 10 });
+      setAppIsLoading(true, t('merge.loadingSourceA', 'Loading Source A into app...'));
+      setErrorMessage(null);
+      resetMergeDetailsState();
 
-    setPrimaryFile({ file, dbBytes, manifest, summary, extraFiles });
-    setOutputName(`Merge_${(manifest.name || 'Merged').replace(/[^a-z0-9_\-]/gi, '_')}.jwlibrary`);
+      const arrayBuffer = await file.arrayBuffer();
+      const fileBytes = new Uint8Array(arrayBuffer);
+      setPrimaryProgress({ stage: t('merge.progressChecksum', 'Verifying integrity...'), percent: 30 });
+      const sha256 = await computeSha256(fileBytes);
+
+      const { manifest, dbBytes, fileSizeBytes, extraFiles } = await extractJwLibrary(
+        file,
+        file.name,
+        (p) => {
+          setPrimaryProgress({ stage: p.stage, percent: p.percent });
+          setAppIsLoading(true, `Backup 1: ${p.stage} (${p.percent}%)`);
+        }
+      );
+
+      setPrimaryProgress({ stage: t('merge.progressSqlite', 'Analyzing SQLite database...'), percent: 90 });
+      const db = await openDatabase(dbBytes);
+      const summary = getLibrarySummary(db, manifest, fileSizeBytes);
+      db.close();
+
+      setPrimaryFile({ file, dbBytes, manifest, summary, extraFiles, sha256 });
+      setOutputName(`Merge_${(manifest.name || 'Merged').replace(/[^a-z0-9_\-]/gi, '_')}.jwlibrary`);
+      setPrimaryProgress({ stage: t('merge.progressReady', 'Ready!'), percent: 100 });
+    } catch (err: any) {
+      setErrorMessage(t('merge.loadPrimaryError', 'Failed to load Source A: ') + (err?.message || String(err)));
+    } finally {
+      setIsLoadingPrimary(false);
+      primaryLoadingRef.current = false;
+      setAppIsLoading(false);
+    }
   };
 
   const loadSecondary = async (file: File) => {
-    setErrorMessage(null);
-    const { manifest, dbBytes, fileSizeBytes, extraFiles } = await extractJwLibrary(file);
-    const db = await openDatabase(dbBytes);
-    const summary = getLibrarySummary(db, manifest, fileSizeBytes);
-    db.close();
+    try {
+      secondaryLoadingRef.current = true;
+      setIsLoadingSecondary(true);
+      setSecondaryProgress({ stage: t('merge.progressUnpacking', 'Unpacking backup archive...'), percent: 10 });
+      setAppIsLoading(true, t('merge.loadingSourceB', 'Loading Source B into app...'));
+      setErrorMessage(null);
+      resetMergeDetailsState();
 
-    setSecondaryFile({ file, dbBytes, manifest, summary, extraFiles });
+      const arrayBuffer = await file.arrayBuffer();
+      const fileBytes = new Uint8Array(arrayBuffer);
+      setSecondaryProgress({ stage: t('merge.progressChecksum', 'Verifying integrity...'), percent: 30 });
+      const sha256 = await computeSha256(fileBytes);
+
+      const { manifest, dbBytes, fileSizeBytes, extraFiles } = await extractJwLibrary(
+        file,
+        file.name,
+        (p) => {
+          setSecondaryProgress({ stage: p.stage, percent: p.percent });
+          setAppIsLoading(true, `Backup 2: ${p.stage} (${p.percent}%)`);
+        }
+      );
+
+      setSecondaryProgress({ stage: t('merge.progressSqlite', 'Analyzing SQLite database...'), percent: 90 });
+      const db = await openDatabase(dbBytes);
+      const summary = getLibrarySummary(db, manifest, fileSizeBytes);
+      db.close();
+
+      setSecondaryFile({ file, dbBytes, manifest, summary, extraFiles, sha256 });
+      setSecondaryProgress({ stage: t('merge.progressReady', 'Ready!'), percent: 100 });
+    } catch (err: any) {
+      setErrorMessage(t('merge.loadSecondaryError', 'Failed to load Source B: ') + (err?.message || String(err)));
+    } finally {
+      setIsLoadingSecondary(false);
+      secondaryLoadingRef.current = false;
+      setAppIsLoading(false);
+    }
   };
 
   // Inspect Potential Conflicts when both files are loaded
@@ -201,14 +338,116 @@ export const LandingPage: React.FC = () => {
     }
   };
 
-  const handleExecuteMerge = async () => {
+  const handleOpenPrimaryInApp = async () => {
+    if (!primaryFile) return;
+    try {
+      setIsLoadingAppPrimary(true);
+      await updateActiveDatabase(primaryFile.dbBytes, primaryFile.manifest, primaryFile.extraFiles, primaryFile.file);
+      navigate('/explorer');
+    } catch (err: any) {
+      setErrorMessage(t('merge.loadPrimaryError', 'Failed to load into app: ') + (err?.message || String(err)));
+    } finally {
+      setIsLoadingAppPrimary(false);
+    }
+  };
+
+  const handleOpenSecondaryInApp = async () => {
+    if (!secondaryFile) return;
+    try {
+      setIsLoadingAppSecondary(true);
+      await updateActiveDatabase(secondaryFile.dbBytes, secondaryFile.manifest, secondaryFile.extraFiles, secondaryFile.file);
+      navigate('/explorer');
+    } catch (err: any) {
+      setErrorMessage(t('merge.loadSecondaryError', 'Failed to load into app: ') + (err?.message || String(err)));
+    } finally {
+      setIsLoadingAppSecondary(false);
+    }
+  };
+
+  const handleUploadPrimaryToCloud = async () => {
+    if (!primaryFile) return;
+    try {
+      setIsUploadingPrimary(true);
+      setUploadProgressPrimary(0);
+      await backupFileDirectly(
+        primaryFile.file,
+        primaryFile.file.name,
+        primaryFile.sha256,
+        (percent) => setUploadProgressPrimary(percent)
+      );
+    } catch (err: any) {
+      setErrorMessage(t('cloud.uploadError', 'Cloud upload error: ') + (err?.message || String(err)));
+    } finally {
+      setIsUploadingPrimary(false);
+      setUploadProgressPrimary(null);
+    }
+  };
+
+  const handleUploadSecondaryToCloud = async () => {
+    if (!secondaryFile) return;
+    try {
+      setIsUploadingSecondary(true);
+      setUploadProgressSecondary(0);
+      await backupFileDirectly(
+        secondaryFile.file,
+        secondaryFile.file.name,
+        secondaryFile.sha256,
+        (percent) => setUploadProgressSecondary(percent)
+      );
+    } catch (err: any) {
+      setErrorMessage(t('cloud.uploadError', 'Cloud upload error: ') + (err?.message || String(err)));
+    } finally {
+      setIsUploadingSecondary(false);
+      setUploadProgressSecondary(null);
+    }
+  };
+
+  const handleResetMerge = () => {
+    setPrimaryFile(null);
+    setSecondaryFile(null);
+    setPrimaryProgress(null);
+    setSecondaryProgress(null);
+    setUploadProgressPrimary(null);
+    setUploadProgressSecondary(null);
+    setConflicts([]);
+    setMergeProgress(null);
+    setMergeResult(null);
+    setErrorMessage(null);
+    setCloudSaveSuccess(false);
+    setShowDetails(false);
+    setCandidateNotes([]);
+    setCandidateDuplicates([]);
+    setExcludedNoteGuids(new Set());
+    setLastMergedExcludedGuids(new Set());
+    setNoteOverrides({});
+    setLastMergedNoteOverrides({});
+    setTagImportedNotes(false);
+    setCustomImportTagName('From Merge');
+    setOutputName('Merge_Merged_Study.jwlibrary');
+    if (primaryInputRef.current) primaryInputRef.current.value = '';
+    if (secondaryInputRef.current) secondaryInputRef.current.value = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleExecuteMerge = async (
+    exclusionsToUse?: Set<string>,
+    overridesToUse?: Record<string, { title?: string; content?: string }>
+  ) => {
     if (!primaryFile || !secondaryFile) return;
 
     try {
       setIsMerging(true);
       setErrorMessage(null);
-      setMergeResult(null);
       setCloudSaveSuccess(false);
+      setMergeProgress({
+        stage: t('merge.progressInit', 'Initializing merge engine...'),
+        current: 0,
+        total: 100,
+      });
+      setAppIsLoading(true, t('merge.merging', 'Merging...'));
+
+      const effectiveExclusions = (exclusionsToUse instanceof Set) ? exclusionsToUse : excludedNoteGuids;
+      const effectiveOverrides = overridesToUse !== undefined ? overridesToUse : noteOverrides;
 
       const tagRules: TagManagerMap = {};
 
@@ -233,18 +472,30 @@ export const LandingPage: React.FC = () => {
           doctorCheck: true,
           conflictResolutions,
           secondaryNoteTag: tagImportedNotes ? (customImportTagName.trim() || 'From Merge') : undefined,
+          excludedNoteGuids: Array.from(effectiveExclusions),
+          noteOverrides: effectiveOverrides,
         },
         tagRules,
-        (p) => setMergeProgress(p),
+        (p) => {
+          setMergeProgress(p);
+          const pct = Math.round((p.current / p.total) * 100);
+          setAppIsLoading(true, `${p.stage} (${pct}%)`);
+        },
         primaryFile.extraFiles
       );
 
       setMergeResult(result);
-      setIsMerging(false);
+      setLastMergedExcludedGuids(new Set(effectiveExclusions));
+      setLastMergedNoteOverrides({ ...effectiveOverrides });
+
+      setCandidateNotes((prev) => (prev.length === 0 ? result.details.addedNotes : prev));
+      setCandidateDuplicates((prev) => (prev.length === 0 ? result.details.unifiedDuplicates : prev));
     } catch (err: any) {
-      setIsMerging(false);
       const msg = err instanceof Error ? err.message : (typeof err === 'string' ? err : (err?.message || JSON.stringify(err)));
       setErrorMessage(`Merge failed: ${msg}`);
+    } finally {
+      setIsMerging(false);
+      setAppIsLoading(false);
     }
   };
 
@@ -262,18 +513,36 @@ export const LandingPage: React.FC = () => {
 
   const handleOpenInExplorer = async () => {
     if (!mergeResult) return;
-    await updateActiveDatabase(mergeResult.mergedDbBytes, mergeResult.manifest);
-    navigate('/explorer');
+    try {
+      setIsOpenInAppLoading(true);
+      await updateActiveDatabase(
+        mergeResult.mergedDbBytes,
+        mergeResult.manifest,
+        mergeResult.extraFiles,
+        mergeResult.mergedBlob
+      );
+      navigate('/explorer');
+    } catch (err: any) {
+      setErrorMessage(t('merge.loadPrimaryError', 'Failed to load into app: ') + (err?.message || String(err)));
+    } finally {
+      setIsOpenInAppLoading(false);
+    }
   };
 
   const handleCloudSaveMerged = async () => {
     if (!mergeResult) return;
     try {
-      await updateActiveDatabase(mergeResult.mergedDbBytes, mergeResult.manifest);
-      await backupCurrentLibrary(outputName);
+      await updateActiveDatabase(
+        mergeResult.mergedDbBytes,
+        mergeResult.manifest,
+        mergeResult.extraFiles,
+        mergeResult.mergedBlob
+      );
+      const sha256 = await computeSha256(mergeResult.mergedDbBytes);
+      await backupFileDirectly(mergeResult.mergedBlob, outputName, sha256);
       setCloudSaveSuccess(true);
-    } catch (err) {
-      alert('Cloud save error: ' + (err as Error).message);
+    } catch (err: any) {
+      setErrorMessage(t('cloud.saveError', 'Cloud save error: ') + (err?.message || String(err)));
     }
   };
 
@@ -314,13 +583,53 @@ export const LandingPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-11 gap-4 items-center">
           
           {/* LEFT CARD: UNIVERSAL PHONE */}
-          <div className="md:col-span-5 rounded-3xl border border-slate-200/90 dark:border-white/[0.08] bg-white/90 dark:bg-[#101625]/85 p-6 space-y-4 backdrop-blur-xl shadow-lg shadow-slate-900/5 dark:shadow-black/40 transition-all hover:border-blue-500/40">
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDraggingPrimary(true);
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDraggingPrimary(false);
+            }}
+            onDrop={async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDraggingPrimary(false);
+              const files = Array.from(e.dataTransfer.files).filter(
+                (f) => f.name.endsWith('.jwlibrary') || f.name.endsWith('.zip')
+              );
+              if (files.length === 1) {
+                await loadPrimary(files[0]);
+              } else if (files.length >= 2) {
+                await loadPrimary(files[0]);
+                await loadSecondary(files[1]);
+              }
+            }}
+            className={`md:col-span-5 rounded-3xl border transition-all p-6 space-y-4 backdrop-blur-xl shadow-lg shadow-slate-900/5 dark:shadow-black/40 ${
+              isDraggingPrimary
+                ? 'border-blue-500 ring-2 ring-blue-500/30 bg-blue-50/20 dark:bg-blue-950/20'
+                : 'border-slate-200/90 dark:border-white/[0.08] bg-white/90 dark:bg-[#101625]/85 hover:border-blue-500/40'
+            }`}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                 <Smartphone className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <span>{t('merge.backup1', 'Backup 1')}</span>
               </div>
-              {primaryFile ? (
+              {isLoadingPrimary ? (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25 flex items-center space-x-1">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>{primaryProgress?.percent ?? 10}%</span>
+                </span>
+              ) : isUploadingPrimary ? (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25 flex items-center space-x-1">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>Cloud {uploadProgressPrimary ?? 0}%</span>
+                </span>
+              ) : primaryFile ? (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 flex items-center space-x-1">
                   <Check className="w-3 h-3" />
                   <span>{t('common.loaded', 'Loaded')}</span>
@@ -338,7 +647,30 @@ export const LandingPage: React.FC = () => {
               onChange={handlePrimaryUpload}
             />
 
-            {!primaryFile ? (
+            {isLoadingPrimary ? (
+              <div className="border-2 border-dashed border-blue-400 dark:border-blue-600/60 rounded-2xl p-6 text-center space-y-3 bg-blue-50/40 dark:bg-blue-950/20">
+                <div className="flex items-center justify-center space-x-2 text-blue-600 dark:text-blue-400">
+                  <div className="relative">
+                    <div className="w-8 h-8 rounded-full border-2 border-blue-600/30 border-t-blue-600 animate-spin" />
+                    <Loader2 className="w-4 h-4 text-blue-600 animate-spin absolute inset-0 m-auto" />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    {primaryProgress?.stage || t('merge.loadingBackup', 'Reading backup archive...')}
+                  </div>
+                  <div className="text-[11px] font-mono text-blue-600 dark:text-blue-400 font-semibold">
+                    {primaryProgress?.percent ?? 10}%
+                  </div>
+                </div>
+                <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="bg-blue-600 h-full transition-all duration-200 rounded-full"
+                    style={{ width: `${primaryProgress?.percent ?? 10}%` }}
+                  />
+                </div>
+              </div>
+            ) : !primaryFile ? (
               <div
                 onClick={() => primaryInputRef.current?.click()}
                 className="group border-2 border-dashed border-slate-200 dark:border-white/[0.08] hover:border-blue-500/50 rounded-2xl p-7 text-center cursor-pointer transition-all space-y-3 bg-slate-50/60 hover:bg-blue-50/20 dark:bg-white/[0.01] dark:hover:bg-white/[0.03]"
@@ -349,18 +681,21 @@ export const LandingPage: React.FC = () => {
                   <Upload className="w-4 h-4 text-slate-400 group-hover:text-blue-500 dark:text-slate-500 dark:group-hover:text-blue-400" />
                   <div className="w-4 h-0.5 rounded-full bg-slate-300 dark:bg-slate-600 mb-0.5" />
                 </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                    {t('merge.dropHere', 'Drop .jwlibrary or browse')}
+                <div className="space-y-1">
+                  <div className="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-snug">
+                    {t('merge.dropHere', 'Drop .jwlibrary file here or click to browse')}
                   </div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{t('merge.backup1Desc', 'First study backup')}</div>
+                  <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">{t('merge.backup1Desc', 'First study backup')}</div>
                 </div>
               </div>
             ) : (
               <div className="bg-slate-50/80 dark:bg-[#0b0f19] border border-slate-200/80 dark:border-white/[0.06] rounded-2xl p-4 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0">
-                    <div className="font-bold text-xs text-slate-900 dark:text-white truncate max-w-[200px]">
+                    <div
+                      className="font-bold text-xs text-slate-900 dark:text-white truncate max-w-[200px] cursor-help"
+                      title={primaryFile.file?.name ? `${primaryFile.summary.name} (${primaryFile.file.name})` : primaryFile.summary.name}
+                    >
                       {primaryFile.summary.name}
                     </div>
                     <div className="text-[10px] text-slate-500 dark:text-slate-400">
@@ -383,6 +718,52 @@ export const LandingPage: React.FC = () => {
                   <span className="font-semibold text-slate-800 dark:text-slate-200">{primaryFile.summary.tagsCount}</span> tags
                   <span>•</span>
                   <span className="font-semibold text-slate-800 dark:text-slate-200">{primaryFile.summary.playlistsCount}</span> playlists
+                </div>
+
+                <div className="pt-2 flex items-center justify-between border-t border-slate-200/60 dark:border-white/[0.04] gap-2 flex-wrap">
+                  {isConnected && (
+                    isShaInCloud(primaryFile.sha256) ? (
+                      <span className="inline-flex items-center space-x-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                        <Check className="w-3 h-3" />
+                        <span>{t('merge.savedDrive', 'Saved on Google Drive ✓')}</span>
+                      </span>
+                    ) : (
+                      <div className="flex flex-col gap-1">
+                        <button
+                          type="button"
+                          onClick={handleUploadPrimaryToCloud}
+                          disabled={isUploadingPrimary}
+                          className="inline-flex items-center space-x-1.5 text-[10px] font-semibold text-blue-600 dark:text-blue-400 hover:underline bg-blue-50 dark:bg-blue-950/30 px-2.5 py-0.5 rounded-full border border-blue-300 dark:border-blue-700/50"
+                        >
+                          {isUploadingPrimary ? <Loader2 className="w-3 h-3 animate-spin" /> : <Cloud className="w-3 h-3" />}
+                          <span>
+                            {isUploadingPrimary
+                              ? `${t('merge.savingDrive', 'Uploading...')} ${uploadProgressPrimary ?? 0}%`
+                              : t('merge.saveDrive', 'Upload to Drive')}
+                          </span>
+                        </button>
+                        {isUploadingPrimary && (
+                          <div className="w-full bg-blue-100 dark:bg-blue-950 rounded-full h-1 overflow-hidden">
+                            <div
+                              className="bg-blue-600 dark:bg-blue-400 h-full transition-all duration-150 rounded-full"
+                              style={{ width: `${Math.max(5, uploadProgressPrimary ?? 0)}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleOpenPrimaryInApp}
+                    disabled={isLoadingAppPrimary}
+                    className="ml-auto inline-flex items-center space-x-1 text-[10px] font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] px-2.5 py-1 rounded-lg transition-all"
+                    title={t('merge.openInAppTooltip', 'Load this backup as active database in the application')}
+                  >
+                    {isLoadingAppPrimary ? <Loader2 className="w-3 h-3 animate-spin" /> : <Compass className="w-3 h-3" />}
+                    <span>{isLoadingAppPrimary ? t('merge.loadingIntoApp', 'Loading...') : t('merge.openInApp', 'Open in App')}</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -411,13 +792,53 @@ export const LandingPage: React.FC = () => {
           </div>
 
           {/* RIGHT CARD: UNIVERSAL TABLET */}
-          <div className="md:col-span-5 rounded-3xl border border-slate-200/90 dark:border-white/[0.08] bg-white/90 dark:bg-[#101625]/85 p-6 space-y-4 backdrop-blur-xl shadow-lg shadow-slate-900/5 dark:shadow-black/40 transition-all hover:border-sky-500/40">
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDraggingSecondary(true);
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDraggingSecondary(false);
+            }}
+            onDrop={async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDraggingSecondary(false);
+              const files = Array.from(e.dataTransfer.files).filter(
+                (f) => f.name.endsWith('.jwlibrary') || f.name.endsWith('.zip')
+              );
+              if (files.length === 1) {
+                await loadSecondary(files[0]);
+              } else if (files.length >= 2) {
+                await loadPrimary(files[0]);
+                await loadSecondary(files[1]);
+              }
+            }}
+            className={`md:col-span-5 rounded-3xl border transition-all p-6 space-y-4 backdrop-blur-xl shadow-lg shadow-slate-900/5 dark:shadow-black/40 ${
+              isDraggingSecondary
+                ? 'border-sky-500 ring-2 ring-sky-500/30 bg-sky-50/20 dark:bg-sky-950/20'
+                : 'border-slate-200/90 dark:border-white/[0.08] bg-white/90 dark:bg-[#101625]/85 hover:border-sky-500/40'
+            }`}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                 <Tablet className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                 <span>{t('merge.backup2', 'Backup 2')}</span>
               </div>
-              {secondaryFile ? (
+              {isLoadingSecondary ? (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/25 flex items-center space-x-1">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>{secondaryProgress?.percent ?? 10}%</span>
+                </span>
+              ) : isUploadingSecondary ? (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/25 flex items-center space-x-1">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>Cloud {uploadProgressSecondary ?? 0}%</span>
+                </span>
+              ) : secondaryFile ? (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 flex items-center space-x-1">
                   <Check className="w-3 h-3" />
                   <span>{t('common.loaded', 'Loaded')}</span>
@@ -435,7 +856,30 @@ export const LandingPage: React.FC = () => {
               onChange={handleSecondaryUpload}
             />
 
-            {!secondaryFile ? (
+            {isLoadingSecondary ? (
+              <div className="border-2 border-dashed border-sky-400 dark:border-sky-600/60 rounded-2xl p-6 text-center space-y-3 bg-sky-50/40 dark:bg-sky-950/20">
+                <div className="flex items-center justify-center space-x-2 text-sky-600 dark:text-sky-400">
+                  <div className="relative">
+                    <div className="w-8 h-8 rounded-full border-2 border-sky-600/30 border-t-sky-600 animate-spin" />
+                    <Loader2 className="w-4 h-4 text-sky-600 animate-spin absolute inset-0 m-auto" />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    {secondaryProgress?.stage || t('merge.loadingBackup', 'Reading backup archive...')}
+                  </div>
+                  <div className="text-[11px] font-mono text-sky-600 dark:text-sky-400 font-semibold">
+                    {secondaryProgress?.percent ?? 10}%
+                  </div>
+                </div>
+                <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="bg-sky-600 h-full transition-all duration-200 rounded-full"
+                    style={{ width: `${secondaryProgress?.percent ?? 10}%` }}
+                  />
+                </div>
+              </div>
+            ) : !secondaryFile ? (
               <div
                 onClick={() => secondaryInputRef.current?.click()}
                 className="group border-2 border-dashed border-slate-200 dark:border-white/[0.08] hover:border-sky-500/50 rounded-2xl p-7 text-center cursor-pointer transition-all space-y-3 bg-slate-50/60 hover:bg-sky-50/20 dark:bg-white/[0.01] dark:hover:bg-white/[0.03]"
@@ -446,18 +890,21 @@ export const LandingPage: React.FC = () => {
                   <Upload className="w-4 h-4 text-slate-400 group-hover:text-sky-500 dark:text-slate-500 dark:group-hover:text-sky-400" />
                   <div className="w-6 h-0.5 rounded-full bg-slate-300 dark:bg-slate-600 mb-0.5" />
                 </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
-                    {t('merge.dropHere', 'Drop .jwlibrary or browse')}
+                <div className="space-y-1">
+                  <div className="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors leading-snug">
+                    {t('merge.dropHere', 'Drop .jwlibrary file here or click to browse')}
                   </div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{t('merge.backup2Desc', 'Second study backup')}</div>
+                  <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">{t('merge.backup2Desc', 'Second study backup')}</div>
                 </div>
               </div>
             ) : (
               <div className="bg-slate-50/80 dark:bg-[#0b0f19] border border-slate-200/80 dark:border-white/[0.06] rounded-2xl p-4 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0">
-                    <div className="font-bold text-xs text-slate-900 dark:text-white truncate max-w-[200px]">
+                    <div
+                      className="font-bold text-xs text-slate-900 dark:text-white truncate max-w-[200px] cursor-help"
+                      title={secondaryFile.file?.name ? `${secondaryFile.summary.name} (${secondaryFile.file.name})` : secondaryFile.summary.name}
+                    >
                       {secondaryFile.summary.name}
                     </div>
                     <div className="text-[10px] text-slate-500 dark:text-slate-400">
@@ -480,6 +927,52 @@ export const LandingPage: React.FC = () => {
                   <span className="font-semibold text-slate-800 dark:text-slate-200">{secondaryFile.summary.tagsCount}</span> tags
                   <span>•</span>
                   <span className="font-semibold text-slate-800 dark:text-slate-200">{secondaryFile.summary.playlistsCount}</span> playlists
+                </div>
+
+                <div className="pt-2 flex items-center justify-between border-t border-slate-200/60 dark:border-white/[0.04] gap-2 flex-wrap">
+                  {isConnected && (
+                    isShaInCloud(secondaryFile.sha256) ? (
+                      <span className="inline-flex items-center space-x-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                        <Check className="w-3 h-3" />
+                        <span>{t('merge.savedDrive', 'Saved on Google Drive ✓')}</span>
+                      </span>
+                    ) : (
+                      <div className="flex flex-col gap-1">
+                        <button
+                          type="button"
+                          onClick={handleUploadSecondaryToCloud}
+                          disabled={isUploadingSecondary}
+                          className="inline-flex items-center space-x-1.5 text-[10px] font-semibold text-sky-600 dark:text-sky-400 hover:underline bg-sky-50 dark:bg-sky-950/30 px-2.5 py-0.5 rounded-full border border-sky-300 dark:border-sky-700/50"
+                        >
+                          {isUploadingSecondary ? <Loader2 className="w-3 h-3 animate-spin" /> : <Cloud className="w-3 h-3" />}
+                          <span>
+                            {isUploadingSecondary
+                              ? `${t('merge.savingDrive', 'Uploading...')} ${uploadProgressSecondary ?? 0}%`
+                              : t('merge.saveDrive', 'Upload to Drive')}
+                          </span>
+                        </button>
+                        {isUploadingSecondary && (
+                          <div className="w-full bg-sky-100 dark:bg-sky-950 rounded-full h-1 overflow-hidden">
+                            <div
+                              className="bg-sky-600 dark:bg-sky-400 h-full transition-all duration-150 rounded-full"
+                              style={{ width: `${Math.max(5, uploadProgressSecondary ?? 0)}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleOpenSecondaryInApp}
+                    disabled={isLoadingAppSecondary}
+                    className="ml-auto inline-flex items-center space-x-1 text-[10px] font-semibold text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] px-2.5 py-1 rounded-lg transition-all"
+                    title={t('merge.openInAppTooltip', 'Load this backup as active database in the application')}
+                  >
+                    {isLoadingAppSecondary ? <Loader2 className="w-3 h-3 animate-spin" /> : <Compass className="w-3 h-3" />}
+                    <span>{isLoadingAppSecondary ? t('merge.loadingIntoApp', 'Loading...') : t('merge.openInApp', 'Open in App')}</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -635,7 +1128,7 @@ export const LandingPage: React.FC = () => {
 
             <button
               type="button"
-              onClick={handleExecuteMerge}
+              onClick={() => handleExecuteMerge()}
               disabled={isMerging}
               className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm tracking-wide transition-all shadow-xl shadow-blue-600/30 hover:scale-[1.02] active:scale-[0.98] inline-flex items-center justify-center space-x-2"
             >
@@ -650,17 +1143,27 @@ export const LandingPage: React.FC = () => {
       {/* ── MERGE PROGRESS ─────────────────────────────────────────── */}
       {isMerging && mergeProgress && (
         <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-3xl border border-blue-500/40 bg-blue-50/70 dark:bg-blue-950/20 p-5 space-y-3 backdrop-blur-xl shadow-md">
+          <div className="rounded-3xl border border-blue-500/40 bg-blue-50/70 dark:bg-blue-950/20 p-5 space-y-3 backdrop-blur-xl shadow-md animate-in fade-in duration-200">
             <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
-              <span>{mergeProgress.stage}</span>
-              <span className="text-blue-600 dark:text-blue-400 font-mono font-bold">
-                {Math.round((mergeProgress.current / mergeProgress.total) * 100)}%
+              <div className="flex items-center space-x-2.5 min-w-0">
+                <Loader2 className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-spin flex-shrink-0" />
+                <div className="min-w-0">
+                  <span className="truncate block font-semibold text-slate-800 dark:text-slate-200">{mergeProgress.stage}</span>
+                  {mergeProgress.details && (
+                    <span className="text-[11px] font-normal text-slate-500 dark:text-slate-400 truncate block mt-0.5">
+                      {mergeProgress.details}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-300/40 dark:border-blue-700/50 flex-shrink-0 ml-3">
+                {Math.min(100, Math.max(0, Math.round((mergeProgress.current / mergeProgress.total) * 100)))}%
               </span>
             </div>
-            <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
+            <div className="w-full bg-slate-200 dark:bg-slate-800/80 rounded-full h-2.5 overflow-hidden shadow-inner">
               <div
-                className="bg-blue-600 h-full transition-all duration-300 rounded-full"
-                style={{ width: `${(mergeProgress.current / mergeProgress.total) * 100}%` }}
+                className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 h-full transition-all duration-300 ease-out rounded-full shadow-sm"
+                style={{ width: `${Math.min(100, Math.max(0, Math.round((mergeProgress.current / mergeProgress.total) * 100)))}%` }}
               />
             </div>
           </div>
@@ -669,13 +1172,25 @@ export const LandingPage: React.FC = () => {
 
       {/* ── MERGE SUCCESS RESULT ───────────────────────────────────── */}
       {mergeResult && (
-        <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 animate-in zoom-in-95 duration-200">
+        <section ref={resultRef} className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 animate-in zoom-in-95 duration-200">
           <div className="rounded-3xl border border-emerald-500/35 bg-white/95 dark:bg-[#101625]/95 p-6 sm:p-8 space-y-5 shadow-2xl backdrop-blur-xl">
-            <div className="flex items-center space-x-3 text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 className="w-6 h-6 flex-shrink-0" />
-              <h2 className="text-xl font-black text-slate-900 dark:text-white">
-                {t('merge.successTitle', 'Merge Completed Successfully!')}
-              </h2>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-emerald-500/15">
+              <div className="flex items-center space-x-3 text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="w-6 h-6 flex-shrink-0" />
+                <h2 className="text-xl font-black text-slate-900 dark:text-white">
+                  {t('merge.successTitle', 'Merge Completed Successfully!')}
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleResetMerge}
+                className="self-start sm:self-auto inline-flex items-center space-x-2 px-4 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/[0.1] transition-all shadow-sm hover:scale-[1.02] active:scale-[0.98]"
+                title={t('merge.cleanMergeDesc', 'Start a fresh new merge')}
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                <span>{t('merge.newMerge', 'New Merge')}</span>
+              </button>
             </div>
 
             <div className="p-3.5 bg-emerald-50/70 dark:bg-emerald-950/20 rounded-2xl border border-emerald-500/20 text-xs text-emerald-800 dark:text-emerald-300 flex flex-wrap gap-x-5 gap-y-1.5 font-semibold">
@@ -694,11 +1209,28 @@ export const LandingPage: React.FC = () => {
               )}
             </div>
 
+            {/* ── Detailed Breakdown (Collapsible / Foldable View) ── */}
+            <MergeDetailedBreakdown
+              mergeResult={mergeResult}
+              candidateNotes={candidateNotes}
+              candidateDuplicates={candidateDuplicates}
+              excludedNoteGuids={excludedNoteGuids}
+              noteOverrides={noteOverrides}
+              toggleNoteExclusion={toggleNoteExclusion}
+              setNoteOverride={handleSetNoteOverride}
+              setExcludedNoteGuids={setExcludedNoteGuids}
+              showDetails={showDetails}
+              setShowDetails={setShowDetails}
+              hasUnsavedChanges={hasUnsavedChanges}
+              onRemerge={() => handleExecuteMerge()}
+              isMerging={isMerging}
+            />
+
             <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
               <button
                 type="button"
                 onClick={handleDownload}
-                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-lg shadow-blue-600/30"
+                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-lg shadow-blue-600/30 hover:scale-[1.02] active:scale-[0.98]"
               >
                 <Download className="w-4 h-4" />
                 <span>{t('merge.downloadCombined', 'Download Combined Backup')}</span>
@@ -717,10 +1249,25 @@ export const LandingPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleOpenInExplorer}
-                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] text-xs font-semibold transition-all"
+                disabled={isOpenInAppLoading}
+                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] text-xs font-semibold transition-all disabled:opacity-60"
               >
-                <Compass className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <span>{t('merge.exploreInApp', 'Explore in App')}</span>
+                {isOpenInAppLoading ? (
+                  <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                ) : (
+                  <Compass className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                )}
+                <span>{isOpenInAppLoading ? t('merge.loadingIntoApp', 'Loading into App...') : t('merge.exploreInApp', 'Explore in App')}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleResetMerge}
+                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/[0.1] text-xs font-semibold transition-all shadow-sm hover:scale-[1.02] active:scale-[0.98]"
+                title={t('merge.cleanMergeDesc', 'Start a fresh new merge')}
+              >
+                <RotateCcw className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span>{t('merge.newMerge', 'New Merge')}</span>
               </button>
             </div>
           </div>
@@ -746,6 +1293,20 @@ export const LandingPage: React.FC = () => {
             <HelpCircle className="w-3.5 h-3.5 text-emerald-500" />
             <span>{t('merge.howToExport', 'How to export?')}</span>
           </Link>
+          {(primaryFile || secondaryFile || mergeResult) && (
+            <>
+              <span className="text-slate-300 dark:text-slate-700">•</span>
+              <button
+                type="button"
+                onClick={handleResetMerge}
+                className="inline-flex items-center space-x-1.5 text-slate-600 dark:text-slate-400 hover:text-red-500 font-medium transition-colors"
+                title={t('merge.cleanMergeDesc', 'Start a fresh new merge')}
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>{t('merge.cleanMerge', 'Reset')}</span>
+              </button>
+            </>
+          )}
         </div>
       </section>
 

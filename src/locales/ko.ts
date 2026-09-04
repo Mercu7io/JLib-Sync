@@ -237,7 +237,16 @@ export const ko: TranslationSchema = {
     "cancel": "Cancel",
     "decryptAndLoad": "Decrypt & Load",
     "encryptionSettings": "Client-Side Encryption",
-    "encryptionWarning": "Warning: If you lose your password, your encrypted backups cannot be recovered."
+    "encryptionWarning": "Warning: If you lose your password, your encrypted backups cannot be recovered.",
+    "rename": "이름 바꾸기",
+    "renameBackupTitle": "클라우드 백업 이름 바꾸기",
+    "renameBackupDesc": "이 백업의 새 파일 이름을 입력하십시오:",
+    "renameSuccess": "백업 이름이 성공적으로 변경되었습니다",
+    "renameErrorEmpty": "파일 이름은 비어 있을 수 없습니다",
+    "renameErrorInvalidChars": "파일 이름에 잘못된 문자가 포함되어 있습니다",
+    "renameErrorSame": "새 이름이 현재 이름과 같습니다",
+    "renameErrorTooLong": "파일 이름이 너무 깁니다",
+    "extensionPreserved": "확장자 {{ext}}는 자동으로 유지됩니다"
   },
   "footer": {
     "clientSide": "100% 클라이언트 SQLite (WASM)",

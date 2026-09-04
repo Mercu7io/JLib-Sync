@@ -4,8 +4,9 @@
  * Bulletproof WASM loader with magic number verification (\0asm) and CDN fallback.
  */
 
-import initSqlJs, { Database, SqlJsStatic } from 'sql.js';
-import { IManifest, ILibrarySummary } from './types';
+import initSqlJs from 'sql.js';
+import type { Database, SqlJsStatic } from 'sql.js';
+import type { IManifest, ILibrarySummary } from './types.ts';
 
 let sqlJsPromise: Promise<SqlJsStatic> | null = null;
 

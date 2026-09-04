@@ -237,7 +237,16 @@ export const id: TranslationSchema = {
     "cancel": "Cancel",
     "decryptAndLoad": "Decrypt & Load",
     "encryptionSettings": "Client-Side Encryption",
-    "encryptionWarning": "Warning: If you lose your password, your encrypted backups cannot be recovered."
+    "encryptionWarning": "Warning: If you lose your password, your encrypted backups cannot be recovered.",
+    "rename": "Rename",
+    "renameBackupTitle": "Rename Cloud Backup",
+    "renameBackupDesc": "Enter a new file name for this backup:",
+    "renameSuccess": "Backup renamed successfully",
+    "renameErrorEmpty": "File name cannot be empty",
+    "renameErrorInvalidChars": "File name contains invalid characters",
+    "renameErrorSame": "The new name is identical to the current name",
+    "renameErrorTooLong": "File name is too long",
+    "extensionPreserved": "The {{ext}} extension will be automatically preserved"
   },
   "footer": {
     "clientSide": "100% SQLite di Sisi Klien (WASM)",

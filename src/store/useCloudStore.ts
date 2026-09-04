@@ -7,9 +7,12 @@ import { driveManager, IDriveFile, getLocalDeviceId, getLocalDeviceName } from '
 import { useAppStore } from './useAppStore';
 import { packageJwLibrary } from '../lib/jw/zip';
 import { CloudCrypto } from '../lib/cloud/crypto';
+import { exportDatabase } from '../lib/jw/sqlite';
+import { computeSha256 } from '../lib/jw/hash';
 
 interface ICloudState {
   isConnected: boolean;
+  isSessionExpired: boolean;
   isOnline: boolean;
   backups: IDriveFile[];
   knownCloudShas: string[];
@@ -27,8 +30,10 @@ interface ICloudState {
   connect: () => void;
   disconnect: () => void;
   refreshBackups: () => Promise<void>;
-  backupCurrentLibrary: (customName?: string) => Promise<void>;
+  backupCurrentLibrary: (customName?: string, onProgress?: (percent: number) => void) => Promise<void>;
+  backupFileDirectly: (blobOrFile: Blob | File, fileName: string, sha256?: string, onProgress?: (percent: number) => void) => Promise<void>;
   restoreCloudBackup: (fileId: string, fileName: string) => Promise<void>;
+  renameCloudBackup: (fileId: string, newName: string) => Promise<void>;
   deleteCloudBackup: (fileId: string) => Promise<void>;
   batchDeleteBackups: (fileIds: string[]) => Promise<void>;
   downloadCloudFile: (fileId: string, fileName: string) => Promise<File>;
@@ -47,6 +52,18 @@ interface ICloudState {
 
 const LOCAL_STORAGE_ENC_KEY = 'jwsync_cloud_enc';
 const LOCAL_STORAGE_NOTIFS_KEY = 'jwsync_cloud_notifications';
+const LOCAL_STORAGE_SHAS_KEY = 'jwsync_cloud_known_shas';
+
+const loadCachedShas = (): string[] => {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_SHAS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.filter((s) => typeof s === 'string');
+    }
+  } catch (_) {}
+  return [];
+};
 
 const loadEncryptionConfig = () => {
   try {
@@ -76,9 +93,10 @@ const getInitialNotificationsEnabled = () => {
 
 export const useCloudStore = create<ICloudState>((set, get) => ({
   isConnected: false,
+  isSessionExpired: driveManager.isSessionExpired(),
   isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
   backups: [],
-  knownCloudShas: [],
+  knownCloudShas: loadCachedShas(),
   unreadCloudBackupsCount: 0,
   unseenBackups: [],
   deviceSyncNotificationsEnabled: getInitialNotificationsEnabled(),
@@ -125,10 +143,15 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
       window.addEventListener('offline', () => set({ isOnline: false }));
     }
     try {
-      await driveManager.init(async () => {
-        set({ isConnected: true, error: null });
-        await get().refreshBackups();
-      });
+      await driveManager.init(
+        async () => {
+          set({ isConnected: true, isSessionExpired: false, error: null });
+          await get().refreshBackups();
+        },
+        () => {
+          set({ isConnected: false, isSessionExpired: true });
+        }
+      );
     } catch (err) {
       console.warn('Cloud init error:', err);
     }
@@ -138,7 +161,7 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
     try {
       set({ error: null });
       await driveManager.login(async () => {
-        set({ isConnected: true, error: null });
+        set({ isConnected: true, isSessionExpired: false, error: null });
         await get().refreshBackups();
       });
     } catch (err) {
@@ -150,6 +173,7 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
     driveManager.logout();
     set({
       isConnected: false,
+      isSessionExpired: false,
       backups: [],
       knownCloudShas: [],
       unreadCloudBackupsCount: 0,
@@ -179,6 +203,10 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
 
       const notifsEnabled = get().deviceSyncNotificationsEnabled;
 
+      try {
+        localStorage.setItem(LOCAL_STORAGE_SHAS_KEY, JSON.stringify(shas));
+      } catch (_) {}
+
       set({
         backups,
         knownCloudShas: shas,
@@ -187,23 +215,56 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
         isLoading: false,
         statusMessage: '',
       });
-    } catch (err) {
-      set({ isLoading: false, statusMessage: '', error: (err as Error).message });
+    } catch (err: any) {
+      const isExp = err?.message?.includes('Session expired');
+      set({
+        isLoading: false,
+        statusMessage: '',
+        error: isExp ? null : (err as Error).message,
+        ...(isExp ? { isConnected: false, isSessionExpired: true } : {}),
+      });
     }
   },
 
-  backupCurrentLibrary: async (customName?: string) => {
-    const { activeLibraryBytes, activeManifest, activeSha256, summary, extraFiles } = useAppStore.getState();
-    if (!activeLibraryBytes || !activeManifest) {
-      throw new Error('No active library loaded to backup.');
-    }
-
+  backupCurrentLibrary: async (customName?: string, onProgress?: (percent: number) => void) => {
     try {
-      set({ isUploading: true, statusMessage: 'Packaging .jwlibrary...' });
-      let blob = await packageJwLibrary(activeLibraryBytes, activeManifest, extraFiles);
-      let name =
-        customName ||
-        `${(summary?.name || 'JWL_Backup').replace(/[^a-z0-9_\-]/gi, '_')}_${new Date().toISOString().slice(0, 10)}.jwlibrary`;
+      set({ isUploading: true, statusMessage: 'Preparing backup for Google Drive...' });
+      const {
+        activeDb,
+        activeLibraryBytes,
+        activeManifest,
+        activeSha256,
+        extraFiles,
+        activeLibraryFile,
+      } = useAppStore.getState();
+
+      if ((!activeLibraryBytes && !activeDb) || !activeManifest) {
+        throw new Error('No active library loaded to backup.');
+      }
+
+      const currentDbBytes = activeDb ? exportDatabase(activeDb) : activeLibraryBytes!;
+      const currentSha256 = await computeSha256(currentDbBytes);
+
+      const defaultName = activeManifest.name
+        ? `${activeManifest.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_Backup.jwlibrary`
+        : 'JWLibrary_Backup.jwlibrary';
+      let name = customName ? (customName.endsWith('.jwlibrary') ? customName : `${customName}.jwlibrary`) : defaultName;
+
+      let blob: Blob;
+      // If we already have the complete File/Blob and the database hasn't been modified:
+      if (activeLibraryFile && activeSha256 === currentSha256) {
+        blob = activeLibraryFile;
+      } else {
+        set({ statusMessage: 'Packaging .jwlibrary archive...' });
+        blob = await packageJwLibrary(
+          currentDbBytes,
+          activeManifest,
+          extraFiles,
+          (pct) => {
+            set({ statusMessage: `Packaging archive (${Math.round(pct)}%)...` });
+          }
+        );
+      }
 
       const { encryptionEnabled, encryptionPassword } = get();
       if (encryptionEnabled) {
@@ -213,15 +274,106 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
         const arrayBuffer = await blob.arrayBuffer();
         const encryptedBytes = await crypto.encrypt(arrayBuffer, encryptionPassword);
         blob = new Blob([encryptedBytes as any], { type: 'application/octet-stream' });
-        name += '.enc';
+        if (!name.endsWith('.enc')) name += '.enc';
       }
 
-      set({ statusMessage: 'Uploading to Google Drive...' });
-      await driveManager.uploadBackup(name, blob, {
-        sha256: activeSha256 || undefined,
-        deviceId: getLocalDeviceId(),
-        deviceName: getLocalDeviceName(),
-      });
+      if (!driveManager.isConnected()) {
+        await new Promise<void>((resolve, reject) => {
+          driveManager.login(async () => {
+            set({ isConnected: true, isSessionExpired: false, error: null });
+            resolve();
+          }).catch(reject);
+        });
+      }
+
+      set({ statusMessage: 'Uploading to Google Drive (0%)...' });
+      onProgress?.(0);
+      await driveManager.uploadBackup(
+        name,
+        blob,
+        {
+          sha256: currentSha256 || undefined,
+          deviceId: getLocalDeviceId(),
+          deviceName: getLocalDeviceName(),
+        },
+        (percent) => {
+          set({ statusMessage: `Uploading to Google Drive (${percent}%)...` });
+          onProgress?.(percent);
+        }
+      );
+
+      if (currentSha256) {
+        const updatedShas = Array.from(new Set([...get().knownCloudShas, currentSha256]));
+        try {
+          localStorage.setItem(LOCAL_STORAGE_SHAS_KEY, JSON.stringify(updatedShas));
+        } catch (_) {}
+        set({ knownCloudShas: updatedShas });
+      }
+
+      await get().refreshBackups();
+      set({ isUploading: false, statusMessage: 'Backup uploaded successfully!' });
+      setTimeout(() => set({ statusMessage: '' }), 4000);
+    } catch (err) {
+      set({ isUploading: false, error: (err as Error).message, statusMessage: '' });
+      throw err;
+    }
+  },
+
+  backupFileDirectly: async (
+    blobOrFile: Blob | File,
+    fileName: string,
+    sha256?: string,
+    onProgress?: (percent: number) => void
+  ) => {
+    try {
+      set({ isUploading: true, statusMessage: 'Uploading to Google Drive...' });
+      let blob: Blob = blobOrFile;
+      let name = fileName.endsWith('.jwlibrary') ? fileName : `${fileName}.jwlibrary`;
+
+      const { encryptionEnabled, encryptionPassword } = get();
+      if (encryptionEnabled) {
+        if (!encryptionPassword) throw new Error('Encryption is enabled but no password is set.');
+        set({ statusMessage: 'Encrypting backup (AES-256)...' });
+        const crypto = new CloudCrypto();
+        const arrayBuffer = await blob.arrayBuffer();
+        const encryptedBytes = await crypto.encrypt(arrayBuffer, encryptionPassword);
+        blob = new Blob([encryptedBytes as any], { type: 'application/octet-stream' });
+        if (!name.endsWith('.enc')) name += '.enc';
+      }
+
+      if (!driveManager.isConnected()) {
+        await new Promise<void>((resolve, reject) => {
+          driveManager.login(async () => {
+            set({ isConnected: true, isSessionExpired: false, error: null });
+            resolve();
+          }).catch(reject);
+        });
+      }
+
+      set({ statusMessage: 'Uploading to Google Drive (0%)...' });
+      onProgress?.(0);
+      await driveManager.uploadBackup(
+        name,
+        blob,
+        {
+          sha256: sha256 || undefined,
+          deviceId: getLocalDeviceId(),
+          deviceName: getLocalDeviceName(),
+        },
+        (percent) => {
+          set({ statusMessage: `Uploading to Google Drive (${percent}%)...` });
+          onProgress?.(percent);
+        }
+      );
+
+      if (sha256) {
+        const updatedShas = Array.from(new Set([...get().knownCloudShas, sha256]));
+        try {
+          localStorage.setItem(LOCAL_STORAGE_SHAS_KEY, JSON.stringify(updatedShas));
+        } catch (_) {}
+        set({ knownCloudShas: updatedShas });
+      }
+
       await get().refreshBackups();
       set({ isUploading: false, statusMessage: 'Backup uploaded successfully!' });
       setTimeout(() => set({ statusMessage: '' }), 4000);
@@ -269,6 +421,18 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
       fileName = fileName.replace(/\.enc$/, '');
     }
     return new File([dataBuffer as any], fileName, { type: 'application/zip' });
+  },
+
+  renameCloudBackup: async (fileId: string, newName: string) => {
+    try {
+      set({ isLoading: true, statusMessage: `Renaming "${newName}"...` });
+      await driveManager.renameBackup(fileId, newName);
+      await get().refreshBackups();
+      set({ isLoading: false, statusMessage: '' });
+    } catch (err) {
+      set({ isLoading: false, statusMessage: '', error: (err as Error).message });
+      throw err;
+    }
   },
 
   deleteCloudBackup: async (fileId: string) => {

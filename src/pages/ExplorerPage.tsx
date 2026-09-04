@@ -83,16 +83,30 @@ export const ExplorerPage: React.FC = () => {
   const {
     activeDb,
     activeManifest,
+    activeLibraryFile,
     summary,
     selectedLanguage,
     updateActiveDatabase,
     loadDemoLibrary,
     isLoading,
     activeSha256,
+    extraFiles,
   } = useAppStore();
 
-  const { setShowCloudModal, isConnected, isShaInCloud } = useCloudStore();
+  const {
+    setShowCloudModal,
+    isConnected,
+    isShaInCloud,
+    backupCurrentLibrary,
+    isUploading,
+  } = useCloudStore();
   const isCurrentInCloud = activeSha256 ? isShaInCloud(activeSha256) : false;
+
+  const handleDirectCloudUpload = async () => {
+    try {
+      await backupCurrentLibrary();
+    } catch (_) {}
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -182,6 +196,7 @@ export const ExplorerPage: React.FC = () => {
         `SELECT t.TagId, t.Name, COUNT(tm.TagMapId) AS count 
          FROM Tag t 
          LEFT JOIN TagMap tm ON t.TagId = tm.TagId 
+         WHERE t.Type = 1
          GROUP BY t.TagId, t.Name 
          ORDER BY count DESC, t.Name ASC`
       );
@@ -388,7 +403,7 @@ export const ExplorerPage: React.FC = () => {
   };
 
   const deleteNote = async (noteId: number) => {
-    if (!activeDb || !window.confirm('Are you sure you want to delete this note?')) return;
+    if (!activeDb || !window.confirm(t('explorer.confirmDeleteNote', 'Are you sure you want to delete this note?'))) return;
     execute(activeDb, 'DELETE FROM TagMap WHERE NoteId = :id', { ':id': noteId });
     execute(activeDb, 'DELETE FROM Note WHERE NoteId = :id', { ':id': noteId });
 
@@ -401,7 +416,7 @@ export const ExplorerPage: React.FC = () => {
     if (!activeDb || !activeManifest) return;
     const dbBytes = exportDatabase(activeDb);
     const updatedManifest = await createOrUpdateManifest(dbBytes, activeManifest);
-    const blob = await packageJwLibrary(dbBytes, updatedManifest);
+    const blob = await packageJwLibrary(dbBytes, updatedManifest, extraFiles);
 
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -444,7 +459,7 @@ export const ExplorerPage: React.FC = () => {
   };
 
   const handleDeleteTag = async (tagId: number) => {
-    if (!activeDb || !window.confirm('Delete this tag? (Notes will not be deleted)')) return;
+    if (!activeDb || !window.confirm(t('explorer.confirmDeleteTag', 'Delete this tag? (Notes will not be deleted)'))) return;
     execute(activeDb, 'DELETE FROM TagMap WHERE TagId = :id', { ':id': tagId });
     execute(activeDb, 'DELETE FROM Tag WHERE TagId = :id', { ':id': tagId });
     const newBytes = exportDatabase(activeDb);
@@ -520,7 +535,12 @@ export const ExplorerPage: React.FC = () => {
               {filteredNotes.length} / {allNotes.length} {t('nav.notes')}
             </span>
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p
+            className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate max-w-[280px] sm:max-w-md lg:max-w-xl cursor-help"
+            title={activeLibraryFile instanceof File && activeLibraryFile.name && activeLibraryFile.name !== summary.name
+              ? `${summary.name} (${activeLibraryFile.name}) • ${summary.deviceName}`
+              : `${summary.name} • ${summary.deviceName}`}
+          >
             {summary.name} • {summary.deviceName}
           </p>
         </div>
@@ -544,31 +564,39 @@ export const ExplorerPage: React.FC = () => {
             <span>{t('explorer.doctorBtn')}</span>
           </button>
 
+          {/* Google Drive Status & Upload Button */}
+          {isConnected ? (
+            isCurrentInCloud ? (
+              <button
+                type="button"
+                onClick={() => setShowCloudModal(true)}
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md border text-xs font-medium bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 transition-colors shadow-sm"
+                title="Manage Cloud Backups"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span>{t('cloud.inCloudBadge', 'Saved in Cloud ✓')}</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleDirectCloudUpload}
+                disabled={isUploading}
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
+                title={t('nav.uploadToDrive', 'Upload to Drive')}
+              >
+                <Upload className={`w-3.5 h-3.5 ${isUploading ? 'animate-bounce' : ''}`} />
+                <span>{isUploading ? t('cloud.uploading', 'Uploading...') : t('nav.uploadToDrive', 'Upload to Drive')}</span>
+              </button>
+            )
+          ) : null}
+
           <button
             type="button"
             onClick={() => setShowCloudModal(true)}
-            className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md border text-xs font-medium transition-colors shadow-sm ${
-              isConnected && isCurrentInCloud
-                ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
-                : isConnected && !isCurrentInCloud
-                ? 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30 font-semibold'
-                : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/[0.08]'
-            }`}
+            className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] text-xs font-medium transition-colors shadow-sm"
           >
-            {isConnected && isCurrentInCloud ? (
-              <Cloud className="w-3.5 h-3.5 text-emerald-500" />
-            ) : isConnected && !isCurrentInCloud ? (
-              <Upload className="w-3.5 h-3.5 text-blue-500" />
-            ) : (
-              <Cloud className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" />
-            )}
-            <span>
-              {isConnected && isCurrentInCloud
-                ? t('nav.driveSynced', 'Drive Synced ✓')
-                : isConnected && !isCurrentInCloud
-                ? t('nav.uploadToDrive', 'Upload to Drive')
-                : t('explorer.cloudDriveBtn')}
-            </span>
+            <Cloud className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" />
+            <span>{t('explorer.cloudDriveBtn')}</span>
           </button>
 
           <button
@@ -1222,7 +1250,7 @@ export const ExplorerPage: React.FC = () => {
                           onClick={() => handleDeleteTag(tag.TagId)}
                           className="text-xs text-red-500 dark:text-red-400 hover:underline font-medium"
                         >
-                          Delete
+                          {t('common.delete', 'Delete')}
                         </button>
                       </div>
                     </>
@@ -1237,7 +1265,7 @@ export const ExplorerPage: React.FC = () => {
                 onClick={() => setShowTagManager(false)}
                 className="px-4 py-2 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-transparent text-xs font-medium"
               >
-                Close
+                {t('common.close', 'Close')}
               </button>
             </div>
           </div>

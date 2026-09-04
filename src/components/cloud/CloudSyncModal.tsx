@@ -20,10 +20,12 @@ import {
   AlertCircle,
   Bell,
   CheckCircle2,
+  Edit3,
 } from 'lucide-react';
 import { useCloudStore } from '../../store/useCloudStore';
 import { useAppStore } from '../../store/useAppStore';
-import { getGoogleClientId, getLocalDeviceId } from '../../lib/cloud/googleDrive';
+import { getGoogleClientId, getLocalDeviceId, IDriveFile } from '../../lib/cloud/googleDrive';
+import { validateBackupName, getEditableBaseName } from '../../lib/cloud/renameSchema';
 import { useTranslation } from 'react-i18next';
 
 export const CloudSyncModal: React.FC = () => {
@@ -31,6 +33,7 @@ export const CloudSyncModal: React.FC = () => {
   const navigate = useNavigate();
   const {
     isConnected,
+    isSessionExpired,
     backups,
     isLoading,
     isUploading,
@@ -41,6 +44,7 @@ export const CloudSyncModal: React.FC = () => {
     refreshBackups,
     backupCurrentLibrary,
     restoreCloudBackup,
+    renameCloudBackup,
     deleteCloudBackup,
     batchDeleteBackups,
     downloadCloudFile,
@@ -76,6 +80,12 @@ export const CloudSyncModal: React.FC = () => {
   const [promptAction, setPromptAction] = useState<'load' | 'merge'>('load');
   const [decryptPass, setDecryptPass] = useState('');
   const [decryptError, setDecryptError] = useState('');
+
+  // Rename Prompt UI
+  const [renamingBackup, setRenamingBackup] = useState<IDriveFile | null>(null);
+  const [newBackupName, setNewBackupName] = useState('');
+  const [renameError, setRenameError] = useState('');
+  const [isRenaming, setIsRenaming] = useState(false);
 
   // Clear cross-device notification count when modal is opened
   useEffect(() => {
@@ -223,6 +233,47 @@ export const CloudSyncModal: React.FC = () => {
     }
   };
 
+  const handleStartRename = (b: IDriveFile) => {
+    setRenamingBackup(b);
+    setNewBackupName(getEditableBaseName(b.name));
+    setRenameError('');
+  };
+
+  const handleRenameSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!renamingBackup) return;
+
+    const validation = validateBackupName({
+      newName: newBackupName,
+      originalName: renamingBackup.name,
+    });
+
+    if (!validation.isValid) {
+      if (validation.errorCode === 'EMPTY') {
+        setRenameError(t('cloud.renameErrorEmpty', 'File name cannot be empty'));
+      } else if (validation.errorCode === 'INVALID_CHARS') {
+        setRenameError(t('cloud.renameErrorInvalidChars', 'File name contains invalid characters'));
+      } else if (validation.errorCode === 'SAME_NAME') {
+        setRenameError(t('cloud.renameErrorSame', 'The new name is identical to the current name'));
+      } else if (validation.errorCode === 'TOO_LONG') {
+        setRenameError(t('cloud.renameErrorTooLong', 'File name is too long'));
+      }
+      return;
+    }
+
+    try {
+      setIsRenaming(true);
+      setRenameError('');
+      await renameCloudBackup(renamingBackup.id, validation.sanitizedName!);
+      setRenamingBackup(null);
+      setNewBackupName('');
+    } catch (err: any) {
+      setRenameError(err.message || 'Failed to rename backup');
+    } finally {
+      setIsRenaming(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div className="bg-white dark:bg-[#0e1422] border border-slate-200 dark:border-white/[0.12] text-slate-900 dark:text-white rounded-2xl max-w-2xl w-full p-4 sm:p-7 space-y-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
@@ -284,6 +335,81 @@ export const CloudSyncModal: React.FC = () => {
           </div>
         )}
 
+        {/* Rename Overlay */}
+        {renamingBackup && (
+          <div className="absolute inset-0 z-50 bg-white/95 dark:bg-[#0e1422]/95 backdrop-blur-sm rounded-2xl flex items-center justify-center p-4 sm:p-6">
+            <form
+              onSubmit={handleRenameSubmit}
+              className="w-full max-w-sm space-y-4 bg-slate-50 dark:bg-white/[0.03] p-5 sm:p-6 rounded-xl border border-slate-200 dark:border-white/[0.08] shadow-2xl"
+            >
+              <div className="text-center space-y-2">
+                <div className="w-12 h-12 rounded-full bg-blue-500/20 mx-auto flex items-center justify-center text-blue-600 dark:text-blue-400 mb-4">
+                  <Edit3 className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  {t('cloud.renameBackupTitle', 'Rename Cloud Backup')}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 break-all" title={renamingBackup.name}>
+                  {renamingBackup.name}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block">
+                  {t('cloud.renameBackupDesc', 'Enter a new file name for this backup:')}
+                </label>
+                <div className="flex items-center rounded-xl border border-slate-300 dark:border-white/[0.1] bg-white dark:bg-[#0b0f17] focus-within:border-blue-500 overflow-hidden shadow-inner">
+                  <input
+                    type="text"
+                    value={newBackupName}
+                    onChange={(e) => {
+                      setNewBackupName(e.target.value);
+                      if (renameError) setRenameError('');
+                    }}
+                    placeholder="Backup_Name"
+                    className="flex-1 bg-transparent px-3 py-2 text-xs text-slate-900 dark:text-slate-200 focus:outline-none min-w-0"
+                    autoFocus
+                    disabled={isRenaming}
+                  />
+                  <span className="px-2.5 py-2 text-[11px] font-mono bg-slate-100 dark:bg-white/[0.05] text-slate-500 dark:text-slate-400 border-l border-slate-200 dark:border-white/[0.08] select-none flex-shrink-0">
+                    {renamingBackup.name.endsWith('.enc') ? '.jwlibrary.enc' : '.jwlibrary'}
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                  {t('cloud.extensionPreserved', {
+                    ext: renamingBackup.name.endsWith('.enc') ? '.jwlibrary.enc' : '.jwlibrary',
+                    defaultValue: `The ${renamingBackup.name.endsWith('.enc') ? '.jwlibrary.enc' : '.jwlibrary'} extension will be automatically preserved`,
+                  })}
+                </p>
+                {renameError && <p className="text-[11px] text-red-500 mt-1">{renameError}</p>}
+              </div>
+
+              <div className="flex items-center space-x-2 pt-2">
+                <button
+                  type="button"
+                  disabled={isRenaming}
+                  onClick={() => {
+                    setRenamingBackup(null);
+                    setRenameError('');
+                    setNewBackupName('');
+                  }}
+                  className="flex-1 py-2 rounded-xl border border-slate-300 dark:border-white/[0.1] text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.05] disabled:opacity-50"
+                >
+                  {t('common.cancel', 'Cancel')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={isRenaming || !newBackupName.trim()}
+                  className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-xs font-semibold text-white shadow-md flex items-center justify-center space-x-1.5"
+                >
+                  {isRenaming && <RefreshCw className="w-3 h-3 animate-spin" />}
+                  <span>{isRenaming ? t('common.loading', 'Saving...') : t('cloud.rename', 'Rename')}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-white/[0.08]">
           <div className="flex items-center space-x-3">
@@ -293,12 +419,17 @@ export const CloudSyncModal: React.FC = () => {
             <div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight flex items-center space-x-2">
                 <span>{t('cloud.title')}</span>
-                {isConnected && (
+                {isConnected ? (
                   <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                     <span>{t('cloud.connected')}</span>
                   </span>
-                )}
+                ) : isSessionExpired ? (
+                  <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    <span>{t('cloud.sessionExpiredBadge', 'Session expirée')}</span>
+                  </span>
+                ) : null}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">{t('cloud.subtitle')}</p>
             </div>
@@ -350,17 +481,57 @@ export const CloudSyncModal: React.FC = () => {
           </div>
         )}
 
-        {/* ── NOT CONNECTED VIEW ────────────────────────────────────────── */}
+        {/* ── NOT CONNECTED / SESSION EXPIRED VIEW ────────────────────────── */}
         {!isConnected ? (
           <div className="space-y-6 text-center py-6">
-            <div className="max-w-md mx-auto space-y-2">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                {t('cloud.connectTitle')}
-              </h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                {t('cloud.connectDesc')}
-              </p>
-            </div>
+            {isSessionExpired ? (
+              <div className="max-w-md mx-auto p-4 sm:p-5 bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 rounded-2xl text-left space-y-3 shadow-sm">
+                <div className="flex items-start space-x-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0">
+                    <AlertCircle className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-bold text-amber-900 dark:text-amber-200">
+                      {t('cloud.sessionExpiredTitle', 'Session Google Drive expirée')}
+                    </h3>
+                    <p className="text-xs text-amber-800/90 dark:text-amber-300/90 leading-relaxed">
+                      {t(
+                        'cloud.sessionExpiredDesc',
+                        'Votre session Google Drive a expiré (durée standard de 1h). Cliquez sur le bouton ci-dessous pour renouveler la connexion en un clic.'
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-end gap-2.5">
+                  <button
+                    type="button"
+                    onClick={disconnect}
+                    className="w-full sm:w-auto px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                  >
+                    {t('cloud.forgetAccount', 'Changer de compte')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={connect}
+                    disabled={!hasClientId}
+                    className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs transition-all shadow-md shadow-amber-600/20"
+                  >
+                    <Cloud className="w-4 h-4" />
+                    <span>{t('cloud.reconnectButton', 'Se reconnecter à Google Drive')}</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="max-w-md mx-auto space-y-2">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  {t('cloud.connectTitle')}
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {t('cloud.connectDesc')}
+                </p>
+              </div>
+            )}
 
             {!hasClientId && (
               <div className="max-w-md mx-auto p-3.5 bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 rounded-xl text-left text-xs text-amber-700 dark:text-amber-300 space-y-1">
@@ -377,17 +548,19 @@ export const CloudSyncModal: React.FC = () => {
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={connect}
-                disabled={!hasClientId}
-                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2.5 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm transition-all shadow-lg shadow-blue-600/25"
-              >
-                <Cloud className="w-4 h-4" />
-                <span>{t('cloud.connectButton')}</span>
-              </button>
-            </div>
+            {!isSessionExpired && (
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={connect}
+                  disabled={!hasClientId}
+                  className="w-full sm:w-auto inline-flex items-center justify-center space-x-2.5 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm transition-all shadow-lg shadow-blue-600/25"
+                >
+                  <Cloud className="w-4 h-4" />
+                  <span>{t('cloud.connectButton')}</span>
+                </button>
+              </div>
+            )}
 
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] text-left text-xs text-slate-600 dark:text-slate-400 space-y-2">
               <div className="flex items-center space-x-2 text-slate-800 dark:text-slate-300 font-semibold">
@@ -543,7 +716,10 @@ export const CloudSyncModal: React.FC = () => {
                         </span>
                       )}
                     </span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    <span
+                      className="text-[11px] text-slate-500 dark:text-slate-400 block truncate max-w-xs sm:max-w-md cursor-help"
+                      title={summary?.name}
+                    >
                       {summary?.name} • {summary?.notesCount} {t('nav.notes', 'notes')} •{' '}
                       {summary?.tagsCount} {t('nav.tags', 'tags')}
                     </span>
@@ -750,13 +926,13 @@ export const CloudSyncModal: React.FC = () => {
 
                           <div className="space-y-0.5 truncate flex-1 min-w-0">
                             <div
-                              className="font-semibold text-slate-800 dark:text-slate-200 truncate flex items-center space-x-1.5"
-                              title={isEncrypted ? 'Encrypted' : undefined}
+                              className="font-semibold text-slate-800 dark:text-slate-200 truncate flex items-center space-x-1.5 cursor-help"
+                              title={isEncrypted ? `${b.name} (${t('cloud.encryptedBadge', 'Encrypted')})` : b.name}
                             >
                               {isEncrypted && (
                                 <Lock className="w-3 h-3 text-amber-500 flex-shrink-0" />
                               )}
-                              <span className="truncate">{b.name}</span>
+                              <span className="truncate" title={b.name}>{b.name}</span>
                             </div>
                             <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center space-x-2 flex-wrap">
                               <span>
@@ -796,6 +972,17 @@ export const CloudSyncModal: React.FC = () => {
                                 ? t('cloud.decrypt', 'Decrypt')
                                 : t('cloud.load', 'Load')}
                             </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleStartRename(b)}
+                            disabled={isLoading || isRenaming}
+                            className="p-1.5 text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+                            title={t('cloud.rename', 'Rename')}
+                            aria-label={t('cloud.rename', 'Rename')}
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
                           </button>
 
                           <button

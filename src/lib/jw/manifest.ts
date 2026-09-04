@@ -4,7 +4,7 @@
  * JW Library will silently refuse to restore without any error prompt.
  */
 
-import { IManifest } from './types';
+import type { IManifest } from './types.ts';
 
 // SHA-256 Round Constants for pure JS fallback
 const K = [

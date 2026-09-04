@@ -129,6 +129,7 @@ export interface IMergeOptions {
   conflictResolutions?: Record<string, 'both' | 'a' | 'b'>;
   secondaryNoteTag?: string; // Optional tag name to attach to notes imported/updated from secondary backups
   excludedNoteGuids?: string[]; // Optional list of note GUIDs from secondary to skip
+  noteOverrides?: Record<string, { title?: string; content?: string }>; // Optional overrides for secondary note title/content
 }
 
 export interface IMergeDetailedNote {

@@ -13,6 +13,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { ContactSupportSection } from '../components/help/ContactSupportSection';
 
 export const HelpPage: React.FC = () => {
   const { t } = useTranslation();
@@ -189,6 +190,9 @@ export const HelpPage: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* ── CONTACT & SUPPORT SECTION (Anti-bot protected) ────────── */}
+      <ContactSupportSection />
 
       {/* ── BACK TO MERGE CTA ───────────────────────────────────────── */}
       <div className="pt-4 text-center">

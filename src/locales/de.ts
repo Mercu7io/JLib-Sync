@@ -237,7 +237,16 @@ export const de: TranslationSchema = {
     "cancel": "Cancel",
     "decryptAndLoad": "Decrypt & Load",
     "encryptionSettings": "Client-Side Encryption",
-    "encryptionWarning": "Warning: If you lose your password, your encrypted backups cannot be recovered."
+    "encryptionWarning": "Warning: If you lose your password, your encrypted backups cannot be recovered.",
+    "rename": "Umbenennen",
+    "renameBackupTitle": "Cloud-Sicherung umbenennen",
+    "renameBackupDesc": "Geben Sie einen neuen Dateinamen für diese Sicherung ein:",
+    "renameSuccess": "Sicherung erfolgreich umbenannt",
+    "renameErrorEmpty": "Der Dateiname darf nicht leer sein",
+    "renameErrorInvalidChars": "Der Dateiname enthält ungültige Zeichen",
+    "renameErrorSame": "Der neue Name ist identisch mit dem aktuellen Namen",
+    "renameErrorTooLong": "Der Dateiname ist zu lang",
+    "extensionPreserved": "Die Dateiendung {{ext}} wird automatisch beibehalten"
   },
   "footer": {
     "clientSide": "100% Client-SQLite (WASM)",

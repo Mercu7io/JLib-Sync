@@ -9,9 +9,9 @@
  * - Unused locations
  */
 
-import { Database } from 'sql.js';
-import { IHealthCheckResult } from './types';
-import { tableExists, columnExists, queryAll, execute } from './sqlite';
+import type { Database } from 'sql.js';
+import type { IHealthCheckResult } from './types.ts';
+import { tableExists, columnExists, queryAll, execute } from './sqlite.ts';
 
 export function runHealthChecks(db: Database): IHealthCheckResult[] {
   const results: IHealthCheckResult[] = [];

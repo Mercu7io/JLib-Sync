@@ -3,51 +3,46 @@
 @tailwind utilities;
 
 @layer base {
-  /* Dynamic text scaling:
-     - normal: 15.5px (standard baseline)
-     - large: 17.5px (default: larger than previous 16px)
-     - xlarge: 19.5px (extra-large accessibility)
+  /* Dynamic text scaling across 5 discrete levels:
+     - Level 1: 14px (Compact)
+     - Level 2: 15.5px (Normal)
+     - Level 3: 17.5px (Large — Default)
+     - Level 4: 19.5px (Extra Large)
+     - Level 5: 21.5px (Huge / Accessibility)
   */
   html {
-    font-size: 17.5px;
+    font-size: 17px;
   }
 
+  html[data-text-size="1"],
+  html[data-text-size="small"] {
+    font-size: 14px;
+  }
+
+  html[data-text-size="2"],
   html[data-text-size="normal"] {
     font-size: 15.5px;
   }
 
+  html[data-text-size="3"],
   html[data-text-size="large"],
   html:not([data-text-size]) {
-    font-size: 17.5px;
+    font-size: 17px;
   }
 
+  html[data-text-size="4"],
   html[data-text-size="xlarge"] {
-    font-size: 19.5px;
+    font-size: 18.5px;
+  }
+
+  html[data-text-size="5"],
+  html[data-text-size="xxlarge"] {
+    font-size: 20px;
   }
 
   body {
     @apply bg-slate-50 text-slate-900 dark:bg-[#0B0F19] dark:text-slate-100 font-sans antialiased;
   }
-}
-
-/* Scale small arbitrary pixel badges and metadata proportionally */
-html[data-text-size="normal"] .text-\[10px\] { font-size: 10px; }
-html[data-text-size="normal"] .text-\[11px\] { font-size: 11px; }
-
-html[data-text-size="large"] .text-\[10px\],
-html:not([data-text-size]) .text-\[10px\] {
-  font-size: 11.5px;
-}
-html[data-text-size="large"] .text-\[11px\],
-html:not([data-text-size]) .text-\[11px\] {
-  font-size: 12.5px;
-}
-
-html[data-text-size="xlarge"] .text-\[10px\] {
-  font-size: 13px;
-}
-html[data-text-size="xlarge"] .text-\[11px\] {
-  font-size: 14px;
 }
 
 @layer utilities {

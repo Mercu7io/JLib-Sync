@@ -237,7 +237,16 @@ export const zh_Hans: TranslationSchema = {
     "cancel": "Cancel",
     "decryptAndLoad": "Decrypt & Load",
     "encryptionSettings": "Client-Side Encryption",
-    "encryptionWarning": "Warning: If you lose your password, your encrypted backups cannot be recovered."
+    "encryptionWarning": "Warning: If you lose your password, your encrypted backups cannot be recovered.",
+    "rename": "重命名",
+    "renameBackupTitle": "重命名云备份",
+    "renameBackupDesc": "请输入此备份的新文件名：",
+    "renameSuccess": "备份重命名成功",
+    "renameErrorEmpty": "文件名不能为空",
+    "renameErrorInvalidChars": "文件名包含无效字符",
+    "renameErrorSame": "新名称与当前名称相同",
+    "renameErrorTooLong": "文件名过长",
+    "extensionPreserved": "扩展名 {{ext}} 将自动保留"
   },
   "footer": {
     "clientSide": "100% 浏览器本地 SQLite (WASM)",

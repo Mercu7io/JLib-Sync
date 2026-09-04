@@ -237,7 +237,16 @@ export const pt: TranslationSchema = {
     "cancel": "Cancel",
     "decryptAndLoad": "Decrypt & Load",
     "encryptionSettings": "Client-Side Encryption",
-    "encryptionWarning": "Warning: If you lose your password, your encrypted backups cannot be recovered."
+    "encryptionWarning": "Warning: If you lose your password, your encrypted backups cannot be recovered.",
+    "rename": "Renomear",
+    "renameBackupTitle": "Renomear backup na nuvem",
+    "renameBackupDesc": "Digite um novo nome para este backup:",
+    "renameSuccess": "Backup renomeado com sucesso",
+    "renameErrorEmpty": "O nome do arquivo não pode ficar vazio",
+    "renameErrorInvalidChars": "O nome contém caracteres inválidos",
+    "renameErrorSame": "O novo nome é idêntico ao atual",
+    "renameErrorTooLong": "O nome do arquivo é muito longo",
+    "extensionPreserved": "A extensão {{ext}} será preservada automaticamente"
   },
   "footer": {
     "clientSide": "100% SQLite no cliente (WASM)",

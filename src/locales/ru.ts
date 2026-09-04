@@ -237,7 +237,16 @@ export const ru: TranslationSchema = {
     "cancel": "Cancel",
     "decryptAndLoad": "Decrypt & Load",
     "encryptionSettings": "Client-Side Encryption",
-    "encryptionWarning": "Warning: If you lose your password, your encrypted backups cannot be recovered."
+    "encryptionWarning": "Warning: If you lose your password, your encrypted backups cannot be recovered.",
+    "rename": "Переименовать",
+    "renameBackupTitle": "Переименовать облачную резервную копию",
+    "renameBackupDesc": "Введите новое имя файла для этой резервной копии:",
+    "renameSuccess": "Резервная копия успешно переименована",
+    "renameErrorEmpty": "Имя файла не может быть пустым",
+    "renameErrorInvalidChars": "Имя файла содержит недопустимые символы",
+    "renameErrorSame": "Новое имя совпадает с текущим",
+    "renameErrorTooLong": "Имя файла слишком длинное",
+    "extensionPreserved": "Расширение {{ext}} будет сохранено автоматически"
   },
   "footer": {
     "clientSide": "100% SQLite на стороне клиента (WASM)",

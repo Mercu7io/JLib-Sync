@@ -11,8 +11,8 @@
  * - Recomputes SHA-256 hash and updates manifest.json
  */
 
-import { Database } from 'sql.js';
-import {
+import type { Database } from 'sql.js';
+import type {
   IManifest,
   IMergeOptions,
   IMergeProgress,
@@ -26,7 +26,7 @@ import {
   IBookmark,
   IInputField,
   IMergeDetails,
-} from './types';
+} from './types.ts';
 import {
   openDatabase,
   queryAll,
@@ -35,15 +35,16 @@ import {
   tableExists,
   columnExists,
   exportDatabase,
-} from './sqlite';
-import { createOrUpdateManifest } from './manifest';
-import { packageJwLibrary } from './zip';
-import { runHealthChecks, applyHealthFix } from './doctor';
+} from './sqlite.ts';
+import { createOrUpdateManifest } from './manifest.ts';
+import { packageJwLibrary } from './zip.ts';
+import { runHealthChecks, applyHealthFix } from './doctor.ts';
 
 export interface IMergeResult {
   mergedBlob: Blob;
   mergedDbBytes: Uint8Array;
   manifest: IManifest;
+  extraFiles?: Map<string, Uint8Array>;
   stats: {
     notesAdded: number;
     notesMerged: number;
@@ -95,8 +96,8 @@ export async function mergeJwLibraries(
   const previewNotes: Array<{ title: string; content: string; source: string }> = [];
 
   onProgress?.({
-    current: 1,
-    total: 10,
+    current: 5,
+    total: 100,
     stage: 'Opening primary database...',
     details: primaryManifest.name || 'Primary Library',
   });
@@ -117,15 +118,17 @@ export async function mergeJwLibraries(
   };
 
   const totalSecondaries = secondaryFiles.length;
+  const secShare = 65 / (totalSecondaries || 1);
 
   for (let sIdx = 0; sIdx < totalSecondaries; sIdx++) {
     const sec = secondaryFiles[sIdx];
     const secName = sec.name || `Secondary #${sIdx + 1}`;
+    const secBase = 5 + sIdx * secShare;
 
     onProgress?.({
-      current: 2 + sIdx * 3,
-      total: 10,
-      stage: `Processing library (${sIdx + 1}/${totalSecondaries})...`,
+      current: Math.round(secBase + secShare * 0.05),
+      total: 100,
+      stage: `Mapping verse locations (${sIdx + 1}/${totalSecondaries})...`,
       details: secName,
     });
 
@@ -135,6 +138,10 @@ export async function mergeJwLibraries(
     const locationMap = new Map<number, number>(); // secLocId -> mainLocId
 
     if (tableExists(secDb, 'Location') && tableExists(mainDb, 'Location')) {
+      const hasSpecialty = columnExists(mainDb, 'Location', 'Specialty');
+      const hasEdition = columnExists(mainDb, 'Location', 'Edition');
+      const specClause = hasSpecialty ? 'AND IFNULL(Specialty, \'\') = :spec' : '';
+
       const secLocations = queryAll<ILocation>(secDb, 'SELECT * FROM Location');
 
       for (const loc of secLocations) {
@@ -149,7 +156,7 @@ export async function mergeJwLibraries(
             AND IFNULL(DocumentId, -1) = :doc
             AND IFNULL(Track, -1) = :track
             AND IFNULL(IssueTagNumber, 0) = :issue
-            AND IFNULL(Specialty, '') = :spec
+            ${specClause}
           LIMIT 1
         `;
 
@@ -162,30 +169,42 @@ export async function mergeJwLibraries(
           ':doc': loc.DocumentId ?? -1,
           ':track': loc.Track ?? -1,
           ':issue': loc.IssueTagNumber ?? 0,
-          ':spec': loc.Specialty ?? '',
+          ...(hasSpecialty ? { ':spec': loc.Specialty ?? '' } : {}),
         });
 
         if (match) {
           locationMap.set(loc.LocationId, match.LocationId);
         } else {
           // Insert new location into mainDb
+          const cols = ['BookNumber', 'ChapterNumber', 'DocumentId', 'Track', 'IssueTagNumber', 'KeySymbol', 'MepsLanguage', 'Type', 'Title'];
+          const valPlaceholders = [':b', ':c', ':d', ':tr', ':i', ':k', ':m', ':ty', ':t'];
+          const params: Record<string, any> = {
+            ':b': loc.BookNumber ?? null,
+            ':c': loc.ChapterNumber ?? null,
+            ':d': loc.DocumentId ?? null,
+            ':tr': loc.Track ?? null,
+            ':i': loc.IssueTagNumber ?? 0,
+            ':k': loc.KeySymbol ?? null,
+            ':m': loc.MepsLanguage ?? null,
+            ':ty': loc.Type ?? 0,
+            ':t': loc.Title ?? null,
+          };
+
+          if (hasSpecialty) {
+            cols.push('Specialty');
+            valPlaceholders.push(':spec');
+            params[':spec'] = loc.Specialty ?? null;
+          }
+          if (hasEdition) {
+            cols.push('Edition');
+            valPlaceholders.push(':ed');
+            params[':ed'] = loc.Edition ?? null;
+          }
+
           execute(
             mainDb,
-            `INSERT INTO Location (BookNumber, ChapterNumber, DocumentId, Track, IssueTagNumber, KeySymbol, MepsLanguage, Type, Title, Specialty, Edition)
-             VALUES (:b, :c, :d, :tr, :i, :k, :m, :ty, :t, :spec, :ed)`,
-            {
-              ':b': loc.BookNumber ?? null,
-              ':c': loc.ChapterNumber ?? null,
-              ':d': loc.DocumentId ?? null,
-              ':tr': loc.Track ?? null,
-              ':i': loc.IssueTagNumber ?? 0,
-              ':k': loc.KeySymbol ?? null,
-              ':m': loc.MepsLanguage ?? null,
-              ':ty': loc.Type ?? 0,
-              ':t': loc.Title ?? null,
-              ':spec': loc.Specialty ?? null,
-              ':ed': loc.Edition ?? null,
-            }
+            `INSERT INTO Location (${cols.join(', ')}) VALUES (${valPlaceholders.join(', ')})`,
+            params
           );
           const newIdRow = queryOne<{ id: number }>(mainDb, 'SELECT last_insert_rowid() AS id');
           if (newIdRow) {
@@ -196,6 +215,12 @@ export async function mergeJwLibraries(
     }
 
     // ── 2. Map & Merge Tags ────────────────────────────────────────────────
+    onProgress?.({
+      current: Math.round(secBase + secShare * 0.2),
+      total: 100,
+      stage: `Consolidating personal study tags (${sIdx + 1}/${totalSecondaries})...`,
+      details: secName,
+    });
     const tagMap = new Map<number, number>(); // secTagId -> mainTagId
 
     if (tableExists(secDb, 'Tag') && tableExists(mainDb, 'Tag')) {
@@ -241,6 +266,12 @@ export async function mergeJwLibraries(
     }
 
     // ── 3. Map & Merge UserMark & BlockRange (Highlights) ──────────────────
+    onProgress?.({
+      current: Math.round(secBase + secShare * 0.35),
+      total: 100,
+      stage: `Combining color highlights & markers (${sIdx + 1}/${totalSecondaries})...`,
+      details: secName,
+    });
     const userMarkMap = new Map<number, number>(); // secUserMarkId -> mainUserMarkId
 
     if (
@@ -305,17 +336,30 @@ export async function mergeJwLibraries(
           const finalGuid =
             guidExists && guidExists.c > 0 ? generateGuid() : mark.UserMarkGuid;
 
+          const hasStyleIndex = columnExists(mainDb, 'UserMark', 'StyleIndex');
+          const hasVersion = columnExists(mainDb, 'UserMark', 'Version');
+          const umCols = ['ColorIndex', 'LocationId', 'UserMarkGuid'];
+          const umVals = [':col', ':loc', ':guid'];
+          const umParams: Record<string, any> = {
+            ':col': finalColorIndex,
+            ':loc': mappedLocId,
+            ':guid': finalGuid,
+          };
+          if (hasStyleIndex) {
+            umCols.push('StyleIndex');
+            umVals.push(':sty');
+            umParams[':sty'] = mark.StyleIndex ?? 0;
+          }
+          if (hasVersion) {
+            umCols.push('Version');
+            umVals.push(':ver');
+            umParams[':ver'] = mark.Version ?? 1;
+          }
+
           execute(
             mainDb,
-            `INSERT INTO UserMark (ColorIndex, LocationId, StyleIndex, UserMarkGuid, Version)
-             VALUES (:col, :loc, :sty, :guid, :ver)`,
-            {
-              ':col': finalColorIndex,
-              ':loc': mappedLocId,
-              ':sty': mark.StyleIndex ?? 0,
-              ':guid': finalGuid,
-              ':ver': mark.Version ?? 1,
-            }
+            `INSERT INTO UserMark (${umCols.join(', ')}) VALUES (${umVals.join(', ')})`,
+            umParams
           );
           const newMarkRow = queryOne<{ id: number }>(
             mainDb,
@@ -355,6 +399,12 @@ export async function mergeJwLibraries(
     }
 
     // ── 4. Map & Merge Notes ───────────────────────────────────────────────
+    onProgress?.({
+      current: Math.round(secBase + secShare * 0.55),
+      total: 100,
+      stage: `Merging study notes & resolving conflicts (${sIdx + 1}/${totalSecondaries})...`,
+      details: secName,
+    });
     const noteMap = new Map<number, number>(); // secNoteId -> mainNoteId
     const notesToTagWithSecondary: number[] = [];
 
@@ -365,6 +415,10 @@ export async function mergeJwLibraries(
         if (options.excludedNoteGuids?.includes(note.Guid)) {
           continue;
         }
+
+        const noteOverride = options.noteOverrides?.[note.Guid];
+        const effectiveTitle = noteOverride?.title !== undefined ? noteOverride.title : note.Title;
+        const effectiveContent = noteOverride?.content !== undefined ? noteOverride.content : note.Content;
 
         const mappedLocId = note.LocationId ? locationMap.get(note.LocationId) ?? null : null;
         const mappedMarkId = note.UserMarkId ? userMarkMap.get(note.UserMarkId) ?? null : null;
@@ -378,7 +432,7 @@ export async function mergeJwLibraries(
           : null;
         const locTitle =
           locRow?.Title ||
-          (locRow?.BookNumber ? `Book ${locRow.BookNumber}${locRow.ChapterNumber ? `:${locRow.ChapterNumber}` : ''}` : note.Title || 'Personal Study');
+          (locRow?.BookNumber ? `Book ${locRow.BookNumber}${locRow.ChapterNumber ? `:${locRow.ChapterNumber}` : ''}` : effectiveTitle || 'Personal Study');
 
         const hasBt = columnExists(mainDb, 'Note', 'BlockType');
         const hasBi = columnExists(mainDb, 'Note', 'BlockIdentifier');
@@ -397,8 +451,8 @@ export async function mergeJwLibraries(
              ${biClause}
            LIMIT 1`,
           {
-            ':t': (note.Title || '').trim(),
-            ':c': (note.Content || '').trim(),
+            ':t': (effectiveTitle || '').trim(),
+            ':c': (effectiveContent || '').trim(),
             ':l': mappedLocId ?? -1,
             ...(hasBt ? { ':bt': note.BlockType ?? -1 } : {}),
             ...(hasBi ? { ':bi': note.BlockIdentifier ?? -1 } : {}),
@@ -411,8 +465,8 @@ export async function mergeJwLibraries(
           details.unifiedDuplicates.push({
             guid: note.Guid,
             noteId: dupMatch.NoteId,
-            title: note.Title || '(Untitled Note)',
-            content: note.Content || '',
+            title: effectiveTitle || '(Untitled Note)',
+            content: effectiveContent || '',
             locationTitle: locTitle,
             source: secName,
             action: 'unified',
@@ -429,8 +483,8 @@ export async function mergeJwLibraries(
             const existingInMain = queryOne<{ NoteId: number }>(mainDb, 'SELECT NoteId FROM Note WHERE Guid = :guid', { ':guid': note.Guid });
             if (existingInMain) {
               execute(mainDb, 'UPDATE Note SET Content = :c, Title = :t, LastModified = :lm WHERE NoteId = :id', {
-                ':c': note.Content ?? null,
-                ':t': note.Title ?? null,
+                ':c': effectiveContent ?? null,
+                ':t': effectiveTitle ?? null,
                 ':lm': note.LastModified || new Date().toISOString(),
                 ':id': existingInMain.NoteId,
               });
@@ -440,8 +494,8 @@ export async function mergeJwLibraries(
               details.unifiedDuplicates.push({
                 guid: note.Guid,
                 noteId: existingInMain.NoteId,
-                title: note.Title || '(Untitled Note)',
-                content: note.Content || '',
+                title: effectiveTitle || '(Untitled Note)',
+                content: effectiveContent || '',
                 locationTitle: locTitle,
                 source: secName,
                 action: 'unified',
@@ -459,21 +513,36 @@ export async function mergeJwLibraries(
           const finalGuid =
             guidExists && guidExists.c > 0 ? generateGuid() : note.Guid;
 
+          const hasNoteBt = columnExists(mainDb, 'Note', 'BlockType');
+          const hasNoteBi = columnExists(mainDb, 'Note', 'BlockIdentifier');
+
+          const noteCols = ['Guid', 'UserMarkId', 'LocationId', 'Title', 'Content', 'LastModified', 'Created'];
+          const noteVals = [':g', ':um', ':loc', ':t', ':c', ':lm', ':cr'];
+          const noteParams: Record<string, any> = {
+            ':g': finalGuid,
+            ':um': mappedMarkId,
+            ':loc': mappedLocId,
+            ':t': effectiveTitle ?? null,
+            ':c': effectiveContent ?? null,
+            ':lm': note.LastModified || new Date().toISOString(),
+            ':cr': note.Created || new Date().toISOString(),
+          };
+
+          if (hasNoteBt) {
+            noteCols.push('BlockType');
+            noteVals.push(':bt');
+            noteParams[':bt'] = note.BlockType ?? 0;
+          }
+          if (hasNoteBi) {
+            noteCols.push('BlockIdentifier');
+            noteVals.push(':bi');
+            noteParams[':bi'] = note.BlockType === 0 ? null : (note.BlockIdentifier ?? null);
+          }
+
           execute(
             mainDb,
-            `INSERT INTO Note (Guid, UserMarkId, LocationId, Title, Content, LastModified, Created, BlockType, BlockIdentifier)
-             VALUES (:g, :um, :loc, :t, :c, :lm, :cr, :bt, :bi)`,
-            {
-              ':g': finalGuid,
-              ':um': mappedMarkId,
-              ':loc': mappedLocId,
-              ':t': note.Title ?? null,
-              ':c': note.Content ?? null,
-              ':lm': note.LastModified || new Date().toISOString(),
-              ':cr': note.Created || new Date().toISOString(),
-              ':bt': note.BlockType ?? 0,
-              ':bi': note.BlockType === 0 ? null : (note.BlockIdentifier ?? null),
-            }
+            `INSERT INTO Note (${noteCols.join(', ')}) VALUES (${noteVals.join(', ')})`,
+            noteParams
           );
 
           const newNoteRow = queryOne<{ id: number }>(
@@ -488,8 +557,8 @@ export async function mergeJwLibraries(
             details.addedNotes.push({
               guid: note.Guid,
               noteId: newNoteRow.id,
-              title: note.Title || '(Untitled Note)',
-              content: note.Content || '',
+              title: effectiveTitle || '(Untitled Note)',
+              content: effectiveContent || '',
               locationTitle: locTitle,
               source: secName,
               action: 'added',
@@ -497,8 +566,8 @@ export async function mergeJwLibraries(
 
             if (previewNotes.length < 5) {
               previewNotes.push({
-                title: note.Title || '(Untitled Note)',
-                content: (note.Content || '').slice(0, 100),
+                title: effectiveTitle || '(Untitled Note)',
+                content: (effectiveContent || '').slice(0, 100),
                 source: secName,
               });
             }
@@ -510,6 +579,12 @@ export async function mergeJwLibraries(
     // TagMap merge moved after playlists
 
     // ── 6. Merge Bookmarks ─────────────────────────────────────────────────
+    onProgress?.({
+      current: Math.round(secBase + secShare * 0.78),
+      total: 100,
+      stage: `Synchronizing bookmarks (${sIdx + 1}/${totalSecondaries})...`,
+      details: secName,
+    });
     if (tableExists(secDb, 'Bookmark') && tableExists(mainDb, 'Bookmark')) {
       const secBookmarks = queryAll<IBookmark>(secDb, 'SELECT * FROM Bookmark');
 
@@ -549,19 +624,39 @@ export async function mergeJwLibraries(
         const blockType = bm.BlockType ?? 0;
         const blockId = blockType === 0 ? null : (bm.BlockIdentifier ?? null);
 
+        const hasBmBt = columnExists(mainDb, 'Bookmark', 'BlockType');
+        const hasBmBi = columnExists(mainDb, 'Bookmark', 'BlockIdentifier');
+        const hasBmPub = columnExists(mainDb, 'Bookmark', 'PublicationLocationId');
+
+        const bmCols = ['LocationId', 'Slot', 'Title', 'Snippet'];
+        const bmVals = [':lid', ':slot', ':title', ':snip'];
+        const bmParams: Record<string, any> = {
+          ':lid': mappedLocId,
+          ':slot': targetSlot,
+          ':title': bm.Title ?? '',
+          ':snip': bm.Snippet ?? null,
+        };
+
+        if (hasBmPub) {
+          bmCols.push('PublicationLocationId');
+          bmVals.push(':plid');
+          bmParams[':plid'] = mappedPubLocId;
+        }
+        if (hasBmBt) {
+          bmCols.push('BlockType');
+          bmVals.push(':bt');
+          bmParams[':bt'] = bm.BlockType ?? 0;
+        }
+        if (hasBmBi) {
+          bmCols.push('BlockIdentifier');
+          bmVals.push(':bi');
+          bmParams[':bi'] = bm.BlockType === 0 ? null : (bm.BlockIdentifier ?? null);
+        }
+
         execute(
           mainDb,
-          `INSERT INTO Bookmark (LocationId, PublicationLocationId, Slot, Title, Snippet, BlockType, BlockIdentifier)
-           VALUES (:lid, :plid, :slot, :title, :snip, :bt, :bi)`,
-          {
-            ':lid': mappedLocId,
-            ':plid': mappedPubLocId,
-            ':slot': targetSlot,
-            ':title': bm.Title ?? '',
-            ':snip': bm.Snippet ?? null,
-            ':bt': blockType,
-            ':bi': blockId,
-          }
+          `INSERT INTO Bookmark (${bmCols.join(', ')}) VALUES (${bmVals.join(', ')})`,
+          bmParams
         );
         stats.bookmarksAdded++;
         const bmLoc = mappedLocId
@@ -576,6 +671,12 @@ export async function mergeJwLibraries(
     }
 
     // ── 7. Merge InputFields (Study Answers) ───────────────────────────────
+    onProgress?.({
+      current: Math.round(secBase + secShare * 0.9),
+      total: 100,
+      stage: `Merging study answers & playlists (${sIdx + 1}/${totalSecondaries})...`,
+      details: secName,
+    });
     if (tableExists(secDb, 'InputField') && tableExists(mainDb, 'InputField')) {
       const secInputs = queryAll<IInputField>(secDb, 'SELECT * FROM InputField');
 
@@ -907,8 +1008,8 @@ export async function mergeJwLibraries(
   // ── 8. Optional Doctor Health Checks & Clean ─────────────────────────────
   if (options.doctorCheck) {
     onProgress?.({
-      current: 8,
-      total: 10,
+      current: 72,
+      total: 100,
       stage: 'Running Library Doctor diagnostics...',
     });
     for (let pass = 0; pass < 3; pass++) {
@@ -926,13 +1027,19 @@ export async function mergeJwLibraries(
 
   // ── 9. Finalize Database & Create .jwlibrary Bundle ──────────────────────
   onProgress?.({
-    current: 9,
-    total: 10,
-    stage: 'Finalizing database and computing SHA-256 hash...',
+    current: 76,
+    total: 100,
+    stage: 'Exporting SQLite database...',
   });
 
   const mergedDbBytes = exportDatabase(mainDb);
   mainDb.close();
+
+  onProgress?.({
+    current: 80,
+    total: 100,
+    stage: 'Verifying integrity hash and manifest...',
+  });
 
   const finalName = options.primaryName || `${primaryManifest.name || 'Library'} (Merged)`;
   const finalDevice = options.deviceName || 'JW Sync (Web)';
@@ -944,9 +1051,9 @@ export async function mergeJwLibraries(
   );
 
   onProgress?.({
-    current: 10,
-    total: 10,
-    stage: 'Packaging .jwlibrary archive...',
+    current: 82,
+    total: 100,
+    stage: 'Compressing .jwlibrary archive (0%)...',
   });
 
   const mergedExtraFiles = new Map<string, Uint8Array>();
@@ -959,12 +1066,32 @@ export async function mergeJwLibraries(
     }
   }
 
-  const mergedBlob = await packageJwLibrary(mergedDbBytes, updatedManifest, mergedExtraFiles);
+  const mergedBlob = await packageJwLibrary(
+    mergedDbBytes,
+    updatedManifest,
+    mergedExtraFiles,
+    (zipPercent) => {
+      const roundedZip = Math.round(zipPercent);
+      const overall = Math.min(99, Math.round(82 + (zipPercent * 0.17)));
+      onProgress?.({
+        current: overall,
+        total: 100,
+        stage: `Compressing .jwlibrary archive (${roundedZip}%)...`,
+      });
+    }
+  );
+
+  onProgress?.({
+    current: 100,
+    total: 100,
+    stage: 'Merge completed successfully!',
+  });
 
   return {
     mergedBlob,
     mergedDbBytes,
     manifest: updatedManifest,
+    extraFiles: mergedExtraFiles,
     stats,
     details,
     previewNotes,

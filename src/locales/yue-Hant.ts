@@ -237,7 +237,16 @@ export const yue_Hant: TranslationSchema = {
     "cancel": "Cancel",
     "decryptAndLoad": "Decrypt & Load",
     "encryptionSettings": "Client-Side Encryption",
-    "encryptionWarning": "Warning: If you lose your password, your encrypted backups cannot be recovered."
+    "encryptionWarning": "Warning: If you lose your password, your encrypted backups cannot be recovered.",
+    "rename": "重新命名",
+    "renameBackupTitle": "重新命名雲端備份",
+    "renameBackupDesc": "請輸入呢個備份嘅新檔案名稱：",
+    "renameSuccess": "備份重新命名成功",
+    "renameErrorEmpty": "檔案名稱唔可以空白",
+    "renameErrorInvalidChars": "檔案名稱包含無效字元",
+    "renameErrorSame": "新名稱同現有名稱相同",
+    "renameErrorTooLong": "檔案名稱太長",
+    "extensionPreserved": "副檔名 {{ext}} 會自動保留"
   },
   "footer": {
     "clientSide": "100% 瀏覽器端 SQLite (WASM)",

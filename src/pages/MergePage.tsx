@@ -16,6 +16,8 @@ import {
   Tablet,
   X,
   RefreshCw,
+  RotateCcw,
+  Loader2,
   Sliders,
   Tag,
   ChevronDown,
@@ -28,9 +30,11 @@ import {
 } from 'lucide-react';
 import { extractJwLibrary } from '../lib/jw/zip';
 import { openDatabase, getLibrarySummary, queryAll } from '../lib/jw/sqlite';
+import { computeSha256 } from '../lib/jw/hash';
 import { mergeJwLibraries, IMergeResult } from '../lib/jw/merge';
 import { IManifest, ILibrarySummary, IMergeProgress, TagManagerMap, IMergeDetailedNote } from '../lib/jw/types';
 import { detectRealConflicts, IConflictItem } from '../lib/jw/conflicts';
+import { MergeDetailedBreakdown } from '../components/merge/MergeDetailedBreakdown';
 import { useAppStore } from '../store/useAppStore';
 import { useCloudStore } from '../store/useCloudStore';
 import { IDriveFile } from '../lib/cloud/googleDrive';
@@ -51,12 +55,13 @@ interface ILoadedFileState {
   manifest: IManifest;
   summary: ILibrarySummary;
   extraFiles: Map<string, Uint8Array>;
+  sha256: string;
 }
 
 export const MergePage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { updateActiveDatabase } = useAppStore();
+  const { updateActiveDatabase, setIsLoading: setAppIsLoading } = useAppStore();
   const {
     isConnected,
     backups,
@@ -64,11 +69,26 @@ export const MergePage: React.FC = () => {
     connect,
     downloadCloudFile,
     backupCurrentLibrary,
+    backupFileDirectly,
+    isShaInCloud,
     isUploading,
   } = useCloudStore();
 
   const [primaryFile, setPrimaryFile] = useState<ILoadedFileState | null>(null);
   const [secondaryFile, setSecondaryFile] = useState<ILoadedFileState | null>(null);
+  const [isLoadingPrimary, setIsLoadingPrimary] = useState<boolean>(false);
+  const [isLoadingSecondary, setIsLoadingSecondary] = useState<boolean>(false);
+  const [primaryProgress, setPrimaryProgress] = useState<{ stage: string; percent: number } | null>(null);
+  const [secondaryProgress, setSecondaryProgress] = useState<{ stage: string; percent: number } | null>(null);
+  const [isOpenInAppLoading, setIsOpenInAppLoading] = useState<boolean>(false);
+  const [isLoadingAppPrimary, setIsLoadingAppPrimary] = useState<boolean>(false);
+  const [isLoadingAppSecondary, setIsLoadingAppSecondary] = useState<boolean>(false);
+  const [isUploadingPrimary, setIsUploadingPrimary] = useState<boolean>(false);
+  const [isUploadingSecondary, setIsUploadingSecondary] = useState<boolean>(false);
+  const [uploadProgressPrimary, setUploadProgressPrimary] = useState<number | null>(null);
+  const [uploadProgressSecondary, setUploadProgressSecondary] = useState<number | null>(null);
+  const [isDraggingPrimary, setIsDraggingPrimary] = useState<boolean>(false);
+  const [isDraggingSecondary, setIsDraggingSecondary] = useState<boolean>(false);
   const [outputName, setOutputName] = useState<string>('Merge_Merged_Study.jwlibrary');
 
   // Conflict Resolution State
@@ -88,23 +108,14 @@ export const MergePage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [cloudSaveSuccess, setCloudSaveSuccess] = useState<boolean>(false);
 
-  // Detailed View & Exclusion State
+  // Detailed View, Exclusion & Override State
   const [showDetails, setShowDetails] = useState<boolean>(false);
   const [candidateNotes, setCandidateNotes] = useState<IMergeDetailedNote[]>([]);
+  const [candidateDuplicates, setCandidateDuplicates] = useState<IMergeDetailedNote[]>([]);
   const [excludedNoteGuids, setExcludedNoteGuids] = useState<Set<string>>(new Set());
   const [lastMergedExcludedGuids, setLastMergedExcludedGuids] = useState<Set<string>>(new Set());
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    notes: true,
-    duplicates: false,
-    highlights: false,
-    tags: false,
-    bookmarks: false,
-    playlists: false,
-  });
-
-  const toggleSection = (key: string) => {
-    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+  const [noteOverrides, setNoteOverrides] = useState<Record<string, { title?: string; content?: string }>>({});
+  const [lastMergedNoteOverrides, setLastMergedNoteOverrides] = useState<Record<string, { title?: string; content?: string }>>({});
 
   const toggleNoteExclusion = (guid: string) => {
     setExcludedNoteGuids((prev) => {
@@ -118,12 +129,35 @@ export const MergePage: React.FC = () => {
     });
   };
 
+  const handleSetNoteOverride = (guid: string, override: { title?: string; content?: string } | null) => {
+    setNoteOverrides((prev) => {
+      const next = { ...prev };
+      if (!override) {
+        delete next[guid];
+      } else {
+        next[guid] = override;
+      }
+      return next;
+    });
+  };
+
   const hasUnsavedExclusionChanges =
     excludedNoteGuids.size !== lastMergedExcludedGuids.size ||
-    Array.from(excludedNoteGuids).some((g) => !lastMergedExcludedGuids.has(g));
+    Array.from(excludedNoteGuids).some((g) => !lastMergedExcludedGuids.has(g)) ||
+    JSON.stringify(noteOverrides) !== JSON.stringify(lastMergedNoteOverrides);
 
   const primaryInputRef = useRef<HTMLInputElement>(null);
   const secondaryInputRef = useRef<HTMLInputElement>(null);
+  const primaryLoadingRef = useRef<boolean>(false);
+  const secondaryLoadingRef = useRef<boolean>(false);
+  const resultRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to success result when merge completes
+  useEffect(() => {
+    if (mergeResult) {
+      resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [mergeResult]);
 
   // Check if preloaded from CloudSyncModal
   useEffect(() => {
@@ -142,34 +176,189 @@ export const MergePage: React.FC = () => {
   }, []);
 
   const loadPrimary = async (file: File) => {
-    setErrorMessage(null);
-    setMergeResult(null);
-    setCandidateNotes([]);
-    setExcludedNoteGuids(new Set());
-    setLastMergedExcludedGuids(new Set());
-    setShowDetails(false);
-    const { manifest, dbBytes, fileSizeBytes, extraFiles } = await extractJwLibrary(file);
-    const db = await openDatabase(dbBytes);
-    const summary = getLibrarySummary(db, manifest, fileSizeBytes);
-    db.close();
+    try {
+      primaryLoadingRef.current = true;
+      setIsLoadingPrimary(true);
+      setPrimaryProgress({ stage: t('merge.progressUnpacking', 'Unpacking backup archive...'), percent: 10 });
+      setAppIsLoading(true, t('merge.loadingSourceA', 'Loading Source A into app...'));
+      setErrorMessage(null);
+      setMergeResult(null);
+      setCandidateNotes([]);
+      setExcludedNoteGuids(new Set());
+      setLastMergedExcludedGuids(new Set());
+      setShowDetails(false);
 
-    setPrimaryFile({ file, dbBytes, manifest, summary, extraFiles });
-    setOutputName(`Merge_${(manifest.name || 'Merged').replace(/[^a-z0-9_\-]/gi, '_')}.jwlibrary`);
+      const { manifest, dbBytes, fileSizeBytes, extraFiles } = await extractJwLibrary(
+        file,
+        file.name,
+        (p) => {
+          setPrimaryProgress(p);
+          setAppIsLoading(true, `${p.stage} (${p.percent}%)`);
+        }
+      );
+
+      setPrimaryProgress({ stage: t('merge.progressSqlite', 'Analyzing SQLite database...'), percent: 96 });
+      setAppIsLoading(true, `${t('merge.progressSqlite', 'Analyzing SQLite database...')} (96%)`);
+      const db = await openDatabase(dbBytes);
+      const summary = getLibrarySummary(db, manifest, fileSizeBytes);
+      db.close();
+
+      setPrimaryProgress({ stage: t('merge.progressChecksum', 'Verifying integrity hash...'), percent: 98 });
+      setAppIsLoading(true, `${t('merge.progressChecksum', 'Verifying integrity hash...')} (98%)`);
+      const sha256 = await computeSha256(dbBytes);
+
+      setPrimaryProgress({ stage: t('merge.progressReady', 'Ready!'), percent: 100 });
+      setPrimaryFile({ file, dbBytes, manifest, summary, extraFiles, sha256 });
+      setOutputName(`Merge_${(manifest.name || 'Merged').replace(/[^a-z0-9_\-]/gi, '_')}.jwlibrary`);
+    } catch (err: any) {
+      console.error('Error loading Source A:', err);
+      setErrorMessage(t('merge.loadPrimaryError', 'Failed to load Source A: ') + (err?.message || String(err)));
+    } finally {
+      primaryLoadingRef.current = false;
+      setIsLoadingPrimary(false);
+      setPrimaryProgress(null);
+      if (!secondaryLoadingRef.current) {
+        setAppIsLoading(false);
+      }
+    }
   };
 
   const loadSecondary = async (file: File) => {
-    setErrorMessage(null);
+    try {
+      secondaryLoadingRef.current = true;
+      setIsLoadingSecondary(true);
+      setSecondaryProgress({ stage: t('merge.progressUnpacking', 'Unpacking backup archive...'), percent: 10 });
+      setAppIsLoading(true, t('merge.loadingSourceB', 'Loading Source B into app...'));
+      setErrorMessage(null);
+      setMergeResult(null);
+      setCandidateNotes([]);
+      setExcludedNoteGuids(new Set());
+      setLastMergedExcludedGuids(new Set());
+      setShowDetails(false);
+
+      const { manifest, dbBytes, fileSizeBytes, extraFiles } = await extractJwLibrary(
+        file,
+        file.name,
+        (p) => {
+          setSecondaryProgress(p);
+          setAppIsLoading(true, `${p.stage} (${p.percent}%)`);
+        }
+      );
+
+      setSecondaryProgress({ stage: t('merge.progressSqlite', 'Analyzing SQLite database...'), percent: 96 });
+      setAppIsLoading(true, `${t('merge.progressSqlite', 'Analyzing SQLite database...')} (96%)`);
+      const db = await openDatabase(dbBytes);
+      const summary = getLibrarySummary(db, manifest, fileSizeBytes);
+      db.close();
+
+      setSecondaryProgress({ stage: t('merge.progressChecksum', 'Verifying integrity hash...'), percent: 98 });
+      setAppIsLoading(true, `${t('merge.progressChecksum', 'Verifying integrity hash...')} (98%)`);
+      const sha256 = await computeSha256(dbBytes);
+
+      setSecondaryProgress({ stage: t('merge.progressReady', 'Ready!'), percent: 100 });
+      setSecondaryFile({ file, dbBytes, manifest, summary, extraFiles, sha256 });
+    } catch (err: any) {
+      console.error('Error loading Source B:', err);
+      setErrorMessage(t('merge.loadSecondaryError', 'Failed to load Source B: ') + (err?.message || String(err)));
+    } finally {
+      secondaryLoadingRef.current = false;
+      setIsLoadingSecondary(false);
+      setSecondaryProgress(null);
+      if (!primaryLoadingRef.current) {
+        setAppIsLoading(false);
+      }
+    }
+  };
+
+  const handleLoadPrimaryIntoApp = async () => {
+    if (!primaryFile) return;
+    try {
+      setIsLoadingAppPrimary(true);
+      await updateActiveDatabase(primaryFile.dbBytes, primaryFile.manifest, primaryFile.extraFiles, primaryFile.file);
+      navigate('/explorer');
+    } catch (err: any) {
+      setErrorMessage(t('merge.loadPrimaryError', 'Failed to load into app: ') + (err?.message || String(err)));
+    } finally {
+      setIsLoadingAppPrimary(false);
+    }
+  };
+
+  const handleLoadSecondaryIntoApp = async () => {
+    if (!secondaryFile) return;
+    try {
+      setIsLoadingAppSecondary(true);
+      await updateActiveDatabase(secondaryFile.dbBytes, secondaryFile.manifest, secondaryFile.extraFiles, secondaryFile.file);
+      navigate('/explorer');
+    } catch (err: any) {
+      setErrorMessage(t('merge.loadSecondaryError', 'Failed to load into app: ') + (err?.message || String(err)));
+    } finally {
+      setIsLoadingAppSecondary(false);
+    }
+  };
+
+  const handleResetMerge = () => {
+    setPrimaryFile(null);
+    setSecondaryFile(null);
+    setPrimaryProgress(null);
+    setSecondaryProgress(null);
+    setConflicts([]);
+    setMergeProgress(null);
     setMergeResult(null);
+    setErrorMessage(null);
+    setCloudSaveSuccess(false);
+    setShowDetails(false);
     setCandidateNotes([]);
+    setCandidateDuplicates([]);
     setExcludedNoteGuids(new Set());
     setLastMergedExcludedGuids(new Set());
-    setShowDetails(false);
-    const { manifest, dbBytes, fileSizeBytes, extraFiles } = await extractJwLibrary(file);
-    const db = await openDatabase(dbBytes);
-    const summary = getLibrarySummary(db, manifest, fileSizeBytes);
-    db.close();
+    setNoteOverrides({});
+    setLastMergedNoteOverrides({});
+    setTagImportedNotes(false);
+    setCustomImportTagName('From Merge');
+    setOutputName('Merge_Merged_Study.jwlibrary');
+    setUploadProgressPrimary(null);
+    setUploadProgressSecondary(null);
+    if (primaryInputRef.current) primaryInputRef.current.value = '';
+    if (secondaryInputRef.current) secondaryInputRef.current.value = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-    setSecondaryFile({ file, dbBytes, manifest, summary, extraFiles });
+  const handleUploadPrimaryToCloud = async () => {
+    if (!primaryFile) return;
+    try {
+      setIsUploadingPrimary(true);
+      setUploadProgressPrimary(0);
+      await backupFileDirectly(
+        primaryFile.file,
+        primaryFile.file.name,
+        primaryFile.sha256,
+        (percent) => setUploadProgressPrimary(percent)
+      );
+    } catch (err: any) {
+      setErrorMessage(t('cloud.uploadError', 'Cloud upload error: ') + (err?.message || String(err)));
+    } finally {
+      setIsUploadingPrimary(false);
+      setUploadProgressPrimary(null);
+    }
+  };
+
+  const handleUploadSecondaryToCloud = async () => {
+    if (!secondaryFile) return;
+    try {
+      setIsUploadingSecondary(true);
+      setUploadProgressSecondary(0);
+      await backupFileDirectly(
+        secondaryFile.file,
+        secondaryFile.file.name,
+        secondaryFile.sha256,
+        (percent) => setUploadProgressSecondary(percent)
+      );
+    } catch (err: any) {
+      setErrorMessage(t('cloud.uploadError', 'Cloud upload error: ') + (err?.message || String(err)));
+    } finally {
+      setIsUploadingSecondary(false);
+      setUploadProgressSecondary(null);
+    }
   };
 
   // Inspect Potential Conflicts when both files are loaded
@@ -197,11 +386,13 @@ export const MergePage: React.FC = () => {
   const handlePrimaryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) await loadPrimary(file);
+    if (e.target) e.target.value = '';
   };
 
   const handleSecondaryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) await loadSecondary(file);
+    if (e.target) e.target.value = '';
   };
 
   const handleLoadDemoFiles = async () => {
@@ -251,15 +442,25 @@ export const MergePage: React.FC = () => {
     }
   };
 
-  const handleExecuteMerge = async (exclusionsToUse?: Set<string>) => {
+  const handleExecuteMerge = async (
+    exclusionsToUse?: Set<string>,
+    overridesToUse?: Record<string, { title?: string; content?: string }>
+  ) => {
     if (!primaryFile || !secondaryFile) return;
 
     try {
       setIsMerging(true);
       setErrorMessage(null);
       setCloudSaveSuccess(false);
+      setMergeProgress({
+        stage: t('merge.progressInit', 'Initializing merge engine...'),
+        current: 0,
+        total: 100,
+      });
+      setAppIsLoading(true, t('merge.merging', 'Merging...'));
 
       const effectiveExclusions = (exclusionsToUse instanceof Set) ? exclusionsToUse : excludedNoteGuids;
+      const effectiveOverrides = overridesToUse !== undefined ? overridesToUse : noteOverrides;
 
       const tagRules: TagManagerMap = {};
 
@@ -285,27 +486,29 @@ export const MergePage: React.FC = () => {
           conflictResolutions,
           secondaryNoteTag: tagImportedNotes ? (customImportTagName.trim() || 'From Merge') : undefined,
           excludedNoteGuids: Array.from(effectiveExclusions),
+          noteOverrides: effectiveOverrides,
         },
         tagRules,
-        (p) => setMergeProgress(p),
+        (p) => {
+          setMergeProgress(p);
+          const pct = Math.round((p.current / p.total) * 100);
+          setAppIsLoading(true, `${p.stage} (${pct}%)`);
+        },
         primaryFile.extraFiles
       );
 
       setMergeResult(result);
       setLastMergedExcludedGuids(new Set(effectiveExclusions));
+      setLastMergedNoteOverrides({ ...effectiveOverrides });
 
-      setCandidateNotes((prev) => {
-        if (prev.length === 0) {
-          return result.details.addedNotes;
-        }
-        return prev;
-      });
-
-      setIsMerging(false);
+      setCandidateNotes((prev) => (prev.length === 0 ? result.details.addedNotes : prev));
+      setCandidateDuplicates((prev) => (prev.length === 0 ? result.details.unifiedDuplicates : prev));
     } catch (err: any) {
-      setIsMerging(false);
       const msg = err instanceof Error ? err.message : (typeof err === 'string' ? err : (err?.message || JSON.stringify(err)));
       setErrorMessage(`Merge failed: ${msg}`);
+    } finally {
+      setIsMerging(false);
+      setAppIsLoading(false);
     }
   };
 
@@ -323,18 +526,36 @@ export const MergePage: React.FC = () => {
 
   const handleOpenInExplorer = async () => {
     if (!mergeResult) return;
-    await updateActiveDatabase(mergeResult.mergedDbBytes, mergeResult.manifest);
-    navigate('/explorer');
+    try {
+      setIsOpenInAppLoading(true);
+      await updateActiveDatabase(
+        mergeResult.mergedDbBytes,
+        mergeResult.manifest,
+        mergeResult.extraFiles,
+        mergeResult.mergedBlob
+      );
+      navigate('/explorer');
+    } catch (err: any) {
+      setErrorMessage(t('merge.loadPrimaryError', 'Failed to load into app: ') + (err?.message || String(err)));
+    } finally {
+      setIsOpenInAppLoading(false);
+    }
   };
 
   const handleCloudSaveMerged = async () => {
     if (!mergeResult) return;
     try {
-      await updateActiveDatabase(mergeResult.mergedDbBytes, mergeResult.manifest);
-      await backupCurrentLibrary(outputName);
+      await updateActiveDatabase(
+        mergeResult.mergedDbBytes,
+        mergeResult.manifest,
+        mergeResult.extraFiles,
+        mergeResult.mergedBlob
+      );
+      const sha256 = await computeSha256(mergeResult.mergedDbBytes);
+      await backupFileDirectly(mergeResult.mergedBlob, outputName, sha256);
       setCloudSaveSuccess(true);
-    } catch (err) {
-      alert('Cloud save error: ' + (err as Error).message);
+    } catch (err: any) {
+      setErrorMessage(t('cloud.saveError', 'Cloud save error: ') + (err?.message || String(err)));
     }
   };
 
@@ -350,7 +571,7 @@ export const MergePage: React.FC = () => {
         <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
           {t('merge.heroSubtitle', 'Combine phone and tablet backups into a single unified archive with automated deduplication.')}
         </p>
-        <div className="pt-1">
+        <div className="pt-1 flex items-center justify-center space-x-4">
           <button
             type="button"
             onClick={handleLoadDemoFiles}
@@ -359,6 +580,16 @@ export const MergePage: React.FC = () => {
             <Sparkles className="w-3.5 h-3.5" />
             <span>{t('merge.loadDemoPair', 'Try with demo files')}</span>
           </button>
+          {(primaryFile || secondaryFile || mergeResult) && (
+            <button
+              type="button"
+              onClick={handleResetMerge}
+              className="inline-flex items-center space-x-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-red-500 font-medium transition-colors"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>{t('merge.cleanMerge', 'Reset')}</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -372,13 +603,53 @@ export const MergePage: React.FC = () => {
       {/* ── DROPZONES (SOURCE A & SOURCE B) ────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* SOURCE A */}
-        <div className="rounded-2xl border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#101625] p-5 space-y-3 shadow-sm">
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDraggingPrimary(true);
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDraggingPrimary(false);
+          }}
+          onDrop={async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDraggingPrimary(false);
+            const files = Array.from(e.dataTransfer.files).filter(
+              (f) => f.name.endsWith('.jwlibrary') || f.name.endsWith('.zip')
+            );
+            if (files.length === 1) {
+              await loadPrimary(files[0]);
+            } else if (files.length >= 2) {
+              await loadPrimary(files[0]);
+              await loadSecondary(files[1]);
+            }
+          }}
+          className={`rounded-2xl border transition-all p-5 space-y-3 shadow-sm ${
+            isDraggingPrimary
+              ? 'border-blue-500 ring-2 ring-blue-500/30 bg-blue-50/20 dark:bg-blue-950/20'
+              : 'border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#101625]'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 text-xs font-bold text-slate-700 dark:text-slate-300">
               <Smartphone className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               <span>{t('merge.sourceA', 'Source A (Phone)')}</span>
             </div>
-            {primaryFile ? (
+            {isLoadingPrimary ? (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25 flex items-center space-x-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>{primaryProgress?.percent ? `${primaryProgress.percent}%` : t('common.loading', 'Loading...')}</span>
+              </span>
+            ) : isUploadingPrimary ? (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25 flex items-center space-x-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>Cloud {uploadProgressPrimary ?? 0}%</span>
+              </span>
+            ) : primaryFile ? (
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 flex items-center space-x-1">
                 <Check className="w-3 h-3" />
                 <span>{t('common.loaded', 'Loaded')}</span>
@@ -396,7 +667,33 @@ export const MergePage: React.FC = () => {
             onChange={handlePrimaryUpload}
           />
 
-          {!primaryFile ? (
+          {isLoadingPrimary ? (
+            <div className="border-2 border-dashed border-blue-500/40 rounded-xl p-6 text-center space-y-3 bg-blue-50/40 dark:bg-blue-950/20">
+              <div className="relative w-10 h-10 mx-auto flex items-center justify-center">
+                <div className="absolute inset-0 rounded-full border-2 border-blue-500/20 border-t-blue-600 dark:border-t-blue-400 animate-spin" />
+                <Loader2 className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center justify-center space-x-2 text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                  <span>{primaryProgress?.stage || t('merge.loadingBackup', 'Reading backup archive...')}</span>
+                  {primaryProgress?.percent !== undefined && (
+                    <span className="text-blue-600 dark:text-blue-400 font-mono text-xs">
+                      {primaryProgress.percent}%
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {t('common.processing', 'Processing client-side in WebAssembly...')}
+                </p>
+              </div>
+              <div className="w-full bg-slate-200/80 dark:bg-slate-800 rounded-full h-2 overflow-hidden max-w-xs mx-auto">
+                <div
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 h-full transition-all duration-200 rounded-full"
+                  style={{ width: `${primaryProgress?.percent ?? 15}%` }}
+                />
+              </div>
+            </div>
+          ) : !primaryFile ? (
             <div
               onClick={() => primaryInputRef.current?.click()}
               className="border-2 border-dashed border-slate-200 dark:border-white/[0.1] hover:border-blue-500/50 rounded-xl p-6 text-center cursor-pointer transition-all space-y-2 bg-slate-50/50 hover:bg-blue-50/20 dark:bg-white/[0.01] group"
@@ -404,27 +701,46 @@ export const MergePage: React.FC = () => {
               <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400">
                 <Upload className="w-5 h-5" />
               </div>
-              <div className="text-xs font-bold text-slate-900 dark:text-white">{t('merge.dropHere', 'Select .jwlibrary')}</div>
-              <p className="text-[11px] text-slate-500">Drop file here or click to browse</p>
+              <div className="space-y-0.5">
+                <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                  {t('merge.dropHere', 'Drop .jwlibrary file here or click to browse')}
+                </div>
+                <p className="text-xs text-slate-500">Drop file here or click to browse</p>
+              </div>
             </div>
           ) : (
             <div className="bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/[0.06] rounded-xl p-3.5 space-y-2">
               <div className="flex items-center justify-between">
                 <div className="min-w-0">
-                  <div className="font-bold text-xs text-slate-900 dark:text-white truncate max-w-[200px]">
+                  <div
+                    className="font-bold text-xs text-slate-900 dark:text-white truncate max-w-[200px] cursor-help"
+                    title={primaryFile.file?.name ? `${primaryFile.summary.name} (${primaryFile.file.name})` : primaryFile.summary.name}
+                  >
                     {primaryFile.summary.name}
                   </div>
                   <div className="text-[10px] text-slate-500">
                     {primaryFile.summary.deviceName} • {(primaryFile.file.size / 1024).toFixed(1)} KB
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => primaryInputRef.current?.click()}
-                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold"
-                >
-                  Change
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={handleLoadPrimaryIntoApp}
+                    disabled={isLoadingAppPrimary}
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold flex items-center space-x-1"
+                    title={t('merge.openInAppTooltip', 'Load this backup as the active database in the application')}
+                  >
+                    {isLoadingAppPrimary ? <Loader2 className="w-3 h-3 animate-spin" /> : <Compass className="w-3 h-3" />}
+                    <span>{isLoadingAppPrimary ? t('merge.loadingIntoApp', 'Loading...') : t('merge.openInApp', 'Open in App')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => primaryInputRef.current?.click()}
+                    className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:underline font-semibold"
+                  >
+                    Change
+                  </button>
+                </div>
               </div>
               <div className="pt-1.5 border-t border-slate-200/60 dark:border-white/[0.04] text-[11px] text-slate-600 dark:text-slate-400 flex items-center space-x-1.5 flex-wrap">
                 <span>{primaryFile.summary.notesCount} notes</span>
@@ -435,6 +751,50 @@ export const MergePage: React.FC = () => {
                 <span>•</span>
                 <span>{primaryFile.summary.playlistsCount} playlists</span>
               </div>
+
+              {/* Cloud presence check & upload button */}
+              {isConnected && (
+                <div className="pt-1.5 border-t border-slate-200/60 dark:border-white/[0.04] flex items-center justify-between">
+                  <div className="flex items-center space-x-1.5">
+                    <Cloud className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="text-[11px] text-slate-500">Google Drive:</span>
+                  </div>
+                  {isShaInCloud(primaryFile.sha256) ? (
+                    <span className="inline-flex items-center space-x-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>{t('cloud.inCloudBadge', 'Saved in Cloud ✓')}</span>
+                    </span>
+                  ) : (
+                    <div className="flex flex-col items-end gap-1">
+                      <button
+                        type="button"
+                        onClick={handleUploadPrimaryToCloud}
+                        disabled={isUploadingPrimary || isUploading}
+                        className="inline-flex items-center space-x-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
+                      >
+                        {isUploadingPrimary ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Upload className="w-3 h-3" />
+                        )}
+                        <span>
+                          {isUploadingPrimary
+                            ? `${t('merge.savingDrive', 'Uploading...')} ${uploadProgressPrimary ?? 0}%`
+                            : t('cloud.uploadSource', 'Save to Drive')}
+                        </span>
+                      </button>
+                      {isUploadingPrimary && (
+                        <div className="w-24 bg-blue-100 dark:bg-blue-950 rounded-full h-1 overflow-hidden">
+                          <div
+                            className="bg-blue-600 dark:bg-blue-400 h-full transition-all duration-150 rounded-full"
+                            style={{ width: `${Math.max(5, uploadProgressPrimary ?? 0)}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -449,13 +809,53 @@ export const MergePage: React.FC = () => {
         </div>
 
         {/* SOURCE B */}
-        <div className="rounded-2xl border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#101625] p-5 space-y-3 shadow-sm">
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDraggingSecondary(true);
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDraggingSecondary(false);
+          }}
+          onDrop={async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDraggingSecondary(false);
+            const files = Array.from(e.dataTransfer.files).filter(
+              (f) => f.name.endsWith('.jwlibrary') || f.name.endsWith('.zip')
+            );
+            if (files.length === 1) {
+              await loadSecondary(files[0]);
+            } else if (files.length >= 2) {
+              await loadPrimary(files[0]);
+              await loadSecondary(files[1]);
+            }
+          }}
+          className={`rounded-2xl border transition-all p-5 space-y-3 shadow-sm ${
+            isDraggingSecondary
+              ? 'border-sky-500 ring-2 ring-sky-500/30 bg-sky-50/20 dark:bg-sky-950/20'
+              : 'border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#101625]'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 text-xs font-bold text-slate-700 dark:text-slate-300">
               <Tablet className="w-4 h-4 text-sky-600 dark:text-sky-400" />
               <span>{t('merge.sourceB', 'Source B (Tablet)')}</span>
             </div>
-            {secondaryFile ? (
+            {isLoadingSecondary ? (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/25 flex items-center space-x-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>{secondaryProgress?.percent ? `${secondaryProgress.percent}%` : t('common.loading', 'Loading...')}</span>
+              </span>
+            ) : isUploadingSecondary ? (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/25 flex items-center space-x-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>Cloud {uploadProgressSecondary ?? 0}%</span>
+              </span>
+            ) : secondaryFile ? (
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 flex items-center space-x-1">
                 <Check className="w-3 h-3" />
                 <span>{t('common.loaded', 'Loaded')}</span>
@@ -473,7 +873,33 @@ export const MergePage: React.FC = () => {
             onChange={handleSecondaryUpload}
           />
 
-          {!secondaryFile ? (
+          {isLoadingSecondary ? (
+            <div className="border-2 border-dashed border-sky-500/40 rounded-xl p-6 text-center space-y-3 bg-sky-50/40 dark:bg-sky-950/20">
+              <div className="relative w-10 h-10 mx-auto flex items-center justify-center">
+                <div className="absolute inset-0 rounded-full border-2 border-sky-500/20 border-t-sky-600 dark:border-t-sky-400 animate-spin" />
+                <Loader2 className="w-5 h-5 text-sky-600 dark:text-sky-400 animate-spin" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center justify-center space-x-2 text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                  <span>{secondaryProgress?.stage || t('merge.loadingBackup', 'Reading backup archive...')}</span>
+                  {secondaryProgress?.percent !== undefined && (
+                    <span className="text-sky-600 dark:text-sky-400 font-mono text-xs">
+                      {secondaryProgress.percent}%
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {t('common.processing', 'Processing client-side in WebAssembly...')}
+                </p>
+              </div>
+              <div className="w-full bg-slate-200/80 dark:bg-slate-800 rounded-full h-2 overflow-hidden max-w-xs mx-auto">
+                <div
+                  className="bg-gradient-to-r from-sky-600 to-blue-600 h-full transition-all duration-200 rounded-full"
+                  style={{ width: `${secondaryProgress?.percent ?? 15}%` }}
+                />
+              </div>
+            </div>
+          ) : !secondaryFile ? (
             <div
               onClick={() => secondaryInputRef.current?.click()}
               className="border-2 border-dashed border-slate-200 dark:border-white/[0.1] hover:border-sky-500/50 rounded-xl p-6 text-center cursor-pointer transition-all space-y-2 bg-slate-50/50 hover:bg-sky-50/20 dark:bg-white/[0.01] group"
@@ -481,27 +907,46 @@ export const MergePage: React.FC = () => {
               <div className="w-10 h-10 rounded-xl bg-sky-500/10 flex items-center justify-center mx-auto text-sky-600 dark:text-sky-400">
                 <Upload className="w-5 h-5" />
               </div>
-              <div className="text-xs font-bold text-slate-900 dark:text-white">{t('merge.dropHere', 'Select .jwlibrary')}</div>
-              <p className="text-[11px] text-slate-500">Drop file here or click to browse</p>
+              <div className="space-y-0.5">
+                <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                  {t('merge.dropHere', 'Drop .jwlibrary file here or click to browse')}
+                </div>
+                <p className="text-xs text-slate-500">Drop file here or click to browse</p>
+              </div>
             </div>
           ) : (
             <div className="bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/[0.06] rounded-xl p-3.5 space-y-2">
               <div className="flex items-center justify-between">
                 <div className="min-w-0">
-                  <div className="font-bold text-xs text-slate-900 dark:text-white truncate max-w-[200px]">
+                  <div
+                    className="font-bold text-xs text-slate-900 dark:text-white truncate max-w-[200px] cursor-help"
+                    title={secondaryFile.file?.name ? `${secondaryFile.summary.name} (${secondaryFile.file.name})` : secondaryFile.summary.name}
+                  >
                     {secondaryFile.summary.name}
                   </div>
                   <div className="text-[10px] text-slate-500">
                     {secondaryFile.summary.deviceName} • {(secondaryFile.file.size / 1024).toFixed(1)} KB
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => secondaryInputRef.current?.click()}
-                  className="text-xs text-sky-600 dark:text-blue-400 hover:underline font-semibold"
-                >
-                  Change
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={handleLoadSecondaryIntoApp}
+                    disabled={isLoadingAppSecondary}
+                    className="text-xs text-sky-600 dark:text-sky-400 hover:underline font-semibold flex items-center space-x-1"
+                    title={t('merge.openInAppTooltip', 'Load this backup as the active database in the application')}
+                  >
+                    {isLoadingAppSecondary ? <Loader2 className="w-3 h-3 animate-spin" /> : <Compass className="w-3 h-3" />}
+                    <span>{isLoadingAppSecondary ? t('merge.loadingIntoApp', 'Loading...') : t('merge.openInApp', 'Open in App')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => secondaryInputRef.current?.click()}
+                    className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:underline font-semibold"
+                  >
+                    Change
+                  </button>
+                </div>
               </div>
               <div className="pt-1.5 border-t border-slate-200/60 dark:border-white/[0.04] text-[11px] text-slate-600 dark:text-slate-400 flex items-center space-x-1.5 flex-wrap">
                 <span>{secondaryFile.summary.notesCount} notes</span>
@@ -512,6 +957,50 @@ export const MergePage: React.FC = () => {
                 <span>•</span>
                 <span>{secondaryFile.summary.playlistsCount} playlists</span>
               </div>
+
+              {/* Cloud presence check & upload button */}
+              {isConnected && (
+                <div className="pt-1.5 border-t border-slate-200/60 dark:border-white/[0.04] flex items-center justify-between">
+                  <div className="flex items-center space-x-1.5">
+                    <Cloud className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="text-[11px] text-slate-500">Google Drive:</span>
+                  </div>
+                  {isShaInCloud(secondaryFile.sha256) ? (
+                    <span className="inline-flex items-center space-x-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>{t('cloud.inCloudBadge', 'Saved in Cloud ✓')}</span>
+                    </span>
+                  ) : (
+                    <div className="flex flex-col items-end gap-1">
+                      <button
+                        type="button"
+                        onClick={handleUploadSecondaryToCloud}
+                        disabled={isUploadingSecondary || isUploading}
+                        className="inline-flex items-center space-x-1 text-[11px] font-semibold text-sky-600 dark:text-sky-400 hover:underline disabled:opacity-50"
+                      >
+                        {isUploadingSecondary ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Upload className="w-3 h-3" />
+                        )}
+                        <span>
+                          {isUploadingSecondary
+                            ? `${t('merge.savingDrive', 'Uploading...')} ${uploadProgressSecondary ?? 0}%`
+                            : t('cloud.uploadSource', 'Save to Drive')}
+                        </span>
+                      </button>
+                      {isUploadingSecondary && (
+                        <div className="w-24 bg-sky-100 dark:bg-sky-950 rounded-full h-1 overflow-hidden">
+                          <div
+                            className="bg-sky-600 dark:bg-sky-400 h-full transition-all duration-150 rounded-full"
+                            style={{ width: `${Math.max(5, uploadProgressSecondary ?? 0)}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -672,18 +1161,28 @@ export const MergePage: React.FC = () => {
 
       {/* ── PROGRESS BAR ───────────────────────────────────────────────── */}
       {isMerging && mergeProgress && (
-        <div className="rounded-2xl border border-blue-500/40 bg-blue-50/70 dark:bg-blue-950/20 p-5 space-y-3 backdrop-blur-xl shadow-sm">
+        <div className="rounded-2xl border border-blue-500/40 bg-blue-50/70 dark:bg-blue-950/20 p-5 space-y-3 backdrop-blur-xl shadow-sm animate-in fade-in duration-200">
           <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
-            <span>{mergeProgress.stage}</span>
-            <span className="text-blue-600 dark:text-blue-400 font-mono">
-              {Math.round((mergeProgress.current / mergeProgress.total) * 100)}%
+            <div className="flex items-center space-x-2.5 min-w-0">
+              <Loader2 className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-spin flex-shrink-0" />
+              <div className="min-w-0">
+                <span className="truncate block font-semibold text-slate-800 dark:text-slate-200">{mergeProgress.stage}</span>
+                {mergeProgress.details && (
+                  <span className="text-[11px] font-normal text-slate-500 dark:text-slate-400 truncate block mt-0.5">
+                    {mergeProgress.details}
+                  </span>
+                )}
+              </div>
+            </div>
+            <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-300/40 dark:border-blue-700/50 flex-shrink-0 ml-3">
+              {Math.min(100, Math.max(0, Math.round((mergeProgress.current / mergeProgress.total) * 100)))}%
             </span>
           </div>
 
-          <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-slate-200 dark:bg-slate-800/80 rounded-full h-2.5 overflow-hidden shadow-inner">
             <div
-              className="bg-blue-600 h-full transition-all duration-300 rounded-full"
-              style={{ width: `${(mergeProgress.current / mergeProgress.total) * 100}%` }}
+              className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 h-full transition-all duration-300 ease-out rounded-full shadow-sm"
+              style={{ width: `${Math.min(100, Math.max(0, Math.round((mergeProgress.current / mergeProgress.total) * 100)))}%` }}
             />
           </div>
         </div>
@@ -691,10 +1190,25 @@ export const MergePage: React.FC = () => {
 
       {/* ── SUCCESS RESULT ─────────────────────────────────────────────── */}
       {mergeResult && (
-        <div className="rounded-2xl border border-emerald-500/30 bg-white dark:bg-[#101625] p-6 space-y-5 shadow-lg animate-in zoom-in-95 duration-150">
-          <div className="flex items-center space-x-2.5 text-emerald-600 dark:text-emerald-400">
-            <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t('merge.successTitle', 'Merge Completed Successfully!')}</h2>
+        <div
+          ref={resultRef}
+          className="rounded-2xl border border-emerald-500/30 bg-white dark:bg-[#101625] p-6 space-y-5 shadow-lg animate-in zoom-in-95 duration-150"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-emerald-500/15">
+            <div className="flex items-center space-x-2.5 text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t('merge.successTitle', 'Merge Completed Successfully!')}</h2>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleResetMerge}
+              className="self-start sm:self-auto inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-xs font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/[0.1] transition-all shadow-sm hover:scale-[1.02] active:scale-[0.98]"
+              title={t('merge.cleanMergeDesc', 'Start a fresh new merge')}
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              <span>{t('merge.newMerge', 'New Merge')}</span>
+            </button>
           </div>
 
           <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/20 rounded-xl border border-emerald-500/20 text-xs text-emerald-800 dark:text-emerald-300 flex flex-wrap gap-x-4 gap-y-1 font-medium">
@@ -719,386 +1233,22 @@ export const MergePage: React.FC = () => {
             )}
           </div>
 
-          {/* Toggle Detailed Breakdown Button & Status */}
-          <div className="pt-1 flex flex-wrap items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={() => setShowDetails((prev) => !prev)}
-              className="inline-flex items-center space-x-2 text-xs font-semibold px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-white/[0.05] dark:hover:bg-white/[0.09] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/[0.08] transition-all cursor-pointer"
-            >
-              <ListFilter className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              <span>{showDetails ? t('merge.hideDetailedBreakdown') : t('merge.viewDetailedBreakdown')}</span>
-              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${showDetails ? 'rotate-180' : ''}`} />
-            </button>
-
-            {excludedNoteGuids.size > 0 && (
-              <span className="text-[11px] px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/25 font-semibold">
-                {excludedNoteGuids.size} {t('merge.categoryNewNotes', 'note(s)')} excluded
-              </span>
-            )}
-          </div>
-
-          {/* Detailed Breakdown Foldable Accordions */}
-          {showDetails && (
-            <div className="space-y-3 pt-1 animate-in fade-in-50 duration-200">
-              {/* Unsaved changes alert / Re-merge action bar */}
-              {hasUnsavedExclusionChanges && (
-                <div className="p-3.5 bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/30 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-800 dark:text-amber-300">
-                  <div className="flex items-center space-x-2">
-                    <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                    <span>
-                      {excludedNoteGuids.size === 0
-                        ? t('merge.allNotesIncluded')
-                        : t('merge.remergeWithExclusions', { count: excludedNoteGuids.size })}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleExecuteMerge()}
-                    disabled={isMerging}
-                    className="inline-flex items-center justify-center space-x-1.5 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-md transition-all flex-shrink-0 cursor-pointer"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${isMerging ? 'animate-spin' : ''}`} />
-                    <span>{isMerging ? t('merge.merging') : t('merge.remergeWithExclusions', { count: excludedNoteGuids.size })}</span>
-                  </button>
-                </div>
-              )}
-
-              {/* Accordion 1: New Notes Added (with Checkboxes to Exclude) */}
-              <div className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50/50 dark:bg-white/[0.02] overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => toggleSection('notes')}
-                  className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-100/50 dark:hover:bg-white/[0.04] transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center space-x-2.5">
-                    <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      {t('merge.categoryNewNotes')}
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-semibold">
-                      {candidateNotes.length > 0 ? candidateNotes.length : mergeResult.stats.notesAdded}
-                    </span>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${openSections.notes ? 'rotate-180' : ''}`} />
-                </button>
-
-                {openSections.notes && (
-                  <div className="p-3 pt-0 space-y-2 border-t border-slate-200/50 dark:border-white/[0.04]">
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400 pt-2 pb-1 flex items-center justify-between">
-                      <span>{t('merge.uncheckToExclude', 'Uncheck to exclude from merge')}</span>
-                      {candidateNotes.length > 0 && (
-                        <span className="text-[10px] font-medium">
-                          {candidateNotes.length - excludedNoteGuids.size} / {candidateNotes.length} included
-                        </span>
-                      )}
-                    </div>
-
-                    {(candidateNotes.length > 0 ? candidateNotes : mergeResult.details.addedNotes).map((note) => {
-                      const isExcluded = excludedNoteGuids.has(note.guid);
-                      return (
-                        <div
-                          key={note.guid}
-                          onClick={() => toggleNoteExclusion(note.guid)}
-                          className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-start space-x-3 ${
-                            isExcluded
-                              ? 'bg-red-50/30 dark:bg-red-950/10 border-red-200/50 dark:border-red-900/30 opacity-70'
-                              : 'bg-white dark:bg-[#141b2d] border-slate-200/80 dark:border-white/[0.06] hover:border-blue-500/30'
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={!isExcluded}
-                            onChange={() => {}} // Handled by parent click
-                            className="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer flex-shrink-0"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center justify-between gap-2">
-                              <div className={`text-xs font-semibold truncate ${isExcluded ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-200'}`}>
-                                {note.title || '(Untitled Note)'}
-                              </div>
-                              <span
-                                className={`text-[10px] px-1.5 py-0.2 rounded font-medium flex-shrink-0 ${
-                                  isExcluded
-                                    ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
-                                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                                }`}
-                              >
-                                {isExcluded ? 'Excluded' : 'Included'}
-                              </span>
-                            </div>
-                            {note.locationTitle && (
-                              <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium truncate mt-0.5">
-                                📍 {note.locationTitle}
-                              </div>
-                            )}
-                            {note.content && (
-                              <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 whitespace-pre-wrap font-sans">
-                                {note.content}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    {candidateNotes.length === 0 && mergeResult.details.addedNotes.length === 0 && (
-                      <div className="text-center py-4 text-xs text-slate-400">
-                        {t('merge.noItems', 'No items in this category')}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Accordion 2: Duplicates Unified */}
-              <div className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50/50 dark:bg-white/[0.02] overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => toggleSection('duplicates')}
-                  className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-100/50 dark:hover:bg-white/[0.04] transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center space-x-2.5">
-                    <Copy className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      {t('merge.categoryDuplicates')}
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-semibold">
-                      {mergeResult.details.unifiedDuplicates.length}
-                    </span>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${openSections.duplicates ? 'rotate-180' : ''}`} />
-                </button>
-
-                {openSections.duplicates && (
-                  <div className="p-3 pt-0 space-y-2 border-t border-slate-200/50 dark:border-white/[0.04]">
-                    {mergeResult.details.unifiedDuplicates.map((dup, idx) => (
-                      <div
-                        key={idx}
-                        className="p-2.5 rounded-xl bg-white dark:bg-[#141b2d] border border-slate-200/80 dark:border-white/[0.06] space-y-1"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
-                            {dup.title || '(Untitled Note)'}
-                          </span>
-                          <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-medium flex-shrink-0">
-                            Unified
-                          </span>
-                        </div>
-                        {dup.locationTitle && (
-                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                            📍 {dup.locationTitle}
-                          </div>
-                        )}
-                        {dup.content && (
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 font-sans">
-                            {dup.content}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-
-                    {mergeResult.details.unifiedDuplicates.length === 0 && (
-                      <div className="text-center py-4 text-xs text-slate-400">
-                        {t('merge.noItems', 'No items in this category')}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Accordion 3: Highlights Combined */}
-              <div className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50/50 dark:bg-white/[0.02] overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => toggleSection('highlights')}
-                  className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-100/50 dark:hover:bg-white/[0.04] transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center space-x-2.5">
-                    <Highlighter className="w-4 h-4 text-amber-500" />
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      {t('merge.categoryHighlights')}
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-semibold">
-                      {mergeResult.details.combinedHighlights.length}
-                    </span>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${openSections.highlights ? 'rotate-180' : ''}`} />
-                </button>
-
-                {openSections.highlights && (
-                  <div className="p-3 pt-0 space-y-2 border-t border-slate-200/50 dark:border-white/[0.04]">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
-                      {mergeResult.details.combinedHighlights.map((hl, idx) => {
-                        const colorInfo = HIGHLIGHT_COLOR_MAP[hl.colorIndex] || {
-                          bg: 'bg-yellow-400',
-                          name: 'Yellow',
-                          border: 'border-yellow-500',
-                        };
-                        return (
-                          <div
-                            key={idx}
-                            className="p-2.5 rounded-xl bg-white dark:bg-[#141b2d] border border-slate-200/80 dark:border-white/[0.06] flex items-center space-x-2.5"
-                          >
-                            <span className={`w-3.5 h-3.5 rounded-full ${colorInfo.bg} shadow-sm flex-shrink-0`} />
-                            <div className="min-w-0 flex-1">
-                              <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
-                                {hl.locationTitle || 'Bible / Publication'}
-                              </div>
-                              <div className="text-[10px] text-slate-400">
-                                {colorInfo.name} highlight
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {mergeResult.details.combinedHighlights.length === 0 && (
-                      <div className="text-center py-4 text-xs text-slate-400">
-                        {t('merge.noItems', 'No items in this category')}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Accordion 4: Tags Consolidated */}
-              <div className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50/50 dark:bg-white/[0.02] overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => toggleSection('tags')}
-                  className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-100/50 dark:hover:bg-white/[0.04] transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center space-x-2.5">
-                    <Tag className="w-4 h-4 text-indigo-500" />
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      {t('merge.categoryTags')}
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 font-semibold">
-                      {mergeResult.details.consolidatedTags.length}
-                    </span>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${openSections.tags ? 'rotate-180' : ''}`} />
-                </button>
-
-                {openSections.tags && (
-                  <div className="p-3 pt-0 border-t border-slate-200/50 dark:border-white/[0.04]">
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      {mergeResult.details.consolidatedTags.map((tg, idx) => (
-                        <span
-                          key={idx}
-                          className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/40 text-xs font-medium text-indigo-800 dark:text-indigo-300"
-                        >
-                          <span>🏷️ {tg.name}</span>
-                          <span className="text-[9px] px-1 py-0.2 rounded bg-indigo-200/60 dark:bg-indigo-900/60 text-indigo-900 dark:text-indigo-200">
-                            {tg.action === 'created' ? 'new' : 'merged'}
-                          </span>
-                        </span>
-                      ))}
-                    </div>
-
-                    {mergeResult.details.consolidatedTags.length === 0 && (
-                      <div className="text-center py-4 text-xs text-slate-400">
-                        {t('merge.noItems', 'No items in this category')}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Accordion 5: Bookmarks Added */}
-              <div className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50/50 dark:bg-white/[0.02] overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => toggleSection('bookmarks')}
-                  className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-100/50 dark:hover:bg-white/[0.04] transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center space-x-2.5">
-                    <Bookmark className="w-4 h-4 text-teal-500" />
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      {t('merge.categoryBookmarks')}
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 font-semibold">
-                      {mergeResult.details.addedBookmarks.length}
-                    </span>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${openSections.bookmarks ? 'rotate-180' : ''}`} />
-                </button>
-
-                {openSections.bookmarks && (
-                  <div className="p-3 pt-0 space-y-2 border-t border-slate-200/50 dark:border-white/[0.04]">
-                    {mergeResult.details.addedBookmarks.map((bm, idx) => (
-                      <div
-                        key={idx}
-                        className="p-2.5 rounded-xl bg-white dark:bg-[#141b2d] border border-slate-200/80 dark:border-white/[0.06] flex items-center justify-between text-xs"
-                      >
-                        <div className="truncate pr-2">
-                          <div className="font-semibold text-slate-800 dark:text-slate-200 truncate">
-                            {bm.title || `Bookmark`}
-                          </div>
-                          {bm.locationTitle && (
-                            <div className="text-[10px] text-slate-400 truncate">
-                              📍 {bm.locationTitle}
-                            </div>
-                          )}
-                        </div>
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 font-medium">
-                          Slot {bm.slot}
-                        </span>
-                      </div>
-                    ))}
-
-                    {mergeResult.details.addedBookmarks.length === 0 && (
-                      <div className="text-center py-4 text-xs text-slate-400">
-                        {t('merge.noItems', 'No items in this category')}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Accordion 6: Playlists Merged */}
-              <div className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50/50 dark:bg-white/[0.02] overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => toggleSection('playlists')}
-                  className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-100/50 dark:hover:bg-white/[0.04] transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center space-x-2.5">
-                    <ListMusic className="w-4 h-4 text-purple-500" />
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      {t('merge.categoryPlaylists')}
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 font-semibold">
-                      {mergeResult.details.mergedPlaylists.length}
-                    </span>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${openSections.playlists ? 'rotate-180' : ''}`} />
-                </button>
-
-                {openSections.playlists && (
-                  <div className="p-3 pt-0 space-y-2 border-t border-slate-200/50 dark:border-white/[0.04]">
-                    {mergeResult.details.mergedPlaylists.map((pl, idx) => (
-                      <div
-                        key={idx}
-                        className="p-2.5 rounded-xl bg-white dark:bg-[#141b2d] border border-slate-200/80 dark:border-white/[0.06] text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center space-x-2"
-                      >
-                        <ListMusic className="w-3.5 h-3.5 text-purple-500 flex-shrink-0" />
-                        <span className="truncate">{pl.name}</span>
-                      </div>
-                    ))}
-
-                    {mergeResult.details.mergedPlaylists.length === 0 && (
-                      <div className="text-center py-4 text-xs text-slate-400">
-                        {t('merge.noItems', 'No items in this category')}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          {/* ── Detailed Breakdown (Collapsible / Foldable View) ── */}
+          <MergeDetailedBreakdown
+            mergeResult={mergeResult}
+            candidateNotes={candidateNotes}
+            candidateDuplicates={candidateDuplicates}
+            excludedNoteGuids={excludedNoteGuids}
+            noteOverrides={noteOverrides}
+            toggleNoteExclusion={toggleNoteExclusion}
+            setNoteOverride={handleSetNoteOverride}
+            setExcludedNoteGuids={setExcludedNoteGuids}
+            showDetails={showDetails}
+            setShowDetails={setShowDetails}
+            hasUnsavedChanges={hasUnsavedExclusionChanges}
+            onRemerge={() => handleExecuteMerge()}
+            isMerging={isMerging}
+          />
 
           <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2">
             <button
@@ -1123,10 +1273,25 @@ export const MergePage: React.FC = () => {
             <button
               type="button"
               onClick={handleOpenInExplorer}
-              className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] text-xs font-semibold transition-all"
+              disabled={isOpenInAppLoading}
+              className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] text-xs font-semibold transition-all disabled:opacity-60"
             >
-              <Compass className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span>{t('merge.exploreInApp', 'Explore in App')}</span>
+              {isOpenInAppLoading ? (
+                <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+              ) : (
+                <Compass className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              )}
+              <span>{isOpenInAppLoading ? t('merge.loadingIntoApp', 'Loading into App...') : t('merge.exploreInApp', 'Explore in App')}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleResetMerge}
+              className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/[0.1] text-xs font-semibold transition-all shadow-sm hover:scale-[1.02] active:scale-[0.98]"
+              title={t('merge.cleanMergeDesc', 'Start a fresh new merge')}
+            >
+              <RotateCcw className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span>{t('merge.newMerge', 'New Merge')}</span>
             </button>
           </div>
         </div>

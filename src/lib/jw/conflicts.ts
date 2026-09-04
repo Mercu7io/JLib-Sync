@@ -1,6 +1,6 @@
-import { Database } from 'sql.js';
-import { queryAll } from './sqlite';
-import { BIBLE_BOOKS } from './locales';
+import type { Database } from 'sql.js';
+import { queryAll } from './sqlite.ts';
+import { BIBLE_BOOKS } from './locales.ts';
 
 export interface IConflictItem {
   id: string;

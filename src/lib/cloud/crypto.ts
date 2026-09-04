@@ -8,9 +8,16 @@ export class CloudCrypto {
   private keyLength = 256;     // AES-256
   private digest = 'SHA-256';
 
+  private getCrypto(): Crypto {
+    if (typeof window !== 'undefined' && window.crypto) return window.crypto;
+    if (typeof globalThis !== 'undefined' && globalThis.crypto) return globalThis.crypto as Crypto;
+    throw new Error('Web Crypto API is not available in this environment.');
+  }
+
   async deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
+    const crypto = this.getCrypto();
     const enc = new TextEncoder();
-    const keyMaterial = await window.crypto.subtle.importKey(
+    const keyMaterial = await crypto.subtle.importKey(
       'raw',
       enc.encode(password),
       { name: 'PBKDF2' },
@@ -18,7 +25,7 @@ export class CloudCrypto {
       ['deriveKey']
     );
 
-    return await window.crypto.subtle.deriveKey(
+    return await crypto.subtle.deriveKey(
       {
         name: 'PBKDF2',
         salt: salt as unknown as BufferSource,
@@ -33,11 +40,12 @@ export class CloudCrypto {
   }
 
   async encrypt(buffer: ArrayBuffer | Uint8Array, password: string): Promise<Uint8Array> {
-    const salt = window.crypto.getRandomValues(new Uint8Array(16));
-    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const crypto = this.getCrypto();
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
     const key = await this.deriveKey(password, salt);
 
-    const encryptedContent = await window.crypto.subtle.encrypt(
+    const encryptedContent = await crypto.subtle.encrypt(
       { name: 'AES-GCM', iv: iv as unknown as BufferSource },
       key,
       buffer as unknown as BufferSource
@@ -54,6 +62,7 @@ export class CloudCrypto {
   }
 
   async decrypt(packedBuffer: ArrayBuffer | Uint8Array, password: string): Promise<Uint8Array> {
+    const crypto = this.getCrypto();
     const packedData = new Uint8Array(packedBuffer);
     if (packedData.length < 28) {
       throw new Error('Encrypted payload is too short to be valid.');
@@ -66,7 +75,7 @@ export class CloudCrypto {
     const key = await this.deriveKey(password, salt);
 
     try {
-      const decryptedContent = await window.crypto.subtle.decrypt(
+      const decryptedContent = await crypto.subtle.decrypt(
         { name: 'AES-GCM', iv: iv as unknown as BufferSource },
         key,
         ciphertext as unknown as BufferSource

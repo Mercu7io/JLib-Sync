@@ -10,6 +10,7 @@ import {
   Sparkles,
   Upload,
   Cloud,
+  CheckCircle2,
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useCloudStore } from '../store/useCloudStore';
@@ -20,7 +21,22 @@ import { useTranslation } from 'react-i18next';
 
 export const StatsPage: React.FC = () => {
   const { t } = useTranslation();
-  const { activeDb, summary, loadDemoLibrary, isLoading } = useAppStore();
+  const { activeDb, summary, activeLibraryFile, loadDemoLibrary, isLoading, activeSha256 } = useAppStore();
+  const {
+    isConnected,
+    isShaInCloud,
+    backupCurrentLibrary,
+    isUploading,
+    setShowCloudModal,
+  } = useCloudStore();
+  const isCurrentInCloud = activeSha256 ? isShaInCloud(activeSha256) : false;
+
+  const handleUploadActiveToCloud = async () => {
+    try {
+      await backupCurrentLibrary();
+    } catch (_) {}
+  };
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 1. Highlight Color Distribution
@@ -88,6 +104,7 @@ export const StatsPage: React.FC = () => {
         `SELECT t.Name, COUNT(tm.TagMapId) as count
          FROM Tag t
          JOIN TagMap tm ON t.TagId = tm.TagId
+         WHERE t.Type = 1
          GROUP BY t.TagId, t.Name
          ORDER BY count DESC
          LIMIT 6`
@@ -157,11 +174,45 @@ export const StatsPage: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
       {/* ── HEADER ────────────────────────────────────────────────────── */}
-      <div className="space-y-1 border-b border-slate-200 dark:border-slate-800 pb-6">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">{t('stats.title')}</h1>
-        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-          {t('stats.subtitle')} {summary.name} ({summary.deviceName}).
-        </p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 border-b border-slate-200 dark:border-slate-800 gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">{t('stats.title')}</h1>
+          <p
+            className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 truncate max-w-[320px] sm:max-w-lg lg:max-w-2xl cursor-help"
+            title={activeLibraryFile instanceof File && activeLibraryFile.name && activeLibraryFile.name !== summary.name
+              ? `${summary.name} (${activeLibraryFile.name}) • ${summary.deviceName}`
+              : `${summary.name} (${summary.deviceName})`}
+          >
+            {t('stats.subtitle')} <span className="font-semibold text-slate-900 dark:text-white">{summary.name}</span> ({summary.deviceName}).
+          </p>
+        </div>
+
+        {/* Cloud presence & upload check */}
+        {isConnected && (
+          <div className="flex items-center space-x-2 flex-shrink-0">
+            {isCurrentInCloud ? (
+              <button
+                type="button"
+                onClick={() => setShowCloudModal(true)}
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 transition-colors shadow-sm"
+                title="Manage Cloud Backups"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span>{t('cloud.inCloudBadge', 'Saved in Cloud ✓')}</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleUploadActiveToCloud}
+                disabled={isUploading}
+                className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-sm transition-all disabled:opacity-50"
+              >
+                <Upload className={`w-3.5 h-3.5 ${isUploading ? 'animate-bounce' : ''}`} />
+                <span>{isUploading ? t('cloud.uploading', 'Uploading...') : t('cloud.saveActiveBtn', 'Save to Google Drive')}</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── TOP METRICS CARDS ─────────────────────────────────────────── */}
