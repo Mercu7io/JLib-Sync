@@ -128,6 +128,46 @@ export interface IMergeOptions {
   colorRules?: Record<number, number>; // Map old ColorIndex -> new ColorIndex
   conflictResolutions?: Record<string, 'both' | 'a' | 'b'>;
   secondaryNoteTag?: string; // Optional tag name to attach to notes imported/updated from secondary backups
+  excludedNoteGuids?: string[]; // Optional list of note GUIDs from secondary to skip
+}
+
+export interface IMergeDetailedNote {
+  guid: string;
+  noteId?: number;
+  title: string;
+  content: string;
+  locationTitle?: string;
+  source: string;
+  action: 'added' | 'unified';
+}
+
+export interface IMergeDetailedHighlight {
+  colorIndex: number;
+  locationTitle?: string;
+}
+
+export interface IMergeDetailedTag {
+  name: string;
+  action: 'created' | 'merged';
+}
+
+export interface IMergeDetailedBookmark {
+  title: string;
+  slot: number;
+  locationTitle?: string;
+}
+
+export interface IMergeDetailedPlaylist {
+  name: string;
+}
+
+export interface IMergeDetails {
+  addedNotes: IMergeDetailedNote[];
+  unifiedDuplicates: IMergeDetailedNote[];
+  combinedHighlights: IMergeDetailedHighlight[];
+  consolidatedTags: IMergeDetailedTag[];
+  addedBookmarks: IMergeDetailedBookmark[];
+  mergedPlaylists: IMergeDetailedPlaylist[];
 }
 
 export interface IMergeProgress {

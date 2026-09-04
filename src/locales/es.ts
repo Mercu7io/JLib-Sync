@@ -155,7 +155,20 @@ export const es: TranslationSchema = {
     "selectBackupFor": "Seleccionar copia para",
     "noCloudBackups": "No se encontraron copias en tu carpeta \"JW Sync\" de Google Drive.",
     "downloadingCloud": "Descargando copia desde Google Drive...",
-    "outputFilename": "Nombre del archivo combinado"
+    "outputFilename": "Nombre del archivo combinado",
+    "viewDetailedBreakdown": "Ver desglose detallado",
+    "hideDetailedBreakdown": "Ocultar desglose detallado",
+    "categoryNewNotes": "Nuevas notas añadidas",
+    "categoryDuplicates": "Duplicados unificados",
+    "categoryHighlights": "Resaltados combinados",
+    "categoryTags": "Etiquetas consolidadas",
+    "categoryBookmarks": "Marcadores agregados",
+    "categoryPlaylists": "Listas de reproducción fusionadas",
+    "remergeWithExclusions": "Volver a fusionar ({{count}} nota(s) excluida(s))",
+    "allNotesIncluded": "Todas las notas incluidas",
+    "uncheckToExclude": "Desmarcar para excluir de la fusión",
+    "checkedToInclude": "Marcada (incluida en la fusión)",
+    "noItems": "Sin elementos en esta categoría"
   },
   "explorer": {
     "title": "Explorador de la Biblioteca de Estudio",

@@ -25,6 +25,7 @@ import {
   ITagMap,
   IBookmark,
   IInputField,
+  IMergeDetails,
 } from './types';
 import {
   openDatabase,
@@ -50,7 +51,9 @@ export interface IMergeResult {
     tagsAdded: number;
     bookmarksAdded: number;
     inputFieldsAdded: number;
+    playlistsMerged?: number;
   };
+  details: IMergeDetails;
   previewNotes: Array<{
     title: string;
     content: string;
@@ -79,6 +82,15 @@ export async function mergeJwLibraries(
     tagsAdded: 0,
     bookmarksAdded: 0,
     inputFieldsAdded: 0,
+    playlistsMerged: 0,
+  };
+  const details: IMergeDetails = {
+    addedNotes: [],
+    unifiedDuplicates: [],
+    combinedHighlights: [],
+    consolidatedTags: [],
+    addedBookmarks: [],
+    mergedPlaylists: [],
   };
   const previewNotes: Array<{ title: string; content: string; source: string }> = [];
 
@@ -211,6 +223,7 @@ export async function mergeJwLibraries(
 
         if (match) {
           tagMap.set(tag.TagId, match.TagId);
+          details.consolidatedTags.push({ name: finalTagName, action: 'merged' });
         } else {
           execute(
             mainDb,
@@ -221,6 +234,7 @@ export async function mergeJwLibraries(
           if (newIdRow) {
             tagMap.set(tag.TagId, newIdRow.id);
             stats.tagsAdded++;
+            details.consolidatedTags.push({ name: finalTagName, action: 'created' });
           }
         }
       }
@@ -312,6 +326,14 @@ export async function mergeJwLibraries(
             userMarkMap.set(mark.UserMarkId, newMarkId);
             stats.marksAdded++;
 
+            const markLoc = mark.LocationId
+              ? queryOne<{ Title: string }>(secDb, 'SELECT Title FROM Location WHERE LocationId = :id', { ':id': mark.LocationId })
+              : null;
+            details.combinedHighlights.push({
+              colorIndex: finalColorIndex,
+              locationTitle: markLoc?.Title || 'Bible / Publication',
+            });
+
             // Insert associated block ranges
             for (const br of secRanges) {
               execute(
@@ -340,8 +362,23 @@ export async function mergeJwLibraries(
       const secNotes = queryAll<INote>(secDb, 'SELECT * FROM Note');
 
       for (const note of secNotes) {
+        if (options.excludedNoteGuids?.includes(note.Guid)) {
+          continue;
+        }
+
         const mappedLocId = note.LocationId ? locationMap.get(note.LocationId) ?? null : null;
         const mappedMarkId = note.UserMarkId ? userMarkMap.get(note.UserMarkId) ?? null : null;
+
+        const locRow = note.LocationId
+          ? queryOne<{ Title?: string; BookNumber?: number; ChapterNumber?: number }>(
+              secDb,
+              'SELECT Title, BookNumber, ChapterNumber FROM Location WHERE LocationId = :id',
+              { ':id': note.LocationId }
+            )
+          : null;
+        const locTitle =
+          locRow?.Title ||
+          (locRow?.BookNumber ? `Book ${locRow.BookNumber}${locRow.ChapterNumber ? `:${locRow.ChapterNumber}` : ''}` : note.Title || 'Personal Study');
 
         const hasBt = columnExists(mainDb, 'Note', 'BlockType');
         const hasBi = columnExists(mainDb, 'Note', 'BlockIdentifier');
@@ -371,6 +408,15 @@ export async function mergeJwLibraries(
         if (dupMatch) {
           noteMap.set(note.NoteId, dupMatch.NoteId);
           stats.notesMerged++;
+          details.unifiedDuplicates.push({
+            guid: note.Guid,
+            noteId: dupMatch.NoteId,
+            title: note.Title || '(Untitled Note)',
+            content: note.Content || '',
+            locationTitle: locTitle,
+            source: secName,
+            action: 'unified',
+          });
         } else {
           // Respect explicit conflict resolution if configured
           const conflictChoice = options.conflictResolutions?.[note.Guid];
@@ -391,6 +437,15 @@ export async function mergeJwLibraries(
               noteMap.set(note.NoteId, existingInMain.NoteId);
               notesToTagWithSecondary.push(existingInMain.NoteId);
               stats.notesMerged++;
+              details.unifiedDuplicates.push({
+                guid: note.Guid,
+                noteId: existingInMain.NoteId,
+                title: note.Title || '(Untitled Note)',
+                content: note.Content || '',
+                locationTitle: locTitle,
+                source: secName,
+                action: 'unified',
+              });
               continue;
             }
           }
@@ -429,6 +484,16 @@ export async function mergeJwLibraries(
             noteMap.set(note.NoteId, newNoteRow.id);
             notesToTagWithSecondary.push(newNoteRow.id);
             stats.notesAdded++;
+
+            details.addedNotes.push({
+              guid: note.Guid,
+              noteId: newNoteRow.id,
+              title: note.Title || '(Untitled Note)',
+              content: note.Content || '',
+              locationTitle: locTitle,
+              source: secName,
+              action: 'added',
+            });
 
             if (previewNotes.length < 5) {
               previewNotes.push({
@@ -499,6 +564,14 @@ export async function mergeJwLibraries(
           }
         );
         stats.bookmarksAdded++;
+        const bmLoc = mappedLocId
+          ? queryOne<{ Title: string }>(mainDb, 'SELECT Title FROM Location WHERE LocationId = :id', { ':id': mappedLocId })
+          : null;
+        details.addedBookmarks.push({
+          title: bm.Title || bm.Snippet || `Slot ${targetSlot}`,
+          slot: targetSlot,
+          locationTitle: bmLoc?.Title || '',
+        });
       }
     }
 
@@ -610,6 +683,10 @@ export async function mergeJwLibraries(
         const newIdRow = queryOne<{ id: number }>(mainDb, 'SELECT last_insert_rowid() AS id');
         if (newIdRow) {
           playlistMap.set(pl.PlaylistItemId, newIdRow.id);
+          stats.playlistsMerged++;
+          details.mergedPlaylists.push({
+            name: pl.Label || 'Playlist item',
+          });
 
           // PlaylistItemIndependentMediaMap
           if (tableExists(secDb, 'PlaylistItemIndependentMediaMap') && tableExists(mainDb, 'PlaylistItemIndependentMediaMap')) {
@@ -795,6 +872,7 @@ export async function mergeJwLibraries(
         if (newTagRow) {
           secTagId = newTagRow.id;
           stats.tagsAdded++;
+          details.consolidatedTags.push({ name: secTagName, action: 'created' });
         }
       }
 
@@ -833,11 +911,16 @@ export async function mergeJwLibraries(
       total: 10,
       stage: 'Running Library Doctor diagnostics...',
     });
-    const healthIssues = runHealthChecks(mainDb);
-    for (const issue of healthIssues) {
-      if (issue.count > 0 && issue.canFix) {
-        applyHealthFix(mainDb, issue.key, issue.affectedIds);
+    for (let pass = 0; pass < 3; pass++) {
+      const healthIssues = runHealthChecks(mainDb);
+      let fixedAny = false;
+      for (const issue of healthIssues) {
+        if (issue.count > 0 && issue.canFix) {
+          applyHealthFix(mainDb, issue.key, issue.affectedIds);
+          fixedAny = true;
+        }
       }
+      if (!fixedAny) break;
     }
   }
 
@@ -883,6 +966,7 @@ export async function mergeJwLibraries(
     mergedDbBytes,
     manifest: updatedManifest,
     stats,
+    details,
     previewNotes,
   };
 }

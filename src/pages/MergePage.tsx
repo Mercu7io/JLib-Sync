@@ -18,16 +18,32 @@ import {
   RefreshCw,
   Sliders,
   Tag,
+  ChevronDown,
+  Copy,
+  Highlighter,
+  Bookmark,
+  ListMusic,
+  ListFilter,
+  AlertCircle,
 } from 'lucide-react';
 import { extractJwLibrary } from '../lib/jw/zip';
 import { openDatabase, getLibrarySummary, queryAll } from '../lib/jw/sqlite';
 import { mergeJwLibraries, IMergeResult } from '../lib/jw/merge';
-import { IManifest, ILibrarySummary, IMergeProgress, TagManagerMap } from '../lib/jw/types';
+import { IManifest, ILibrarySummary, IMergeProgress, TagManagerMap, IMergeDetailedNote } from '../lib/jw/types';
 import { detectRealConflicts, IConflictItem } from '../lib/jw/conflicts';
 import { useAppStore } from '../store/useAppStore';
 import { useCloudStore } from '../store/useCloudStore';
 import { IDriveFile } from '../lib/cloud/googleDrive';
 import { useTranslation } from 'react-i18next';
+
+const HIGHLIGHT_COLOR_MAP: Record<number, { bg: string; name: string; border: string }> = {
+  1: { bg: 'bg-yellow-400', border: 'border-yellow-500', name: 'Yellow' },
+  2: { bg: 'bg-emerald-500', border: 'border-emerald-600', name: 'Green' },
+  3: { bg: 'bg-blue-500', border: 'border-blue-600', name: 'Blue' },
+  4: { bg: 'bg-pink-500', border: 'border-pink-600', name: 'Pink' },
+  5: { bg: 'bg-orange-500', border: 'border-orange-600', name: 'Orange' },
+  6: { bg: 'bg-purple-500', border: 'border-purple-600', name: 'Purple' },
+};
 
 interface ILoadedFileState {
   file: File;
@@ -72,6 +88,40 @@ export const MergePage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [cloudSaveSuccess, setCloudSaveSuccess] = useState<boolean>(false);
 
+  // Detailed View & Exclusion State
+  const [showDetails, setShowDetails] = useState<boolean>(false);
+  const [candidateNotes, setCandidateNotes] = useState<IMergeDetailedNote[]>([]);
+  const [excludedNoteGuids, setExcludedNoteGuids] = useState<Set<string>>(new Set());
+  const [lastMergedExcludedGuids, setLastMergedExcludedGuids] = useState<Set<string>>(new Set());
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    notes: true,
+    duplicates: false,
+    highlights: false,
+    tags: false,
+    bookmarks: false,
+    playlists: false,
+  });
+
+  const toggleSection = (key: string) => {
+    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const toggleNoteExclusion = (guid: string) => {
+    setExcludedNoteGuids((prev) => {
+      const next = new Set(prev);
+      if (next.has(guid)) {
+        next.delete(guid);
+      } else {
+        next.add(guid);
+      }
+      return next;
+    });
+  };
+
+  const hasUnsavedExclusionChanges =
+    excludedNoteGuids.size !== lastMergedExcludedGuids.size ||
+    Array.from(excludedNoteGuids).some((g) => !lastMergedExcludedGuids.has(g));
+
   const primaryInputRef = useRef<HTMLInputElement>(null);
   const secondaryInputRef = useRef<HTMLInputElement>(null);
 
@@ -93,6 +143,11 @@ export const MergePage: React.FC = () => {
 
   const loadPrimary = async (file: File) => {
     setErrorMessage(null);
+    setMergeResult(null);
+    setCandidateNotes([]);
+    setExcludedNoteGuids(new Set());
+    setLastMergedExcludedGuids(new Set());
+    setShowDetails(false);
     const { manifest, dbBytes, fileSizeBytes, extraFiles } = await extractJwLibrary(file);
     const db = await openDatabase(dbBytes);
     const summary = getLibrarySummary(db, manifest, fileSizeBytes);
@@ -104,6 +159,11 @@ export const MergePage: React.FC = () => {
 
   const loadSecondary = async (file: File) => {
     setErrorMessage(null);
+    setMergeResult(null);
+    setCandidateNotes([]);
+    setExcludedNoteGuids(new Set());
+    setLastMergedExcludedGuids(new Set());
+    setShowDetails(false);
     const { manifest, dbBytes, fileSizeBytes, extraFiles } = await extractJwLibrary(file);
     const db = await openDatabase(dbBytes);
     const summary = getLibrarySummary(db, manifest, fileSizeBytes);
@@ -191,14 +251,15 @@ export const MergePage: React.FC = () => {
     }
   };
 
-  const handleExecuteMerge = async () => {
+  const handleExecuteMerge = async (exclusionsToUse?: Set<string>) => {
     if (!primaryFile || !secondaryFile) return;
 
     try {
       setIsMerging(true);
       setErrorMessage(null);
-      setMergeResult(null);
       setCloudSaveSuccess(false);
+
+      const effectiveExclusions = (exclusionsToUse instanceof Set) ? exclusionsToUse : excludedNoteGuids;
 
       const tagRules: TagManagerMap = {};
 
@@ -223,6 +284,7 @@ export const MergePage: React.FC = () => {
           doctorCheck: true,
           conflictResolutions,
           secondaryNoteTag: tagImportedNotes ? (customImportTagName.trim() || 'From Merge') : undefined,
+          excludedNoteGuids: Array.from(effectiveExclusions),
         },
         tagRules,
         (p) => setMergeProgress(p),
@@ -230,6 +292,15 @@ export const MergePage: React.FC = () => {
       );
 
       setMergeResult(result);
+      setLastMergedExcludedGuids(new Set(effectiveExclusions));
+
+      setCandidateNotes((prev) => {
+        if (prev.length === 0) {
+          return result.details.addedNotes;
+        }
+        return prev;
+      });
+
       setIsMerging(false);
     } catch (err: any) {
       setIsMerging(false);
@@ -588,7 +659,7 @@ export const MergePage: React.FC = () => {
 
           <button
             type="button"
-            onClick={handleExecuteMerge}
+            onClick={() => handleExecuteMerge()}
             disabled={isMerging}
             className="w-full sm:w-auto px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm tracking-wide transition-all shadow-lg shadow-blue-600/30 inline-flex items-center justify-center space-x-2"
           >
@@ -640,7 +711,394 @@ export const MergePage: React.FC = () => {
                 <span>{t('merge.statBookmarksAdded', { count: mergeResult.stats.bookmarksAdded, defaultValue: `+${mergeResult.stats.bookmarksAdded} bookmarks added` })}</span>
               </>
             )}
+            {(mergeResult.stats.playlistsMerged ?? 0) > 0 && (
+              <>
+                <span>•</span>
+                <span>{t('merge.statPlaylistsMerged', { count: mergeResult.stats.playlistsMerged, defaultValue: `+${mergeResult.stats.playlistsMerged} playlists merged` })}</span>
+              </>
+            )}
           </div>
+
+          {/* Toggle Detailed Breakdown Button & Status */}
+          <div className="pt-1 flex flex-wrap items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => setShowDetails((prev) => !prev)}
+              className="inline-flex items-center space-x-2 text-xs font-semibold px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-white/[0.05] dark:hover:bg-white/[0.09] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/[0.08] transition-all cursor-pointer"
+            >
+              <ListFilter className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              <span>{showDetails ? t('merge.hideDetailedBreakdown') : t('merge.viewDetailedBreakdown')}</span>
+              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${showDetails ? 'rotate-180' : ''}`} />
+            </button>
+
+            {excludedNoteGuids.size > 0 && (
+              <span className="text-[11px] px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/25 font-semibold">
+                {excludedNoteGuids.size} {t('merge.categoryNewNotes', 'note(s)')} excluded
+              </span>
+            )}
+          </div>
+
+          {/* Detailed Breakdown Foldable Accordions */}
+          {showDetails && (
+            <div className="space-y-3 pt-1 animate-in fade-in-50 duration-200">
+              {/* Unsaved changes alert / Re-merge action bar */}
+              {hasUnsavedExclusionChanges && (
+                <div className="p-3.5 bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/30 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-800 dark:text-amber-300">
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                    <span>
+                      {excludedNoteGuids.size === 0
+                        ? t('merge.allNotesIncluded')
+                        : t('merge.remergeWithExclusions', { count: excludedNoteGuids.size })}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleExecuteMerge()}
+                    disabled={isMerging}
+                    className="inline-flex items-center justify-center space-x-1.5 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-md transition-all flex-shrink-0 cursor-pointer"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isMerging ? 'animate-spin' : ''}`} />
+                    <span>{isMerging ? t('merge.merging') : t('merge.remergeWithExclusions', { count: excludedNoteGuids.size })}</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Accordion 1: New Notes Added (with Checkboxes to Exclude) */}
+              <div className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50/50 dark:bg-white/[0.02] overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => toggleSection('notes')}
+                  className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-100/50 dark:hover:bg-white/[0.04] transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      {t('merge.categoryNewNotes')}
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-semibold">
+                      {candidateNotes.length > 0 ? candidateNotes.length : mergeResult.stats.notesAdded}
+                    </span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${openSections.notes ? 'rotate-180' : ''}`} />
+                </button>
+
+                {openSections.notes && (
+                  <div className="p-3 pt-0 space-y-2 border-t border-slate-200/50 dark:border-white/[0.04]">
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 pt-2 pb-1 flex items-center justify-between">
+                      <span>{t('merge.uncheckToExclude', 'Uncheck to exclude from merge')}</span>
+                      {candidateNotes.length > 0 && (
+                        <span className="text-[10px] font-medium">
+                          {candidateNotes.length - excludedNoteGuids.size} / {candidateNotes.length} included
+                        </span>
+                      )}
+                    </div>
+
+                    {(candidateNotes.length > 0 ? candidateNotes : mergeResult.details.addedNotes).map((note) => {
+                      const isExcluded = excludedNoteGuids.has(note.guid);
+                      return (
+                        <div
+                          key={note.guid}
+                          onClick={() => toggleNoteExclusion(note.guid)}
+                          className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-start space-x-3 ${
+                            isExcluded
+                              ? 'bg-red-50/30 dark:bg-red-950/10 border-red-200/50 dark:border-red-900/30 opacity-70'
+                              : 'bg-white dark:bg-[#141b2d] border-slate-200/80 dark:border-white/[0.06] hover:border-blue-500/30'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={!isExcluded}
+                            onChange={() => {}} // Handled by parent click
+                            className="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer flex-shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className={`text-xs font-semibold truncate ${isExcluded ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-200'}`}>
+                                {note.title || '(Untitled Note)'}
+                              </div>
+                              <span
+                                className={`text-[10px] px-1.5 py-0.2 rounded font-medium flex-shrink-0 ${
+                                  isExcluded
+                                    ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
+                                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                }`}
+                              >
+                                {isExcluded ? 'Excluded' : 'Included'}
+                              </span>
+                            </div>
+                            {note.locationTitle && (
+                              <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium truncate mt-0.5">
+                                📍 {note.locationTitle}
+                              </div>
+                            )}
+                            {note.content && (
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 whitespace-pre-wrap font-sans">
+                                {note.content}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {candidateNotes.length === 0 && mergeResult.details.addedNotes.length === 0 && (
+                      <div className="text-center py-4 text-xs text-slate-400">
+                        {t('merge.noItems', 'No items in this category')}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Accordion 2: Duplicates Unified */}
+              <div className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50/50 dark:bg-white/[0.02] overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => toggleSection('duplicates')}
+                  className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-100/50 dark:hover:bg-white/[0.04] transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <Copy className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      {t('merge.categoryDuplicates')}
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-semibold">
+                      {mergeResult.details.unifiedDuplicates.length}
+                    </span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${openSections.duplicates ? 'rotate-180' : ''}`} />
+                </button>
+
+                {openSections.duplicates && (
+                  <div className="p-3 pt-0 space-y-2 border-t border-slate-200/50 dark:border-white/[0.04]">
+                    {mergeResult.details.unifiedDuplicates.map((dup, idx) => (
+                      <div
+                        key={idx}
+                        className="p-2.5 rounded-xl bg-white dark:bg-[#141b2d] border border-slate-200/80 dark:border-white/[0.06] space-y-1"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                            {dup.title || '(Untitled Note)'}
+                          </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-medium flex-shrink-0">
+                            Unified
+                          </span>
+                        </div>
+                        {dup.locationTitle && (
+                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                            📍 {dup.locationTitle}
+                          </div>
+                        )}
+                        {dup.content && (
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 font-sans">
+                            {dup.content}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+
+                    {mergeResult.details.unifiedDuplicates.length === 0 && (
+                      <div className="text-center py-4 text-xs text-slate-400">
+                        {t('merge.noItems', 'No items in this category')}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Accordion 3: Highlights Combined */}
+              <div className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50/50 dark:bg-white/[0.02] overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => toggleSection('highlights')}
+                  className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-100/50 dark:hover:bg-white/[0.04] transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <Highlighter className="w-4 h-4 text-amber-500" />
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      {t('merge.categoryHighlights')}
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-semibold">
+                      {mergeResult.details.combinedHighlights.length}
+                    </span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${openSections.highlights ? 'rotate-180' : ''}`} />
+                </button>
+
+                {openSections.highlights && (
+                  <div className="p-3 pt-0 space-y-2 border-t border-slate-200/50 dark:border-white/[0.04]">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                      {mergeResult.details.combinedHighlights.map((hl, idx) => {
+                        const colorInfo = HIGHLIGHT_COLOR_MAP[hl.colorIndex] || {
+                          bg: 'bg-yellow-400',
+                          name: 'Yellow',
+                          border: 'border-yellow-500',
+                        };
+                        return (
+                          <div
+                            key={idx}
+                            className="p-2.5 rounded-xl bg-white dark:bg-[#141b2d] border border-slate-200/80 dark:border-white/[0.06] flex items-center space-x-2.5"
+                          >
+                            <span className={`w-3.5 h-3.5 rounded-full ${colorInfo.bg} shadow-sm flex-shrink-0`} />
+                            <div className="min-w-0 flex-1">
+                              <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                                {hl.locationTitle || 'Bible / Publication'}
+                              </div>
+                              <div className="text-[10px] text-slate-400">
+                                {colorInfo.name} highlight
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {mergeResult.details.combinedHighlights.length === 0 && (
+                      <div className="text-center py-4 text-xs text-slate-400">
+                        {t('merge.noItems', 'No items in this category')}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Accordion 4: Tags Consolidated */}
+              <div className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50/50 dark:bg-white/[0.02] overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => toggleSection('tags')}
+                  className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-100/50 dark:hover:bg-white/[0.04] transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <Tag className="w-4 h-4 text-indigo-500" />
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      {t('merge.categoryTags')}
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 font-semibold">
+                      {mergeResult.details.consolidatedTags.length}
+                    </span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${openSections.tags ? 'rotate-180' : ''}`} />
+                </button>
+
+                {openSections.tags && (
+                  <div className="p-3 pt-0 border-t border-slate-200/50 dark:border-white/[0.04]">
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {mergeResult.details.consolidatedTags.map((tg, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/40 text-xs font-medium text-indigo-800 dark:text-indigo-300"
+                        >
+                          <span>🏷️ {tg.name}</span>
+                          <span className="text-[9px] px-1 py-0.2 rounded bg-indigo-200/60 dark:bg-indigo-900/60 text-indigo-900 dark:text-indigo-200">
+                            {tg.action === 'created' ? 'new' : 'merged'}
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+
+                    {mergeResult.details.consolidatedTags.length === 0 && (
+                      <div className="text-center py-4 text-xs text-slate-400">
+                        {t('merge.noItems', 'No items in this category')}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Accordion 5: Bookmarks Added */}
+              <div className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50/50 dark:bg-white/[0.02] overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => toggleSection('bookmarks')}
+                  className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-100/50 dark:hover:bg-white/[0.04] transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <Bookmark className="w-4 h-4 text-teal-500" />
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      {t('merge.categoryBookmarks')}
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 font-semibold">
+                      {mergeResult.details.addedBookmarks.length}
+                    </span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${openSections.bookmarks ? 'rotate-180' : ''}`} />
+                </button>
+
+                {openSections.bookmarks && (
+                  <div className="p-3 pt-0 space-y-2 border-t border-slate-200/50 dark:border-white/[0.04]">
+                    {mergeResult.details.addedBookmarks.map((bm, idx) => (
+                      <div
+                        key={idx}
+                        className="p-2.5 rounded-xl bg-white dark:bg-[#141b2d] border border-slate-200/80 dark:border-white/[0.06] flex items-center justify-between text-xs"
+                      >
+                        <div className="truncate pr-2">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                            {bm.title || `Bookmark`}
+                          </div>
+                          {bm.locationTitle && (
+                            <div className="text-[10px] text-slate-400 truncate">
+                              📍 {bm.locationTitle}
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 font-medium">
+                          Slot {bm.slot}
+                        </span>
+                      </div>
+                    ))}
+
+                    {mergeResult.details.addedBookmarks.length === 0 && (
+                      <div className="text-center py-4 text-xs text-slate-400">
+                        {t('merge.noItems', 'No items in this category')}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Accordion 6: Playlists Merged */}
+              <div className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50/50 dark:bg-white/[0.02] overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => toggleSection('playlists')}
+                  className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-100/50 dark:hover:bg-white/[0.04] transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <ListMusic className="w-4 h-4 text-purple-500" />
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      {t('merge.categoryPlaylists')}
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 font-semibold">
+                      {mergeResult.details.mergedPlaylists.length}
+                    </span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${openSections.playlists ? 'rotate-180' : ''}`} />
+                </button>
+
+                {openSections.playlists && (
+                  <div className="p-3 pt-0 space-y-2 border-t border-slate-200/50 dark:border-white/[0.04]">
+                    {mergeResult.details.mergedPlaylists.map((pl, idx) => (
+                      <div
+                        key={idx}
+                        className="p-2.5 rounded-xl bg-white dark:bg-[#141b2d] border border-slate-200/80 dark:border-white/[0.06] text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center space-x-2"
+                      >
+                        <ListMusic className="w-3.5 h-3.5 text-purple-500 flex-shrink-0" />
+                        <span className="truncate">{pl.name}</span>
+                      </div>
+                    ))}
+
+                    {mergeResult.details.mergedPlaylists.length === 0 && (
+                      <div className="text-center py-4 text-xs text-slate-400">
+                        {t('merge.noItems', 'No items in this category')}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2">
             <button
