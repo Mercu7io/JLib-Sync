@@ -132,6 +132,9 @@ export const en = {
     tagImportedNotesDesc: 'Attach a tag to all notes imported from the second backup so you can easily review them under Personal Study > Tags in JW Library.',
     tagImportedNotesLabel: 'Tag name',
     fromMerge: 'From Merge',
+    mergeBackups: 'Merge Backups',
+    merging: 'Merging...',
+    fromDevice: 'From {{device}}',
     buttonMerge: 'Generate & Download Combined Backup',
     buttonMergeShort: 'Merge & Download Backup',
     successTitle: 'Merge Completed Successfully!',
@@ -140,6 +143,12 @@ export const en = {
     marksAdded: 'Highlights Added',
     bookmarksAdded: 'Bookmarks Added',
     tagsAdded: 'Tags Consolidated',
+    statNewNotes: '+{{count}} new notes',
+    statDuplicatesUnified: '{{count}} duplicates unified',
+    statHighlightsCombined: '+{{count}} highlights combined',
+    statTagsConsolidated: '+{{count}} tags consolidated',
+    statBookmarksAdded: '+{{count}} bookmarks added',
+    statPlaylistsMerged: '+{{count}} playlists merged',
     downloadCombined: 'Download Combined Backup',
     saveDrive: 'Save to Google Drive',
     savingDrive: 'Uploading...',
@@ -184,6 +193,27 @@ export const en = {
     editNote: 'Edit Note',
     saveChanges: 'Save Changes',
     bookmarksTitle: 'Study Bookmarks',
+    notesCategory: 'Notes',
+    playlistsCategory: 'Playlists',
+    bookmarksCategory: 'Bookmarks',
+    allTags: 'All Tags',
+    noNotesMatched: 'No notes matched your current search and filters.',
+    noPlaylistsFound: 'No playlists matched your current search and filters.',
+    clearAllFilters: 'Clear all filters',
+    playlistItem: 'Playlist',
+    itemsCount: 'items',
+    unnamedItem: '(Unnamed item)',
+    andMoreItems: '...and {{count}} more',
+    noBookmarks: 'No bookmarks found in this library.',
+    noBookmarksMatched: 'No bookmarks matched your current search.',
+    scriptureBook: 'Scripture Book',
+    publication: 'Publication',
+    bookmarkSingle: 'bookmark',
+    bookmarkPlural: 'bookmarks',
+    slot: 'Slot',
+    clearSearch: 'Clear search query',
+    noteTitleLabel: 'Title',
+    noteContentLabel: 'Content',
   },
   stats: {
     title: 'Study Analytics & Highlights',
@@ -204,6 +234,18 @@ export const en = {
     notesCountSuffix: 'notes',
     noScriptures: 'No scripture notes linked in this backup.',
     noTags: 'No tags found in this backup.',
+    colorYellow: 'Yellow',
+    colorYellowCat: 'Direct Answer',
+    colorGreen: 'Green',
+    colorGreenCat: 'Principle / Scripture',
+    colorBlue: 'Blue',
+    colorBlueCat: 'Illustration / Tool',
+    colorPink: 'Pink',
+    colorPinkCat: 'Heart Statement',
+    colorOrange: 'Orange',
+    colorOrangeCat: 'Action Command',
+    colorPurple: 'Purple',
+    colorPurpleCat: 'Warning',
   },
   share: {
     title: 'Selective Note Sharing',
@@ -253,19 +295,33 @@ export const en = {
   help: {
     title: 'User Guide & Help',
     subtitle: 'Everything you need to know about merging, exploring, and restoring your study libraries safely.',
+    badge: 'User Guide',
     step1Title: '1. Export your backups from JW Library',
     step1Desc: 'Open JW Library on your phone and tablet. Go to Personal Study > Backup and Restore > Create a Backup, then save the .jwlibrary file.',
+    step1Tip1: 'Android: Saved in Downloads or Documents folder',
+    step1Tip2: 'iOS (iPhone/iPad): Save to Files (Files app / On My iPhone)',
+    step1Tip3: 'Windows: Saved to your chosen folder',
     step2Title: '2. Merge them together on Panda JWL-Sync',
     step2Desc: 'Drop your first backup on the left and your second backup on the right. Our algorithm unifies notes on the same verses, consolidates tags, and avoids duplicates.',
+    step2Tip1: 'Automatic deduplication of highlights & bookmarks',
+    step2Tip2: 'If identical verses have different notes, choose to keep both',
+    step2Tip3: 'Tags with the same name are merged cleanly',
     step3Title: '3. Restore the merged backup',
     step3Desc: 'Download your merged .jwlibrary file. Open JW Library on both devices and select Restore a Backup. Both devices now share your complete research!',
+    step3Tip1: 'Safe & official: the generated file conforms to JW Library archive specs',
+    step3Tip2: 'Verified SHA-256 manifest signature for 100% integrity',
+    step3Tip3: 'Restore on both devices to keep everything synchronized',
     privacyTitle: '100% In-Browser Privacy Guarantee',
     privacyDesc: 'Panda JWL-Sync runs completely on your device using WebAssembly SQLite. Your personal notes, highlights, and study tags are never sent to any server.',
+    localWasm: 'Local WASM SQLite',
+    zeroUpload: 'Zero server upload',
     faqTitle: 'Frequently Asked Questions',
+    faqQuestionPrefix: 'Q:',
     faq1Q: 'Will my highlights or tags be lost?',
     faq1A: 'No! Unlike the official restore which overwrites the entire database, Panda JWL-Sync combines records intelligently without deleting either side.',
     faq2Q: 'What happens if I edited the same verse on both devices?',
     faq2A: 'The app detects duplicate verse collisions and lets you choose whether to keep both notes or select your preferred version.',
+    startMergingBtn: 'Start Merging Backups',
   },
   footer: {
     clientSide: '100% Client-Side & Private',
@@ -282,44 +338,20 @@ export const en = {
 
 type EnSchema = typeof en;
 export type TranslationSchema = {
-  [K in keyof Omit<EnSchema, 'help'>]: K extends 'cloud'
+  [K in keyof Omit<EnSchema, 'help' | 'stats' | 'explorer' | 'merge'>]: K extends 'cloud'
     ? Omit<EnSchema['cloud'], 'clientIdMissingTitle' | 'clientIdMissingDesc'> & {
         clientIdMissingTitle?: string;
         clientIdMissingDesc?: string;
-      }
-    : K extends 'explorer'
-    ? Omit<EnSchema['explorer'], 'tagManagerBtn'> & {
-        tagManagerBtn?: string;
       }
     : K extends 'nav'
     ? Omit<EnSchema['nav'], 'help' | 'helpDesc'> & {
         help?: string;
         helpDesc?: string;
       }
-    : K extends 'merge'
-    ? Omit<
-        EnSchema['merge'],
-        | 'backup1'
-        | 'backup2'
-        | 'backup1Desc'
-        | 'backup2Desc'
-        | 'tagImportedNotes'
-        | 'tagImportedNotesDesc'
-        | 'tagImportedNotesLabel'
-        | 'fromMerge'
-        | 'howToExport'
-      > & {
-        backup1?: string;
-        backup2?: string;
-        backup1Desc?: string;
-        backup2Desc?: string;
-        tagImportedNotes?: string;
-        tagImportedNotesDesc?: string;
-        tagImportedNotesLabel?: string;
-        fromMerge?: string;
-        howToExport?: string;
-      }
     : EnSchema[K];
 } & {
   help?: Partial<EnSchema['help']>;
+  stats?: Partial<EnSchema['stats']>;
+  explorer?: Partial<EnSchema['explorer']>;
+  merge?: Partial<EnSchema['merge']>;
 };

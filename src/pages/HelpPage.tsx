@@ -28,9 +28,9 @@ export const HelpPage: React.FC = () => {
         'Open JW Library on your phone and tablet. Go to Personal Study > Backup and Restore > Create a Backup, then save the .jwlibrary file.'
       ),
       tips: [
-        'Android: Saved in Downloads or Documents folder',
-        'iOS (iPhone/iPad): Save to Files (Files app / On My iPhone)',
-        'Windows: Saved to your chosen folder',
+        t('help.step1Tip1', 'Android: Saved in Downloads or Documents folder'),
+        t('help.step1Tip2', 'iOS (iPhone/iPad): Save to Files (Files app / On My iPhone)'),
+        t('help.step1Tip3', 'Windows: Saved to your chosen folder'),
       ],
     },
     {
@@ -43,9 +43,9 @@ export const HelpPage: React.FC = () => {
         'Drop your phone backup on the left and your tablet backup on the right. Our algorithm unifies notes on the same verses, consolidates tags, and avoids duplicates.'
       ),
       tips: [
-        'Automatic deduplication of highlights & bookmarks',
-        'If identical verses have different notes, choose to keep both',
-        'Tags with the same name are merged cleanly',
+        t('help.step2Tip1', 'Automatic deduplication of highlights & bookmarks'),
+        t('help.step2Tip2', 'If identical verses have different notes, choose to keep both'),
+        t('help.step2Tip3', 'Tags with the same name are merged cleanly'),
       ],
     },
     {
@@ -58,9 +58,9 @@ export const HelpPage: React.FC = () => {
         'Download your merged .jwlibrary file. Open JW Library on both devices and select Restore a Backup. Both devices now share your complete research!'
       ),
       tips: [
-        'Safe & official: the generated file conforms to JW Library archive specs',
-        'Verified SHA-256 manifest signature for 100% integrity',
-        'Restore on both devices to keep everything synchronized',
+        t('help.step3Tip1', 'Safe & official: the generated file conforms to JW Library archive specs'),
+        t('help.step3Tip2', 'Verified SHA-256 manifest signature for 100% integrity'),
+        t('help.step3Tip3', 'Restore on both devices to keep everything synchronized'),
       ],
     },
   ];
@@ -88,7 +88,7 @@ export const HelpPage: React.FC = () => {
       <div className="text-center space-y-3 max-w-xl mx-auto">
         <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/25 text-blue-600 dark:text-blue-400 text-xs font-semibold backdrop-blur-md">
           <HelpCircle className="w-3.5 h-3.5" />
-          <span>User Guide</span>
+          <span>{t('help.badge', 'User Guide')}</span>
         </div>
         <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
           {t('help.title', 'User Guide & Help')}
@@ -158,11 +158,11 @@ export const HelpPage: React.FC = () => {
         <div className="flex flex-wrap gap-4 pt-1 text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
           <span className="flex items-center space-x-1.5">
             <HardDrive className="w-3.5 h-3.5" />
-            <span>Local WASM SQLite</span>
+            <span>{t('help.localWasm', 'Local WASM SQLite')}</span>
           </span>
           <span className="flex items-center space-x-1.5">
             <Lock className="w-3.5 h-3.5" />
-            <span>Zero server upload</span>
+            <span>{t('help.zeroUpload', 'Zero server upload')}</span>
           </span>
         </div>
       </div>
@@ -179,7 +179,7 @@ export const HelpPage: React.FC = () => {
               className="rounded-2xl border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#101625] p-5 space-y-2 shadow-sm"
             >
               <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
-                <span className="text-blue-500 font-black">Q:</span>
+                <span className="text-blue-500 font-black">{t('help.faqQuestionPrefix', 'Q:')}</span>
                 <span>{faq.q}</span>
               </h4>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -196,7 +196,7 @@ export const HelpPage: React.FC = () => {
           to="/"
           className="inline-flex items-center space-x-2 px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs tracking-wide transition-all shadow-lg shadow-blue-600/30"
         >
-          <span>Start Merging Backups</span>
+          <span>{t('help.startMergingBtn', 'Start Merging Backups')}</span>
           <ArrowRight className="w-4 h-4" />
         </Link>
       </div>

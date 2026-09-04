@@ -597,10 +597,10 @@ export const LandingPage: React.FC = () => {
                   {secondaryFile?.summary?.deviceName && (
                     <button
                       type="button"
-                      onClick={() => setCustomImportTagName(`From ${secondaryFile.summary.deviceName}`)}
+                      onClick={() => setCustomImportTagName(t('merge.fromDevice', { device: secondaryFile.summary.deviceName, defaultValue: `From ${secondaryFile.summary.deviceName}` }))}
                       className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-300 transition-colors truncate max-w-[180px]"
                     >
-                      From {secondaryFile.summary.deviceName}
+                      {t('merge.fromDevice', { device: secondaryFile.summary.deviceName, defaultValue: `From ${secondaryFile.summary.deviceName}` })}
                     </button>
                   )}
                   <button
@@ -640,7 +640,7 @@ export const LandingPage: React.FC = () => {
               className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm tracking-wide transition-all shadow-xl shadow-blue-600/30 hover:scale-[1.02] active:scale-[0.98] inline-flex items-center justify-center space-x-2"
             >
               <GitMerge className="w-4 h-4" />
-              <span>{isMerging ? 'Merging...' : 'Merge Backups'}</span>
+              <span>{isMerging ? t('merge.merging', 'Merging...') : t('merge.mergeBackups', 'Merge Backups')}</span>
               <ArrowRight className="w-4 h-4 ml-1" />
             </button>
           </div>
@@ -679,13 +679,19 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="p-3.5 bg-emerald-50/70 dark:bg-emerald-950/20 rounded-2xl border border-emerald-500/20 text-xs text-emerald-800 dark:text-emerald-300 flex flex-wrap gap-x-5 gap-y-1.5 font-semibold">
-              <span>+{mergeResult.stats.notesAdded} new notes</span>
+              <span>{t('merge.statNewNotes', { count: mergeResult.stats.notesAdded, defaultValue: `+${mergeResult.stats.notesAdded} new notes` })}</span>
               <span>•</span>
-              <span>{mergeResult.stats.notesMerged} duplicates unified</span>
+              <span>{t('merge.statDuplicatesUnified', { count: mergeResult.stats.notesMerged, defaultValue: `${mergeResult.stats.notesMerged} duplicates unified` })}</span>
               <span>•</span>
-              <span>+{mergeResult.stats.marksAdded} highlights combined</span>
+              <span>{t('merge.statHighlightsCombined', { count: mergeResult.stats.marksAdded, defaultValue: `+${mergeResult.stats.marksAdded} highlights combined` })}</span>
               <span>•</span>
-              <span>+{mergeResult.stats.tagsAdded} tags consolidated</span>
+              <span>{t('merge.statTagsConsolidated', { count: mergeResult.stats.tagsAdded, defaultValue: `+${mergeResult.stats.tagsAdded} tags consolidated` })}</span>
+              {mergeResult.stats.bookmarksAdded > 0 && (
+                <>
+                  <span>•</span>
+                  <span>{t('merge.statBookmarksAdded', { count: mergeResult.stats.bookmarksAdded, defaultValue: `+${mergeResult.stats.bookmarksAdded} bookmarks added` })}</span>
+                </>
+              )}
             </div>
 
             <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">

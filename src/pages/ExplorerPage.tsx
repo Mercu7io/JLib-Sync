@@ -631,7 +631,7 @@ export const ExplorerPage: React.FC = () => {
             )}
             <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center space-x-2">
               <FileText className="w-5 h-5 text-orange-500 dark:text-orange-400" />
-              <span>Notes</span>
+              <span>{t('explorer.notesCategory', 'Notes')}</span>
               <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">({filteredNotes.length})</span>
             </h2>
           </button>
@@ -650,21 +650,21 @@ export const ExplorerPage: React.FC = () => {
                         : 'bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
                     }`}
                   >
-                    All Tags
+                    {t('explorer.allTags', 'All Tags')}
                   </button>
-                  {allTags.map((t) => (
+                  {allTags.map((tItem) => (
                     <button
-                      key={t.TagId}
+                      key={tItem.TagId}
                       type="button"
-                      onClick={() => setSelectedTag(t.Name === selectedTag ? null : t.Name)}
+                      onClick={() => setSelectedTag(tItem.Name === selectedTag ? null : tItem.Name)}
                       className={`px-2.5 py-1 rounded-full whitespace-nowrap transition-colors flex items-center space-x-1 ${
-                        selectedTag === t.Name
+                        selectedTag === tItem.Name
                           ? 'bg-orange-600 text-white font-medium shadow-sm'
                           : 'bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
                       }`}
                     >
-                      <span>{t.Name}</span>
-                      <span className="text-[10px] opacity-75 font-mono">({t.count})</span>
+                      <span>{tItem.Name}</span>
+                      <span className="text-[10px] opacity-75 font-mono">({tItem.count})</span>
                     </button>
                   ))}
                 </div>
@@ -673,7 +673,7 @@ export const ExplorerPage: React.FC = () => {
               {/* Notes Grid */}
               {filteredNotes.length === 0 ? (
                 <div className="text-center py-12 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/30 space-y-2">
-                  <p className="text-sm text-slate-600 dark:text-slate-400">No notes matched your current search and filters.</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">{t('explorer.noNotesMatched', 'No notes matched your current search and filters.')}</p>
                   <button
                     type="button"
                     onClick={() => {
@@ -683,7 +683,7 @@ export const ExplorerPage: React.FC = () => {
                     }}
                     className="text-xs text-orange-600 dark:text-orange-400 hover:underline font-semibold"
                   >
-                    Clear all filters
+                    {t('explorer.clearAllFilters', 'Clear all filters')}
                   </button>
                 </div>
               ) : (
@@ -722,14 +722,14 @@ export const ExplorerPage: React.FC = () => {
                               {colorInfo && (
                                 <span
                                   className={`w-2 h-2 rounded-full ${colorInfo.bgClass} ring-1 ${colorInfo.borderClass}`}
-                                  title={`Highlight: ${colorInfo.name} (${colorInfo.category})`}
+                                  title={`${t('stats.highlights', 'Highlight')}: ${t(`stats.color${colorInfo.name}`, colorInfo.name)} (${t(`stats.color${colorInfo.name}Cat`, colorInfo.category)})`}
                                 />
                               )}
                               <span className="font-medium text-slate-700 dark:text-slate-300 truncate">
                                 {note.locationTitle ||
                                   (note.bookNumber
                                     ? `${BIBLE_BOOKS[note.bookNumber] || 'Bible'} ch. ${note.chapterNumber || 1}`
-                                    : 'Personal Note')}
+                                    : t('explorer.personalNote', 'Personal Note'))}
                               </span>
                             </div>
 
@@ -817,7 +817,7 @@ export const ExplorerPage: React.FC = () => {
             )}
             <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center space-x-2">
               <BookOpen className="w-5 h-5 text-purple-500 dark:text-purple-400" />
-              <span>Playlists</span>
+              <span>{t('explorer.playlistsCategory', 'Playlists')}</span>
               <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">({filteredPlaylists.length})</span>
             </h2>
           </button>
@@ -825,7 +825,7 @@ export const ExplorerPage: React.FC = () => {
           {showPlaylistsCategory && (
             filteredPlaylists.length === 0 ? (
               <div className="text-center py-12 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/30 space-y-2">
-                <p className="text-sm text-slate-600 dark:text-slate-400">No playlists matched your current search and filters.</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">{t('explorer.noPlaylistsFound', 'No playlists matched your current search and filters.')}</p>
                 <button
                   type="button"
                   onClick={() => {
@@ -835,7 +835,7 @@ export const ExplorerPage: React.FC = () => {
                   }}
                   className="text-xs text-purple-600 dark:text-purple-400 hover:underline font-semibold"
                 >
-                  Clear all filters
+                  {t('explorer.clearAllFilters', 'Clear all filters')}
                 </button>
               </div>
             ) : (
@@ -847,18 +847,20 @@ export const ExplorerPage: React.FC = () => {
                   >
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                        <span className="font-semibold text-purple-600 dark:text-purple-300">Playlist</span>
-                        <span>{pl.itemCount} items</span>
+                        <span className="font-semibold text-purple-600 dark:text-purple-300">{t('explorer.playlistItem', 'Playlist')}</span>
+                        <span>{pl.itemCount} {t('explorer.itemsCount', 'items')}</span>
                       </div>
                       <h3 className="font-semibold text-sm text-slate-900 dark:text-white leading-snug">{pl.name}</h3>
                       <div className="text-xs text-slate-700 dark:text-slate-300 space-y-1 mt-2">
                         {pl.items.slice(0, 5).map((item, idx) => (
                           <div key={idx} className="truncate text-slate-500 dark:text-slate-400">
-                            • {item || '(Unnamed item)'}
+                            • {item || t('explorer.unnamedItem', '(Unnamed item)')}
                           </div>
                         ))}
                         {pl.itemCount > 5 && (
-                          <div className="text-slate-400 dark:text-slate-500 italic">...and {pl.itemCount - 5} more</div>
+                          <div className="text-slate-400 dark:text-slate-500 italic">
+                            {t('explorer.andMoreItems', { count: pl.itemCount - 5, defaultValue: `...and ${pl.itemCount - 5} more` })}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -885,7 +887,7 @@ export const ExplorerPage: React.FC = () => {
             )}
             <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center space-x-2">
               <BookmarkIcon className="w-5 h-5 text-emerald-500" />
-              <span>Bookmarks</span>
+              <span>{t('explorer.bookmarksCategory', 'Bookmarks')}</span>
               <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">({bookmarks.length})</span>
             </h2>
           </button>
@@ -895,7 +897,7 @@ export const ExplorerPage: React.FC = () => {
               <div className="text-center py-12 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-100/50 dark:bg-slate-900/30 space-y-2">
                 <BookmarkIcon className="w-8 h-8 text-slate-400 dark:text-slate-600 mx-auto mb-2" />
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  {bookmarks.length === 0 ? 'No bookmarks found in this library.' : 'No bookmarks matched your current search.'}
+                  {bookmarks.length === 0 ? t('explorer.noBookmarks', 'No bookmarks found in this library.') : t('explorer.noBookmarksMatched', 'No bookmarks matched your current search.')}
                 </p>
                 {searchQuery && (
                   <button
@@ -903,7 +905,7 @@ export const ExplorerPage: React.FC = () => {
                     onClick={() => setSearchQuery('')}
                     className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
                   >
-                    Clear search query
+                    {t('explorer.clearSearch', 'Clear search query')}
                   </button>
                 )}
               </div>
@@ -926,12 +928,12 @@ export const ExplorerPage: React.FC = () => {
                               {group.title}
                             </h3>
                             <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
-                              {group.isBible ? 'Scripture Book' : 'Publication'}
+                              {group.isBible ? t('explorer.scriptureBook', 'Scripture Book') : t('explorer.publication', 'Publication')}
                             </span>
                           </div>
                         </div>
                         <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-500/15 px-2 py-0.5 rounded-full flex-shrink-0">
-                          {group.items.length} {group.items.length === 1 ? 'bookmark' : 'bookmarks'}
+                          {group.items.length} {group.items.length === 1 ? t('explorer.bookmarkSingle', 'bookmark') : t('explorer.bookmarkPlural', 'bookmarks')}
                         </span>
                       </div>
 
@@ -965,10 +967,10 @@ export const ExplorerPage: React.FC = () => {
                                 <div className="space-y-0.5 flex-1 min-w-0">
                                   <div className="flex items-center space-x-1.5">
                                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                                      Slot {bm.slot + 1}
+                                      {t('explorer.slot', 'Slot')} {bm.slot + 1}
                                     </span>
                                     <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">
-                                      {bm.title || (bm.bookNumber ? `${BIBLE_BOOKS[bm.bookNumber]} ch. ${bm.chapterNumber}` : 'Bookmark')}
+                                      {bm.title || (bm.bookNumber ? `${BIBLE_BOOKS[bm.bookNumber]} ch. ${bm.chapterNumber}` : t('explorer.bookmarkSingle', 'Bookmark'))}
                                     </h4>
                                   </div>
                                   {bm.snippet && (
@@ -1020,7 +1022,7 @@ export const ExplorerPage: React.FC = () => {
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">Title</label>
+                <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">{t('explorer.noteTitleLabel', 'Title')}</label>
                 <input
                   type="text"
                   value={editTitle}
@@ -1030,7 +1032,7 @@ export const ExplorerPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">Content</label>
+                <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1">{t('explorer.noteContentLabel', 'Content')}</label>
                 <textarea
                   rows={6}
                   value={editContent}

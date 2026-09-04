@@ -228,8 +228,12 @@ export const StatsPage: React.FC = () => {
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: c.hex }}
                   />
-                  <span className="font-semibold text-slate-900 dark:text-white">{c.name}</span>
-                  <span className="text-slate-500 dark:text-slate-400">({c.category})</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">
+                    {t(`stats.color${c.name}`, c.name)}
+                  </span>
+                  <span className="text-slate-500 dark:text-slate-400">
+                    ({t(`stats.color${c.name}Cat`, c.category)})
+                  </span>
                 </div>
                 <div className="font-mono text-slate-700 dark:text-slate-200">
                   {c.count} ({c.percentage}%)
