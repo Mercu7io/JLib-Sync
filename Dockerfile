@@ -11,7 +11,9 @@ RUN npm ci
 
 # Pass build-time environment variables for Vite (VITE_* are baked at compile time)
 ARG VITE_GOOGLE_CLIENT_ID
+ARG VITE_WEB3FORMS_ACCESS_KEY
 ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
+ENV VITE_WEB3FORMS_ACCESS_KEY=$VITE_WEB3FORMS_ACCESS_KEY
 
 # Copy project source files
 COPY . .

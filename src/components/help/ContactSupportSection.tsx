@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Mail,
   Send,
@@ -15,9 +15,11 @@ import {
   Lock,
   Eye,
   EyeOff,
+  Loader2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { APP_VERSION } from '../../lib/version';
+import { sendContactMessage, validateContactInput } from '../../lib/contact/web3forms';
 
 /**
  * Obfuscated email getter.
@@ -35,8 +37,9 @@ export const ContactSupportSection: React.FC = () => {
 
   // Form state
   const [category, setCategory] = useState<'question' | 'bug' | 'feature' | 'other'>('question');
-  const [subject, setSubject] = useState('');
+  const [name, setName] = useState('');
   const [replyEmail, setReplyEmail] = useState('');
+  const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [honeypot, setHoneypot] = useState('');
 
@@ -46,13 +49,14 @@ export const ContactSupportSection: React.FC = () => {
   const [captchaAnswer, setCaptchaAnswer] = useState('');
 
   // Status & Feedback
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [copiedMessage, setCopiedMessage] = useState(false);
   const [showDirectEmail, setShowDirectEmail] = useState(false);
 
-  // Prepared links for success screen
+  // Prepared links for direct mail fallback
   const [preparedLinks, setPreparedLinks] = useState<{
     mailtoUrl: string;
     gmailUrl: string;
@@ -89,7 +93,7 @@ export const ContactSupportSection: React.FC = () => {
     } catch (_) {}
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -107,7 +111,7 @@ export const ContactSupportSection: React.FC = () => {
       return;
     }
 
-    // 3. Anti-bot cooldown check (30 seconds between sends)
+    // 3. Anti-bot cooldown check (25 seconds between sends)
     try {
       const lastSend = sessionStorage.getItem('jwsync_last_contact_ts');
       if (lastSend && Date.now() - Number(lastSend) < 25000) {
@@ -116,18 +120,7 @@ export const ContactSupportSection: React.FC = () => {
       }
     } catch (_) {}
 
-    // 4. Form validation
-    if (!subject.trim()) {
-      setError(t('help.contactErrSubject', 'Please provide a subject for your message.'));
-      return;
-    }
-
-    if (!message.trim() || message.trim().length < 10) {
-      setError(t('help.contactErrMessage', 'Please enter a message with at least 10 characters.'));
-      return;
-    }
-
-    // 5. Math Captcha verification
+    // 4. Math Captcha verification
     const parsedAnswer = parseInt(captchaAnswer.trim(), 10);
     if (isNaN(parsedAnswer) || parsedAnswer !== num1 + num2) {
       setError(t('help.botWrongAnswer', 'Incorrect anti-bot calculation. Please try again.'));
@@ -135,7 +128,21 @@ export const ContactSupportSection: React.FC = () => {
       return;
     }
 
-    // Build message contents
+    // 5. Typed Schema Validation
+    const validation = validateContactInput({
+      name,
+      email: replyEmail,
+      subject,
+      message,
+      category,
+    });
+
+    if (!validation.isValid) {
+      setError(t(validation.errorKey || 'help.contactErrSubject', validation.defaultMessage || 'Please verify form fields.'));
+      return;
+    }
+
+    // 6. Build message details & direct URLs for optional fallback
     const recipient = getSecureContactEmail();
     const categoryLabels: Record<string, string> = {
       question: t('help.contactCatQuestion', 'Question / General Help'),
@@ -150,45 +157,57 @@ export const ContactSupportSection: React.FC = () => {
     const fullBody = [
       `=== Panda JWL-Sync Contact ===`,
       `${t('help.emailReqType', 'Request type')} : ${categoryLabels[category] || category}`,
+      `${t('help.contactName', 'Name')} : ${name.trim()}`,
+      `${t('help.contactReplyEmail', 'Email')} : ${replyEmail.trim()}`,
       `${t('help.emailSubject', 'Subject')} : ${subject.trim()}`,
-      replyEmail.trim() ? `${t('help.emailReplyTo', 'Reply email')} : ${replyEmail.trim()}` : null,
       `Date : ${new Date().toLocaleString()}`,
       `Browser / OS : ${userAgent}`,
       `Application : Panda JWL-Sync v${APP_VERSION}`,
       ``,
       `=== Message ===`,
       message.trim(),
-    ]
-      .filter((line) => line !== null)
-      .join('\n');
-
-    const mailtoUrl = `mailto:${recipient}?subject=${encodeURIComponent(fullSubject)}&body=${encodeURIComponent(fullBody)}`;
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(recipient)}&su=${encodeURIComponent(fullSubject)}&body=${encodeURIComponent(fullBody)}`;
-    const outlookUrl = `https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(recipient)}&subject=${encodeURIComponent(fullSubject)}&body=${encodeURIComponent(fullBody)}`;
-
-    // Save cooldown timestamp
-    try {
-      sessionStorage.setItem('jwsync_last_contact_ts', String(Date.now()));
-    } catch (_) {}
+    ].join('\n');
 
     setPreparedLinks({
-      mailtoUrl,
-      gmailUrl,
-      outlookUrl,
+      mailtoUrl: `mailto:${recipient}?subject=${encodeURIComponent(fullSubject)}&body=${encodeURIComponent(fullBody)}`,
+      gmailUrl: `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(recipient)}&su=${encodeURIComponent(fullSubject)}&body=${encodeURIComponent(fullBody)}`,
+      outlookUrl: `https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(recipient)}&subject=${encodeURIComponent(fullSubject)}&body=${encodeURIComponent(fullBody)}`,
       fullSubject,
       fullBody,
       recipient,
     });
 
-    setIsSuccess(true);
-
-    // Try to trigger default mail client directly
+    // 7. Dispatch via Web3Forms API
+    setIsSubmitting(true);
     try {
-      window.location.href = mailtoUrl;
-    } catch (_) {}
+      const result = await sendContactMessage({
+        name,
+        email: replyEmail,
+        subject,
+        message,
+        category,
+        userAgent,
+        appVersion: APP_VERSION,
+        botcheck: honeypot,
+      });
+
+      if (result.success) {
+        try {
+          sessionStorage.setItem('jwsync_last_contact_ts', String(Date.now()));
+        } catch (_) {}
+        setIsSuccess(true);
+      } else {
+        setError(result.message || t('help.contactErrSend', 'An error occurred while sending your message. Please try again or use direct email.'));
+      }
+    } catch (err: any) {
+      setError(err?.message || t('help.contactErrSend', 'An error occurred while sending your message. Please try again or use direct email.'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleResetForm = () => {
+    setName('');
     setSubject('');
     setMessage('');
     setReplyEmail('');
@@ -215,7 +234,7 @@ export const ContactSupportSection: React.FC = () => {
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl leading-relaxed">
             {t(
               'help.contactSubtitle',
-              'Have a question, encountered a bug, or have an idea to improve Panda JWL-Sync? Send us an email!'
+              'Have a question, encountered a bug, or have an idea to improve Panda JWL-Sync? Send us an inquiry!'
             )}
           </p>
         </div>
@@ -228,80 +247,56 @@ export const ContactSupportSection: React.FC = () => {
       </div>
 
       {/* ── SUCCESS VIEW ─────────────────────────────────────── */}
-      {isSuccess && preparedLinks ? (
+      {isSuccess ? (
         <div className="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-500/30 rounded-2xl p-6 space-y-5 animate-in fade-in duration-200">
           <div className="flex items-start space-x-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
               <Check className="w-5 h-5" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-                {t('help.contactSuccessTitle', 'Email prepared successfully!')}
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                {t('help.contactSentSuccessTitle', 'Message sent successfully!')}
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                 {t(
-                  'help.contactSuccessDesc',
-                  'Your email has been prepared. Click below to open in your favorite email app or webmail, or copy the details directly.'
+                  'help.contactSentSuccessDesc',
+                  'Thank you for reaching out! Your message has been transmitted to our support team. We will reply to your email as soon as possible.'
                 )}
               </p>
             </div>
           </div>
 
           {/* Action buttons */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-            <a
-              href={preparedLinks.mailtoUrl}
-              className="flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-sm"
-            >
-              <Mail className="w-4 h-4" />
-              <span>{t('help.contactOpenMailApp', 'Open in Email Client')}</span>
-            </a>
-            <a
-              href={preparedLinks.gmailUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] text-slate-800 dark:text-white text-xs font-semibold transition-all border border-slate-200/80 dark:border-white/[0.08]"
-            >
-              <ExternalLink className="w-3.5 h-3.5 text-red-500" />
-              <span>{t('help.contactOpenGmail', 'Open in Gmail')}</span>
-            </a>
-            <a
-              href={preparedLinks.outlookUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] text-slate-800 dark:text-white text-xs font-semibold transition-all border border-slate-200/80 dark:border-white/[0.08]"
-            >
-              <ExternalLink className="w-3.5 h-3.5 text-blue-500" />
-              <span>{t('help.contactOpenOutlook', 'Open in Outlook')}</span>
-            </a>
-          </div>
-
-          {/* Quick Copy Utilities */}
-          <div className="flex flex-wrap gap-2 pt-2 border-t border-emerald-500/20">
-            <button
-              type="button"
-              onClick={handleCopyEmail}
-              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/[0.08] text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors"
-            >
-              {copiedEmail ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedEmail ? t('help.contactEmailCopied', 'Email address copied!') : t('help.contactCopyEmail', 'Copy Email Address')}</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleCopyMessage}
-              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/[0.08] text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors"
-            >
-              {copiedMessage ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedMessage ? t('help.contactMessageCopied', 'Message text copied!') : t('help.contactCopyMessage', 'Copy Full Text')}</span>
-            </button>
+          <div className="flex flex-wrap items-center gap-3 pt-2">
             <button
               type="button"
               onClick={handleResetForm}
-              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors ml-auto"
+              className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-sm"
             >
-              <RefreshCw className="w-3 h-3" />
+              <RefreshCw className="w-3.5 h-3.5" />
               <span>{t('help.contactNewMessage', 'Write another message')}</span>
             </button>
+
+            {preparedLinks && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleCopyMessage}
+                  className="inline-flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/[0.08] text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors"
+                >
+                  {copiedMessage ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedMessage ? t('help.contactMessageCopied', 'Message text copied!') : t('help.contactCopyMessage', 'Copy Full Text')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyEmail}
+                  className="inline-flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/[0.08] text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors"
+                >
+                  {copiedEmail ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedEmail ? t('help.contactEmailCopied', 'Email address copied!') : t('help.contactCopyEmail', 'Copy Email Address')}</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
       ) : (
@@ -354,25 +349,26 @@ export const ContactSupportSection: React.FC = () => {
             </div>
           </div>
 
-          {/* Subject & Optional reply email */}
+          {/* Name & Required Email */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label htmlFor="contact_subject" className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                {t('help.contactSubject', 'Subject')} <span className="text-red-500">*</span>
+              <label htmlFor="contact_name" className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                {t('help.contactName', 'Your Name')} <span className="text-red-500">*</span>
               </label>
               <input
-                id="contact_subject"
+                id="contact_name"
                 type="text"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder={t('help.contactSubjectPlaceholder', 'e.g. Issue merging highlights on Android...')}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={t('help.contactNamePlaceholder', 'e.g. John Doe')}
+                maxLength={100}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/[0.08] text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
                 required
               />
             </div>
             <div className="space-y-1.5">
               <label htmlFor="contact_reply_email" className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                {t('help.contactReplyEmail', 'Your email (optional, for reply)')}
+                {t('help.contactReplyEmail', 'Your Email')} <span className="text-red-500">*</span>
               </label>
               <input
                 id="contact_reply_email"
@@ -380,9 +376,28 @@ export const ContactSupportSection: React.FC = () => {
                 value={replyEmail}
                 onChange={(e) => setReplyEmail(e.target.value)}
                 placeholder={t('help.contactReplyEmailPlaceholder', 'your.name@example.com')}
+                maxLength={254}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/[0.08] text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                required
               />
             </div>
+          </div>
+
+          {/* Subject */}
+          <div className="space-y-1.5">
+            <label htmlFor="contact_subject" className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              {t('help.contactSubject', 'Subject')} <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="contact_subject"
+              type="text"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder={t('help.contactSubjectPlaceholder', 'e.g. Issue merging highlights on Android...')}
+              maxLength={200}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/[0.08] text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+              required
+            />
           </div>
 
           {/* Message Area */}
@@ -396,6 +411,7 @@ export const ContactSupportSection: React.FC = () => {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder={t('help.contactMessagePlaceholder', 'Please describe your request, issue, or suggestion in detail...')}
+              maxLength={5000}
               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/[0.08] text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 resize-y"
               required
             />
@@ -437,6 +453,17 @@ export const ContactSupportSection: React.FC = () => {
             </div>
           </div>
 
+          {/* GDPR / Privacy transparency badge */}
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-start space-x-2 bg-slate-50/60 dark:bg-white/[0.015] p-3 rounded-xl border border-slate-200/60 dark:border-white/[0.05]">
+            <ShieldCheck className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+            <span className="leading-relaxed">
+              {t(
+                'help.contactGdprNotice',
+                'Messages sent via this form are securely transmitted via Web3Forms and retained for a maximum of 7 days for support processing before automated deletion, in compliance with GDPR.'
+              )}
+            </span>
+          </div>
+
           {/* Error Message */}
           {error && (
             <div className="flex items-center space-x-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold animate-in fade-in duration-150">
@@ -445,17 +472,27 @@ export const ContactSupportSection: React.FC = () => {
             </div>
           )}
 
-          {/* Submit button */}
+          {/* Submit button & Direct option */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
             <button
               type="submit"
-              className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs tracking-wide transition-all shadow-md shadow-blue-600/20"
+              disabled={isSubmitting}
+              className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs tracking-wide transition-all shadow-md shadow-blue-600/20 cursor-pointer disabled:cursor-not-allowed"
             >
-              <Send className="w-3.5 h-3.5" />
-              <span>{t('help.contactSendBtn', 'Prepare & Send Email')}</span>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>{t('help.contactSendingBtn', 'Sending...')}</span>
+                </>
+              ) : (
+                <>
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{t('help.contactSendBtn', 'Send Message')}</span>
+                </>
+              )}
             </button>
 
-            {/* Direct Email Toggle for users who prefer copying the address */}
+            {/* Direct Email Toggle */}
             <div className="flex items-center space-x-2 text-[11px] text-slate-500 dark:text-slate-400">
               <span>{t('help.contactOrDirect', 'Or without the form:')}</span>
               <button

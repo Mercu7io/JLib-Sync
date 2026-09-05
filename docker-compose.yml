@@ -10,6 +10,7 @@ services:
     #   dockerfile: Dockerfile
     #   args:
     #     VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
+    #     VITE_WEB3FORMS_ACCESS_KEY: ${VITE_WEB3FORMS_ACCESS_KEY}
     ports:
       - "${PORT:-8080}:80"
     restart: unless-stopped

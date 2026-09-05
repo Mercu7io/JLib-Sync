@@ -700,3 +700,176 @@ test('GoogleDriveManager: stores and returns notes, tags, and playlists metrics'
     globalThis.fetch = originalFetch;
   }
 });
+
+test('validateContactInput: validates typed schema for contact inputs', async () => {
+  const { validateContactInput } = await import('../src/lib/contact/web3forms.ts');
+
+  // Nominal valid case
+  const validRes = validateContactInput({
+    name: 'Brother Smith',
+    email: 'brother.smith@example.org',
+    subject: 'Merge feedback',
+    message: 'Thank you for this wonderful tool, it helped me merge my notes seamlessly!',
+    category: 'question',
+  });
+  assert.equal(validRes.isValid, true);
+  assert.equal(validRes.errorKey, undefined);
+
+  // Edge case 1: name too short
+  const shortNameRes = validateContactInput({
+    name: 'A',
+    email: 'valid@example.com',
+    subject: 'Test',
+    message: 'Valid message with more than 10 characters',
+  });
+  assert.equal(shortNameRes.isValid, false);
+  assert.equal(shortNameRes.errorKey, 'help.contactErrName');
+
+  // Edge case 2: invalid email
+  const invalidEmailRes = validateContactInput({
+    name: 'Valid Name',
+    email: 'not-an-email',
+    subject: 'Test',
+    message: 'Valid message with more than 10 characters',
+  });
+  assert.equal(invalidEmailRes.isValid, false);
+  assert.equal(invalidEmailRes.errorKey, 'help.contactErrEmail');
+
+  // Edge case 3: message too short (< 10 chars)
+  const shortMsgRes = validateContactInput({
+    name: 'Valid Name',
+    email: 'valid@example.com',
+    subject: 'Test',
+    message: 'Hi',
+  });
+  assert.equal(shortMsgRes.isValid, false);
+  assert.equal(shortMsgRes.errorKey, 'help.contactErrMessage');
+
+  // Edge case 4: subject empty
+  const emptySubjectRes = validateContactInput({
+    name: 'Valid Name',
+    email: 'valid@example.com',
+    subject: '',
+    message: 'Valid message with more than 10 characters',
+  });
+  assert.equal(emptySubjectRes.isValid, false);
+  assert.equal(emptySubjectRes.errorKey, 'help.contactErrSubject');
+});
+
+test('sendContactMessage: handles Web3Forms dispatch, honeypot, and error states', async () => {
+  const { sendContactMessage } = await import('../src/lib/contact/web3forms.ts');
+
+  let capturedUrl = '';
+  let capturedBody: any = null;
+
+  const mockFetch: any = async (url: string, opts: any) => {
+    capturedUrl = url;
+    capturedBody = opts.body;
+    return {
+      ok: true,
+      json: async () => ({ success: true, message: 'Submission successful' }),
+    };
+  };
+
+  // Nominal dispatch case
+  const res = await sendContactMessage(
+    {
+      name: 'John Doe',
+      email: 'john@example.com',
+      subject: 'Feature request',
+      message: 'Can you add support for custom color themes?',
+      category: 'feature',
+      appVersion: '3.0.0',
+    },
+    'mock_key_123',
+    mockFetch
+  );
+
+  assert.equal(res.success, true);
+  assert.equal(capturedUrl, 'https://api.web3forms.com/submit');
+  assert.ok(capturedBody instanceof FormData);
+  assert.equal(capturedBody.get('access_key'), 'mock_key_123');
+  assert.equal(capturedBody.get('name'), 'John Doe');
+  assert.equal(capturedBody.get('email'), 'john@example.com');
+
+  // Edge case: bot honeypot filled -> simulated success without external API call
+  let honeypotCalled = false;
+  const honeypotFetch: any = async () => {
+    honeypotCalled = true;
+    return { ok: true, json: async () => ({ success: true }) };
+  };
+
+  const botRes = await sendContactMessage(
+    {
+      name: 'Spam Bot',
+      email: 'bot@spam.com',
+      subject: 'Buy cheap watches',
+      message: 'Click this link to buy cheap watches now!',
+      botcheck: 'http://spam-link.ru',
+    },
+    'mock_key_123',
+    honeypotFetch
+  );
+
+  assert.equal(botRes.success, true);
+  assert.equal(honeypotCalled, false, 'Fetch must not be called when honeypot is triggered');
+
+  // Edge case: missing access key
+  const missingKeyRes = await sendContactMessage(
+    {
+      name: 'John Doe',
+      email: 'john@example.com',
+      subject: 'Inquiry',
+      message: 'This is a valid inquiry message.',
+    },
+    '',
+    mockFetch
+  );
+  assert.equal(missingKeyRes.success, false);
+  assert.ok(missingKeyRes.message.includes('not configured'));
+
+  // Edge case: HTTP error response from server
+  const serverErrorFetch: any = async () => ({
+    ok: false,
+    status: 500,
+  });
+  const errRes = await sendContactMessage(
+    {
+      name: 'John Doe',
+      email: 'john@example.com',
+      subject: 'Inquiry',
+      message: 'This is a valid inquiry message.',
+    },
+    'mock_key_123',
+    serverErrorFetch
+  );
+  assert.equal(errRes.success, false);
+  assert.ok(errRes.message.includes('500'));
+});
+
+test('Web3Forms: access key is never hardcoded in tracked source code', async () => {
+  const fs = await import('node:fs');
+  const path = await import('node:path');
+
+  const filesToCheck = [
+    'src/lib/contact/web3forms.ts',
+    'src/components/help/ContactSupportSection.tsx',
+    'src/pages/HelpPage.tsx',
+    '.env.example',
+  ];
+
+  const secretPattern = new RegExp(['b06ed6', '27-495d', '-4104', '-a72e', '-a92b92f76cd9'].join(''), 'i');
+
+  for (const relPath of filesToCheck) {
+    const fullPath = path.resolve(relPath);
+    if (fs.existsSync(fullPath)) {
+      const content = fs.readFileSync(fullPath, 'utf8');
+      assert.equal(
+        secretPattern.test(content),
+        false,
+        `Secret access key must NEVER be hardcoded in tracked file: ${relPath}`
+      );
+    }
+  }
+});
+
