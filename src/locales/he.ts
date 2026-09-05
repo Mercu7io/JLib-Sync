@@ -415,6 +415,13 @@ export const he: TranslationSchema = {
     "chooseFile": "בחר .jwlibrary",
     "uploadDirectBtn": "העלה .jwlibrary",
     "analyzingFile": "מנתח קובץ .jwlibrary...",
+    "openInApp": "פתח באפליקציה",
+    "openInAppEncrypted": "בטל נעילה ופתח",
+    "openInAppTooltip": "טען גיבוי זה לסביבת העבודה של האפליקציה (מיזוג, סייר, סטטיסטיקה)",
+    "downloadToDevice": "הורד",
+    "downloadToDeviceTooltip": "שמור קובץ .jwlibrary מפוענח ישירות במכשיר שלך",
+    "decryptAndDownload": "פענח והורד",
+    "decryptAndMerge": "פענח ומזג",
   },
   "help": {
     "title": "מדריך למשתמש ושאלות נפוצות",

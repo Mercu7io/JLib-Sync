@@ -415,6 +415,13 @@ export const nl: TranslationSchema = {
     "chooseFile": ".jwlibrary kiezen",
     "uploadDirectBtn": ".jwlibrary uploaden",
     "analyzingFile": ".jwlibrary-bestand analyseren...",
+    "openInApp": "Openen in app",
+    "openInAppEncrypted": "Ontgrendelen & openen",
+    "openInAppTooltip": "Laad deze back-up in de app-werkruimte (Samenvoegen, Verkenner, Statistieken)",
+    "downloadToDevice": "Downloaden",
+    "downloadToDeviceTooltip": "Gedecodeerd .jwlibrary-bestand direct op uw apparaat opslaan",
+    "decryptAndDownload": "Ontsleutelen & downloaden",
+    "decryptAndMerge": "Ontsleutelen & samenvoegen",
   },
   "help": {
     "title": "Handleiding en veelgestelde vragen",

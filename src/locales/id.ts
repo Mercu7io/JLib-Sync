@@ -415,6 +415,13 @@ export const id: TranslationSchema = {
     "chooseFile": "Pilih .jwlibrary",
     "uploadDirectBtn": "Unggah .jwlibrary",
     "analyzingFile": "Menganalisis berkas .jwlibrary...",
+    "openInApp": "Buka di Aplikasi",
+    "openInAppEncrypted": "Buka Kunci & Buka",
+    "openInAppTooltip": "Muat cadangan ini ke ruang kerja aplikasi (Gabung, Penjelajah, Statistik)",
+    "downloadToDevice": "Unduh",
+    "downloadToDeviceTooltip": "Simpan berkas .jwlibrary terdekripsi langsung ke perangkat Anda",
+    "decryptAndDownload": "Dekripsi & Unduh",
+    "decryptAndMerge": "Dekripsi & Gabung",
   },
   "help": {
     "title": "Panduan Pengguna & Pertanyaan Umum",

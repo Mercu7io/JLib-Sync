@@ -415,6 +415,13 @@ export const ja: TranslationSchema = {
     "chooseFile": ".jwlibraryを選択",
     "uploadDirectBtn": ".jwlibraryをアップロード",
     "analyzingFile": ".jwlibraryファイルを解析中...",
+    "openInApp": "アプリで開く",
+    "openInAppEncrypted": "ロック解除して開く",
+    "openInAppTooltip": "このバックアップをアプリのワークスペースに読み込みます（結合、エクスプローラー、統計）",
+    "downloadToDevice": "ダウンロード",
+    "downloadToDeviceTooltip": "復号化された.jwlibraryファイルをデバイスに直接保存します",
+    "decryptAndDownload": "復号化してダウンロード",
+    "decryptAndMerge": "復号化して結合",
   },
   "help": {
     "title": "ユーザーガイド & よくある質問",

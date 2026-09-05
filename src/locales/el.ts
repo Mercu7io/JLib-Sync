@@ -415,6 +415,13 @@ export const el: TranslationSchema = {
     "chooseFile": "Επιλογή .jwlibrary",
     "uploadDirectBtn": "Μεταφόρτωση .jwlibrary",
     "analyzingFile": "Ανάλυση αρχείου .jwlibrary...",
+    "openInApp": "Άνοιγμα στην εφαρμογή",
+    "openInAppEncrypted": "Ξεκλείδωμα & Άνοιγμα",
+    "openInAppTooltip": "Φόρτωση αυτού του αντιγράφου ασφαλείας στον χώρο εργασίας της εφαρμογής (Συγχώνευση, Εξερεύνηση, Στατιστικά)",
+    "downloadToDevice": "Λήψη",
+    "downloadToDeviceTooltip": "Αποθηκεύστε το αποκρυπτογραφημένο αρχείο .jwlibrary απευθείας στη συσκευή σας",
+    "decryptAndDownload": "Αποκρυπτογράφηση & Λήψη",
+    "decryptAndMerge": "Αποκρυπτογράφηση & Συγχώνευση",
   },
   "help": {
     "title": "Οδηγός χρήσης και Συχνές ερωτήσεις",

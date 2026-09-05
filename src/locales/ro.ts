@@ -415,6 +415,13 @@ export const ro: TranslationSchema = {
     "chooseFile": "Alegeți .jwlibrary",
     "uploadDirectBtn": "Încărcați .jwlibrary",
     "analyzingFile": "Se analizează fișierul .jwlibrary...",
+    "openInApp": "Deschide în aplicație",
+    "openInAppEncrypted": "Deblocați și deschideți",
+    "openInAppTooltip": "Încărcați această copie de rezervă în spațiul de lucru al aplicației (Îmbinare, Explorator, Statistici)",
+    "downloadToDevice": "Descărcați",
+    "downloadToDeviceTooltip": "Salvați fișierul .jwlibrary decriptat direct pe dispozitivul dvs.",
+    "decryptAndDownload": "Decriptați și descărcați",
+    "decryptAndMerge": "Decriptați și îmbinați",
   },
   "help": {
     "title": "Ghid de utilizare și Întrebări frecvente",

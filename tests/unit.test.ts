@@ -472,6 +472,16 @@ test('i18n: en and fr contain all required cloud and help keys', async () => {
   assert.equal(fr.cloud.unverifiedBadge, 'Non vérifié');
   assert.equal(en.cloud.uploadDirectFile, 'Upload .jwlibrary File');
   assert.equal(fr.cloud.uploadDirectFile, 'Uploader un fichier .jwlibrary');
+  assert.equal(en.cloud.downloadToDevice, 'Download');
+  assert.equal(fr.cloud.downloadToDevice, 'Télécharger');
+  assert.equal(en.cloud.openInApp, 'Open in App');
+  assert.equal(fr.cloud.openInApp, "Ouvrir dans l'app");
+  assert.equal(en.cloud.decryptAndDownload, 'Decrypt & Download');
+  assert.equal(fr.cloud.decryptAndDownload, 'Déchiffrer & Télécharger');
+  assert.equal(en.cloud.decryptAndMerge, 'Decrypt & Merge');
+  assert.equal(fr.cloud.decryptAndMerge, 'Déchiffrer & Fusionner');
+  assert.equal(en.cloud.openInAppEncrypted, 'Unlock & Open');
+  assert.equal(fr.cloud.openInAppEncrypted, 'Déchiffrer & Ouvrir');
   assert.equal(en.stats.bookmarks, 'Bookmarks');
   assert.equal(fr.stats.bookmarks, 'Signets');
   assert.ok(en.cloud.uploadingWithProgress.includes('{{percent}}'));
@@ -927,6 +937,67 @@ test('analyzeJwLibraryFile: unpacks archive, extracts notes, tags, playlists, an
   const encFile = new File([new Uint8Array(100)], 'Encrypted.jwlibrary.enc', { type: 'application/octet-stream' });
   const encAnalysis = await analyzeJwLibraryFile(encFile);
   assert.equal(encAnalysis, null);
+});
+
+test('downloadCloudFile: auto-decrypts AES-256 encrypted backups, strips .enc, and reports progress', async () => {
+  const { CloudCrypto } = await import('../src/lib/cloud/crypto.ts');
+  const { driveManager } = await import('../src/lib/cloud/googleDrive.ts');
+  const { useCloudStore } = await import('../src/store/useCloudStore.ts');
+
+  const crypto = new CloudCrypto();
+  const rawPayload = new TextEncoder().encode('Simulated JWLibrary zip content');
+  const testPassword = 'StrongPassword!2026';
+  const encryptedBytes = await crypto.encrypt(rawPayload, testPassword);
+
+  // Mock driveManager.downloadBackup
+  const originalDownloadBackup = driveManager.downloadBackup;
+  let reportedProgress: number[] = [];
+  (driveManager as any).downloadBackup = async (_fileId: string, onProgress?: (pct: number) => void) => {
+    onProgress?.(50);
+    onProgress?.(100);
+    return encryptedBytes;
+  };
+
+  try {
+    // 1. Edge case: downloading encrypted file without providing password should fail with PASSWORD_REQUIRED
+    useCloudStore.getState().setEncryptionConfig(false, null, 0);
+    await assert.rejects(
+      async () => {
+        await useCloudStore.getState().downloadCloudFile('enc_file_1', 'my_backup.jwlibrary.enc');
+      },
+      (err: any) => err.message === 'PASSWORD_REQUIRED'
+    );
+
+    // 2. Edge case: downloading with incorrect password should throw decryption error
+    await assert.rejects(
+      async () => {
+        await useCloudStore.getState().downloadCloudFile('enc_file_1', 'my_backup.jwlibrary.enc', undefined, 'WrongPassword');
+      }
+    );
+
+    // 3. Nominal case: downloading with correct password
+    const downloadedFile = await useCloudStore.getState().downloadCloudFile(
+      'enc_file_1',
+      'my_backup.jwlibrary.enc',
+      (pct) => reportedProgress.push(pct),
+      testPassword
+    );
+
+    assert.ok(downloadedFile instanceof File);
+    assert.equal(downloadedFile.name, 'my_backup.jwlibrary', 'Should strip .enc extension from decrypted file');
+    const fileBytes = new Uint8Array(await downloadedFile.arrayBuffer());
+    assert.deepEqual(fileBytes, rawPayload, 'Decrypted file content must match raw payload');
+    assert.ok(reportedProgress.includes(100), 'Download progress should reach 100%');
+
+    // 4. Plain file download (not encrypted)
+    (driveManager as any).downloadBackup = async () => rawPayload;
+    const plainFile = await useCloudStore.getState().downloadCloudFile('plain_1', 'plain_backup.jwlibrary');
+    assert.equal(plainFile.name, 'plain_backup.jwlibrary');
+    const plainBytes = new Uint8Array(await plainFile.arrayBuffer());
+    assert.deepEqual(plainBytes, rawPayload);
+  } finally {
+    driveManager.downloadBackup = originalDownloadBackup;
+  }
 });
 
 

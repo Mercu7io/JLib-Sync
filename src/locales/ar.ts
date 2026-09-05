@@ -415,6 +415,13 @@ export const ar: TranslationSchema = {
     "chooseFile": "اختر .jwlibrary",
     "uploadDirectBtn": "رفع .jwlibrary",
     "analyzingFile": "جاري تحليل ملف .jwlibrary...",
+    "openInApp": "فتح في التطبيق",
+    "openInAppEncrypted": "فك القفل وفتح",
+    "openInAppTooltip": "تحميل هذه النسخة الاحتياطية في مساحة عمل التطبيق (دمج، استكشاف، إحصائيات)",
+    "downloadToDevice": "تنزيل",
+    "downloadToDeviceTooltip": "حفظ ملف .jwlibrary مفكوك التشفير مباشرة على جهازك",
+    "decryptAndDownload": "فك التشفير والتنزيل",
+    "decryptAndMerge": "فك التشفير والدمج",
   },
   "help": {
     "title": "دليل الاستخدام والأسئلة الشائعة",

@@ -415,6 +415,13 @@ export const ru: TranslationSchema = {
     "chooseFile": "Выбрать .jwlibrary",
     "uploadDirectBtn": "Загрузить .jwlibrary",
     "analyzingFile": "Анализ файла .jwlibrary...",
+    "openInApp": "Открыть в приложении",
+    "openInAppEncrypted": "Разблокировать и открыть",
+    "openInAppTooltip": "Загрузить эту резервную копию в рабочее пространство приложения (Слияние, Проводник, Статистика)",
+    "downloadToDevice": "Скачать",
+    "downloadToDeviceTooltip": "Сохранить расшифрованный файл .jwlibrary прямо на ваше устройство",
+    "decryptAndDownload": "Расшифровать и скачать",
+    "decryptAndMerge": "Расшифровать и объединить",
   },
   "help": {
     "title": "Руководство пользователя и частые вопросы",

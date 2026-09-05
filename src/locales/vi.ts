@@ -415,6 +415,13 @@ export const vi: TranslationSchema = {
     "chooseFile": "Chọn .jwlibrary",
     "uploadDirectBtn": "Tải lên .jwlibrary",
     "analyzingFile": "Đang phân tích tệp .jwlibrary...",
+    "openInApp": "Mở trong ứng dụng",
+    "openInAppEncrypted": "Mở khóa & Mở",
+    "openInAppTooltip": "Tải bản sao lưu này vào không gian làm việc của ứng dụng (Hợp nhất, Khám phá, Thống kê)",
+    "downloadToDevice": "Tải xuống",
+    "downloadToDeviceTooltip": "Lưu tệp .jwlibrary đã giải mã trực tiếp vào thiết bị của bạn",
+    "decryptAndDownload": "Giải mã & Tải xuống",
+    "decryptAndMerge": "Giải mã & Hợp nhất",
   },
   "help": {
     "title": "Hướng dẫn sử dụng và Câu hỏi thường gặp",

@@ -415,6 +415,13 @@ export const sw: TranslationSchema = {
     "chooseFile": "Chagua .jwlibrary",
     "uploadDirectBtn": "Pakia .jwlibrary",
     "analyzingFile": "Inachanganua faili la .jwlibrary...",
+    "openInApp": "Fungua katika Programu",
+    "openInAppEncrypted": "Fungua na Ufungue",
+    "openInAppTooltip": "Pakia nakala rudufu hii kwenye nafasi ya kazi ya programu (Unganisha, Kichunguzi, Takwimu)",
+    "downloadToDevice": "Pakua",
+    "downloadToDeviceTooltip": "Hifadhi faili la .jwlibrary lililofunguliwa usimbaji fiche moja kwa moja kwenye kifaa chako",
+    "decryptAndDownload": "Fungua Usimbaji Fiche na Upakue",
+    "decryptAndMerge": "Fungua Usimbaji Fiche na Unganishe",
   },
   "help": {
     "title": "Mwongozo wa Mtumiaji na Maswali Yanayoulizwa Mara kwa Mara",

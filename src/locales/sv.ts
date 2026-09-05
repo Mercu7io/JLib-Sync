@@ -415,6 +415,13 @@ export const sv: TranslationSchema = {
     "chooseFile": "Välj .jwlibrary",
     "uploadDirectBtn": "Ladda upp .jwlibrary",
     "analyzingFile": "Analyserar .jwlibrary-fil...",
+    "openInApp": "Öppna i appen",
+    "openInAppEncrypted": "Lås upp och öppna",
+    "openInAppTooltip": "Ladda denna säkerhetskopia till appens arbetsyta (Slå ihop, Utforskare, Statistik)",
+    "downloadToDevice": "Ladda ner",
+    "downloadToDeviceTooltip": "Spara dekrypterad .jwlibrary-fil direkt på din enhet",
+    "decryptAndDownload": "Dekryptera och ladda ner",
+    "decryptAndMerge": "Dekryptera och slå ihop",
   },
   "help": {
     "title": "Användarguide & Vanliga frågor",

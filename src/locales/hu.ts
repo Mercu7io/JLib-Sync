@@ -415,6 +415,13 @@ export const hu: TranslationSchema = {
     "chooseFile": ".jwlibrary kiválasztása",
     "uploadDirectBtn": ".jwlibrary feltöltése",
     "analyzingFile": "A .jwlibrary fájl elemzése folyamatban...",
+    "openInApp": "Megnyitás az appban",
+    "openInAppEncrypted": "Feloldás és megnyitás",
+    "openInAppTooltip": "Biztonsági másolat betöltése az alkalmazás munkaterületére (Összevonás, Felfedező, Statisztika)",
+    "downloadToDevice": "Letöltés",
+    "downloadToDeviceTooltip": "A feloldott .jwlibrary fájl mentése közvetlenül az eszközére",
+    "decryptAndDownload": "Feloldás és letöltés",
+    "decryptAndMerge": "Feloldás és összevonás",
   },
   "help": {
     "title": "Felhasználói útmutató és Gyakori kérdések",

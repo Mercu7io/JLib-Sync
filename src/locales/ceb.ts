@@ -415,6 +415,13 @@ export const ceb: TranslationSchema = {
     "chooseFile": "Pagpili og .jwlibrary",
     "uploadDirectBtn": "I-upload ang .jwlibrary",
     "analyzingFile": "Gisusi ang .jwlibrary file...",
+    "openInApp": "Ablihi sa App",
+    "openInAppEncrypted": "I-unlock ug Ablihi",
+    "openInAppTooltip": "I-load kini nga backup sa workspace sa app (Paghiusa, Explorer, Stats)",
+    "downloadToDevice": "I-download",
+    "downloadToDeviceTooltip": "I-save ang na-decrypt nga .jwlibrary file direkta sa imong device",
+    "decryptAndDownload": "I-decrypt ug I-download",
+    "decryptAndMerge": "I-decrypt ug Paghiusa",
   },
   "help": {
     "title": "Giya sa Gumagamit ug Kanunayng mga Pangutana",

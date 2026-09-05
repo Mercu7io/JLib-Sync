@@ -415,6 +415,13 @@ export const hi: TranslationSchema = {
     "chooseFile": ".jwlibrary चुनें",
     "uploadDirectBtn": ".jwlibrary अपलोड करें",
     "analyzingFile": ".jwlibrary फ़ाइल का विश्लेषण हो रहा है...",
+    "openInApp": "ऐप में खोलें",
+    "openInAppEncrypted": "अनलॉक करें और खोलें",
+    "openInAppTooltip": "इस बैकअप को ऐप वर्कस्पेस में लोड करें (मर्ज, एक्सप्लोरर, आंकड़े)",
+    "downloadToDevice": "डाउनलोड करें",
+    "downloadToDeviceTooltip": "डिक्रिप्ट की गई .jwlibrary फ़ाइल को सीधे अपने डिवाइस पर सहेजें",
+    "decryptAndDownload": "डिक्रिप्ट करें और डाउनलोड करें",
+    "decryptAndMerge": "डिक्रिप्ट करें और मर्ज करें",
   },
   "help": {
     "title": "उपयोगकर्ता गाइड और अक्सर पूछे जाने वाले प्रश्न",

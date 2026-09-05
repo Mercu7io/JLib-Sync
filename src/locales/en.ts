@@ -413,6 +413,13 @@ export const en = {
     chooseFile: 'Choose .jwlibrary',
     uploadDirectBtn: 'Upload .jwlibrary',
     analyzingFile: 'Analyzing .jwlibrary file...',
+    openInApp: 'Open in App',
+    openInAppEncrypted: 'Unlock & Open',
+    openInAppTooltip: 'Load this backup into the app workspace (Merge, Explorer, Stats)',
+    downloadToDevice: 'Download',
+    downloadToDeviceTooltip: 'Save decrypted .jwlibrary file directly to your device',
+    decryptAndDownload: 'Decrypt & Download',
+    decryptAndMerge: 'Decrypt & Merge',
   },
   help: {
     title: 'User Guide & Help',

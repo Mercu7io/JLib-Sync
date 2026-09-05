@@ -415,6 +415,13 @@ export const es: TranslationSchema = {
     "chooseFile": "Elegir .jwlibrary",
     "uploadDirectBtn": "Subir .jwlibrary",
     "analyzingFile": "Analizando archivo .jwlibrary...",
+    "openInApp": "Abrir en la app",
+    "openInAppEncrypted": "Descifrar y abrir",
+    "openInAppTooltip": "Cargar esta copia de seguridad en el espacio de trabajo de la app (Fusionar, Explorador, Estadísticas)",
+    "downloadToDevice": "Descargar",
+    "downloadToDeviceTooltip": "Guardar el archivo .jwlibrary descifrado directamente en tu dispositivo",
+    "decryptAndDownload": "Descifrar y descargar",
+    "decryptAndMerge": "Descifrar y fusionar",
   },
   "help": {
     "title": "Guía del usuario y preguntas frecuentes",

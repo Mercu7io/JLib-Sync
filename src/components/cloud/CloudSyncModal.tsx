@@ -25,6 +25,7 @@ import {
   Tag,
   ListMusic,
   Bookmark,
+  FolderOpen,
 } from 'lucide-react';
 import { useCloudStore } from '../../store/useCloudStore';
 import { useAppStore } from '../../store/useAppStore';
@@ -85,11 +86,12 @@ export const CloudSyncModal: React.FC = () => {
   // Decryption Prompt UI
   const [promptFileId, setPromptFileId] = useState<string | null>(null);
   const [promptFileName, setPromptFileName] = useState<string | null>(null);
-  const [promptAction, setPromptAction] = useState<'load' | 'merge'>('load');
+  const [promptAction, setPromptAction] = useState<'load' | 'merge' | 'download'>('load');
   const [decryptPass, setDecryptPass] = useState('');
   const [decryptError, setDecryptError] = useState('');
   const [isDecrypting, setIsDecrypting] = useState(false);
   const [decryptAttemptCount, setDecryptAttemptCount] = useState(0);
+  const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
 
   // Rename Prompt UI
   const [renamingBackup, setRenamingBackup] = useState<IDriveFile | null>(null);
@@ -240,6 +242,38 @@ export const CloudSyncModal: React.FC = () => {
     }
   };
 
+  const saveFileToDisk = (file: File) => {
+    const url = URL.createObjectURL(file);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file.name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 150);
+  };
+
+  const handleDownloadToDevice = async (b: IDriveFile) => {
+    try {
+      setDownloadingFileId(b.id);
+      const file = await downloadCloudFile(b.id, b.name);
+      saveFileToDisk(file);
+    } catch (err: any) {
+      if (err.message === 'PASSWORD_REQUIRED' || err.message.includes('Decryption failed') || err.message.includes('decrypt')) {
+        setPromptFileId(b.id);
+        setPromptFileName(b.name);
+        setPromptAction('download');
+        setDecryptError(err.message === 'PASSWORD_REQUIRED' ? '' : t('cloud.invalidPassword', 'Incorrect password.'));
+      } else {
+        alert(t('cloud.downloadError', 'Download error: ') + err.message);
+      }
+    } finally {
+      setDownloadingFileId(null);
+    }
+  };
+
   const handleDecryptSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!promptFileId || !promptFileName) return;
@@ -252,6 +286,12 @@ export const CloudSyncModal: React.FC = () => {
       if (promptAction === 'load') {
         // Will decrypt in-memory cached buffer if already downloaded!
         await restoreCloudBackup(promptFileId, promptFileName, decryptPass);
+        setPromptFileId(null);
+        setDecryptPass('');
+        setDecryptAttemptCount(0);
+      } else if (promptAction === 'download') {
+        const file = await downloadCloudFile(promptFileId, promptFileName, undefined, decryptPass);
+        saveFileToDisk(file);
         setPromptFileId(null);
         setDecryptPass('');
         setDecryptAttemptCount(0);
@@ -387,7 +427,15 @@ export const CloudSyncModal: React.FC = () => {
                   className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-xs font-semibold text-white shadow-md flex items-center justify-center space-x-1.5"
                 >
                   {isDecrypting && <RefreshCw className="w-3 h-3 animate-spin" />}
-                  <span>{isDecrypting ? t('cloud.verifyingPassword', 'Verifying password...') : t('cloud.decryptAndLoad', 'Decrypt & Load')}</span>
+                  <span>
+                    {isDecrypting
+                      ? t('cloud.verifyingPassword', 'Verifying password...')
+                      : promptAction === 'download'
+                      ? t('cloud.decryptAndDownload', 'Decrypt & Download')
+                      : promptAction === 'merge'
+                      ? t('cloud.decryptAndMerge', 'Decrypt & Merge')
+                      : t('cloud.decryptAndLoad', 'Decrypt & Open in App')}
+                  </span>
                 </button>
               </div>
             </form>
@@ -1123,26 +1171,44 @@ export const CloudSyncModal: React.FC = () => {
                         </div>
 
                         <div className="flex items-center space-x-1.5 flex-shrink-0 self-end sm:self-auto">
+                          {/* 1. Open / Load into App Workspace */}
                           <button
                             type="button"
                             onClick={() => handleRestoreClick(b)}
-                            disabled={isLoading}
-                            className={`inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${
+                            disabled={isLoading || downloadingFileId !== null}
+                            className={`inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-sm ${
                               isEncrypted
-                                ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30'
-                                : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30'
+                                ? 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                                : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/20'
                             }`}
+                            title={t('cloud.openInAppTooltip', 'Load this backup into the app workspace (Merge, Explorer, Stats)')}
                           >
                             {isEncrypted ? (
                               <Unlock className="w-3.5 h-3.5" />
                             ) : (
-                              <Download className="w-3.5 h-3.5" />
+                              <FolderOpen className="w-3.5 h-3.5" />
                             )}
                             <span>
                               {isEncrypted
-                                ? t('cloud.decrypt', 'Decrypt')
-                                : t('cloud.load', 'Load')}
+                                ? t('cloud.openInAppEncrypted', 'Unlock & Open')
+                                : t('cloud.openInApp', 'Open in App')}
                             </span>
+                          </button>
+
+                          {/* 2. Download directly to Device */}
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadToDevice(b)}
+                            disabled={isLoading || downloadingFileId !== null}
+                            className="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-white/[0.12] bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200 text-xs font-semibold transition-colors shadow-sm"
+                            title={t('cloud.downloadToDeviceTooltip', 'Save decrypted .jwlibrary file directly to your device')}
+                          >
+                            {downloadingFileId === b.id ? (
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-500" />
+                            ) : (
+                              <Download className="w-3.5 h-3.5" />
+                            )}
+                            <span>{t('cloud.downloadToDevice', 'Download')}</span>
                           </button>
 
                           <button

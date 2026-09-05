@@ -415,6 +415,13 @@ export const ko: TranslationSchema = {
     "chooseFile": ".jwlibrary 선택",
     "uploadDirectBtn": ".jwlibrary 업로드",
     "analyzingFile": ".jwlibrary 파일 분석 중...",
+    "openInApp": "앱에서 열기",
+    "openInAppEncrypted": "잠금 해제 및 열기",
+    "openInAppTooltip": "이 백업을 앱 작업 공간에 로드합니다(병합, 탐색기, 통계)",
+    "downloadToDevice": "다운로드",
+    "downloadToDeviceTooltip": "복호화된 .jwlibrary 파일을 장치에 직접 저장합니다",
+    "decryptAndDownload": "복호화 및 다운로드",
+    "decryptAndMerge": "복호화 및 병합",
   },
   "help": {
     "title": "사용자 가이드 및 자주 묻는 질문",

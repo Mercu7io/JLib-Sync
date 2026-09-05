@@ -415,6 +415,13 @@ export const zh_Hans: TranslationSchema = {
     "chooseFile": "选择 .jwlibrary",
     "uploadDirectBtn": "上传 .jwlibrary",
     "analyzingFile": "正在分析 .jwlibrary 文件...",
+    "openInApp": "在应用中打开",
+    "openInAppEncrypted": "解锁并打开",
+    "openInAppTooltip": "将此备份加载到应用工作区中（合并、浏览器、统计）",
+    "downloadToDevice": "下载",
+    "downloadToDeviceTooltip": "直接将解密后的 .jwlibrary 文件保存到您的设备",
+    "decryptAndDownload": "解密并下载",
+    "decryptAndMerge": "解密并合并",
   },
   "help": {
     "title": "使用指南与常见问题",

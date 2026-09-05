@@ -415,6 +415,13 @@ export const tl: TranslationSchema = {
     "chooseFile": "Pumili ng .jwlibrary",
     "uploadDirectBtn": "I-upload ang .jwlibrary",
     "analyzingFile": "Sinusuri ang .jwlibrary file...",
+    "openInApp": "Buksan sa App",
+    "openInAppEncrypted": "I-unlock at Buksan",
+    "openInAppTooltip": "I-load ang backup na ito sa workspace ng app (Pagsamahin, Explorer, Stats)",
+    "downloadToDevice": "I-download",
+    "downloadToDeviceTooltip": "I-save ang na-decrypt na .jwlibrary file nang direkta sa iyong device",
+    "decryptAndDownload": "I-decrypt at I-download",
+    "decryptAndMerge": "I-decrypt at Pagsamahin",
   },
   "help": {
     "title": "Gabay ng User at mga Madalas Itanong",

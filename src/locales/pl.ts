@@ -415,6 +415,13 @@ export const pl: TranslationSchema = {
     "chooseFile": "Wybierz .jwlibrary",
     "uploadDirectBtn": "Prześlij .jwlibrary",
     "analyzingFile": "Analizowanie pliku .jwlibrary...",
+    "openInApp": "Otwórz w aplikacji",
+    "openInAppEncrypted": "Odblokuj i otwórz",
+    "openInAppTooltip": "Wczytaj tę kopię zapasową do obszaru roboczego aplikacji (Scalanie, Eksplorator, Statystyki)",
+    "downloadToDevice": "Pobierz",
+    "downloadToDeviceTooltip": "Zapisz odszyfrowany plik .jwlibrary bezpośrednio na swoim urządzeniu",
+    "decryptAndDownload": "Odszyfruj i pobierz",
+    "decryptAndMerge": "Odszyfruj i scal",
   },
   "help": {
     "title": "Podręcznik użytkownika i Najczęstsze pytania",
