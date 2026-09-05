@@ -1,4 +1,4 @@
-import { TranslationSchema } from './en';
+import type { TranslationSchema } from './en.ts';
 
 export const fr: TranslationSchema = {
   "nav": {
@@ -48,7 +48,8 @@ export const fr: TranslationSchema = {
     "textSizeMax": "Maximale",
     "notes": "notes",
     "tags": "étiquettes",
-    "highlights": "surlignages"
+    "highlights": "surlignages",
+    "playlists": "listes"
   },
   "common": {
     "cancel": "Annuler",
@@ -377,6 +378,14 @@ export const fr: TranslationSchema = {
     "uploadSource": "Sauvegarder sur Drive",
     "saveActiveBtn": "Sauvegarder sur Google Drive",
     "uploading": "Envoi en cours...",
+    "uploadingWithProgress": "Envoi en cours ({{percent}}%)...",
+    "encryptedBadge": "Chiffré",
+    "encryptedTooltip": "Chiffré AES-256",
+    "encryptedBackupPrompt": "Cette sauvegarde est chiffrée en AES-256-GCM. Veuillez saisir le mot de passe pour la déchiffrer.",
+    "unlockCached": "Déverrouiller la sauvegarde",
+    "unlockAndDownload": "Déverrouiller & Télécharger",
+    "downloadingFromDrive": "Téléchargement de la sauvegarde depuis Google Drive...",
+    "closingWindowNote": "La fenêtre se fermera automatiquement dès la fin du téléchargement.",
     "uploadError": "Erreur de téléversement vers le Cloud : ",
     "saveError": "Erreur d'enregistrement sur le Cloud : ",
     "refreshList": "Actualiser la liste",
@@ -394,7 +403,12 @@ export const fr: TranslationSchema = {
     "renameErrorInvalidChars": "Le nom contient des caractères non autorisés",
     "renameErrorSame": "Le nouveau nom est identique au nom actuel",
     "renameErrorTooLong": "Le nom du fichier est trop long",
-    "extensionPreserved": "L'extension {{ext}} sera automatiquement conservée"
+    "extensionPreserved": "L'extension {{ext}} sera automatiquement conservée",
+    "unverifiedBadge": "Non vérifié",
+    "unverifiedTooltip": "Cette sauvegarde n'a pas d'empreinte validée ou pourrait être incomplète.",
+    "invalidPassword": "Mot de passe incorrect. Veuillez réessayer.",
+    "attemptFailed": "Tentative {{count}} échouée",
+    "verifyingPassword": "Vérification du mot de passe..."
   },
   "help": {
     "title": "Guide d'Utilisation & Aide",
@@ -425,6 +439,17 @@ export const fr: TranslationSchema = {
     "faq1A": "Non ! Contrairement à la restauration officielle de l'application qui remplace la totalité de la base, Panda JWL-Sync combine intelligemment les enregistrements sans rien écraser.",
     "faq2Q": "Que se passe-t-il si j'ai modifié le même verset sur les deux appareils ?",
     "faq2A": "L'application détecte les collisions de versets identiques et vous permet soit de combiner les deux notes, soit de choisir votre version préférée.",
+    "faqLockQ": "Que signifie l'icône de cadenas sur certaines sauvegardes du cloud ?",
+    "faqLockA": "Les fichiers munis d'un cadenas (.enc) sont chiffrés de bout en bout avec l'algorithme AES-256-GCM. Ils ne peuvent être lus par personne (y compris Google) sans votre mot de passe de chiffrement. Vous devrez saisir ce mot de passe pour les déverrouiller et les charger.",
+    "faqPwaQ": "Puis-je utiliser Panda JWL-Sync hors ligne ou l'installer comme application ?",
+    "faqPwaA": "Oui ! Panda JWL-Sync est une application Web progressive (PWA). Vous pouvez l'installer sur votre appareil et ouvrir vos fichiers .jwlibrary directement même sans connexion Internet. Hors ligne, la fusion et l'exploration de bases de données restent 100% fonctionnelles.",
+    "gdprTitle": "Conformité RGPD / GDPR & Transparence",
+    "gdprDesc": "En stricte conformité avec le Règlement Général européen sur la Protection des Données (RGPD/GDPR), Panda JWL-Sync ne conserve, ne collecte, ne traite ni ne revend aucune donnée personnelle sur des serveurs distants. L'ensemble de vos notes d'étude et surlignages reste sous votre contrôle exclusif sur votre appareil et dans votre espace Google Drive personnel.",
+    "viewFullPolicy": "Consulter la politique de confidentialité complète",
+    "contactChangeQuestion": "Changer de question",
+    "emailReqType": "Type de demande",
+    "emailSubject": "Sujet",
+    "emailReplyTo": "Email de réponse",
     "startMergingBtn": "Commencer la fusion des sauvegardes",
     "contactTitle": "Contact & Assistance",
     "contactSubtitle": "Une question, un problème technique ou une suggestion pour améliorer Panda JWL-Sync ? Envoyez-nous un email !",

@@ -13,6 +13,11 @@ export interface IDriveFile {
   deviceId?: string;
   deviceName?: string;
   appProperties?: Record<string, string>;
+  isValidated?: boolean;
+  notesCount?: number;
+  tagsCount?: number;
+  playlistsCount?: number;
+  bookmarksCount?: number;
 }
 
 export interface IJwSyncIndexBackup {
@@ -23,6 +28,10 @@ export interface IJwSyncIndexBackup {
   deviceId?: string;
   deviceName?: string;
   uploadedAt: string;
+  notesCount?: number;
+  tagsCount?: number;
+  playlistsCount?: number;
+  bookmarksCount?: number;
 }
 
 export interface IJwSyncIndex {
@@ -395,6 +404,26 @@ export class GoogleDriveManager {
     );
     const driveFiles: IDriveFile[] = data.files || [];
 
+    // Filter out 0-byte or empty stubs and queue them for background cleanup
+    const validDriveFiles: IDriveFile[] = [];
+    const zeroByteIds: string[] = [];
+
+    for (const f of driveFiles) {
+      const byteSize = f.size ? parseInt(f.size, 10) : 0;
+      if (byteSize === 0) {
+        zeroByteIds.push(f.id);
+      } else {
+        validDriveFiles.push(f);
+      }
+    }
+
+    if (zeroByteIds.length > 0) {
+      // Clean up orphaned 0-byte stubs in the background without blocking the listing
+      this.batchDeleteBackups(zeroByteIds).catch((err) => {
+        console.warn('Background cleanup of empty stubs failed:', err);
+      });
+    }
+
     // Also fetch index to supplement metadata
     let index: IJwSyncIndex | null = null;
     try {
@@ -408,13 +437,26 @@ export class GoogleDriveManager {
       }
     }
 
-    return driveFiles.map((f) => {
+    const parseCount = (val?: string | number) => {
+      if (val === undefined || val === null || val === '') return undefined;
+      const n = typeof val === 'number' ? val : parseInt(val, 10);
+      return isNaN(n) ? undefined : n;
+    };
+
+    return validDriveFiles.map((f) => {
       const idx = indexMap.get(f.id);
+      const sha256 = f.appProperties?.sha256 || idx?.sha256 || '';
+      const hasSha = !!sha256 && sha256.trim().length > 0;
       return {
         ...f,
-        sha256: f.appProperties?.sha256 || idx?.sha256,
+        sha256: hasSha ? sha256 : undefined,
         deviceId: f.appProperties?.deviceId || idx?.deviceId,
         deviceName: f.appProperties?.deviceName || idx?.deviceName,
+        isValidated: hasSha,
+        notesCount: parseCount(f.appProperties?.notesCount ?? idx?.notesCount),
+        tagsCount: parseCount(f.appProperties?.tagsCount ?? idx?.tagsCount),
+        playlistsCount: parseCount(f.appProperties?.playlistsCount ?? idx?.playlistsCount),
+        bookmarksCount: parseCount(f.appProperties?.bookmarksCount ?? idx?.bookmarksCount),
       };
     });
   }
@@ -473,7 +515,15 @@ export class GoogleDriveManager {
   async uploadBackup(
     name: string,
     blob: Blob,
-    extraMetadata?: { sha256?: string; deviceId?: string; deviceName?: string },
+    extraMetadata?: {
+      sha256?: string;
+      deviceId?: string;
+      deviceName?: string;
+      notesCount?: number;
+      tagsCount?: number;
+      playlistsCount?: number;
+      bookmarksCount?: number;
+    },
     onProgress?: (percent: number) => void
   ): Promise<IDriveFile> {
     if (!this.folderId) await this.ensureSyncFolder();
@@ -484,6 +534,10 @@ export class GoogleDriveManager {
     if (extraMetadata?.sha256) appProperties.sha256 = extraMetadata.sha256;
     if (extraMetadata?.deviceId) appProperties.deviceId = extraMetadata.deviceId;
     if (extraMetadata?.deviceName) appProperties.deviceName = extraMetadata.deviceName;
+    if (extraMetadata?.notesCount !== undefined) appProperties.notesCount = String(extraMetadata.notesCount);
+    if (extraMetadata?.tagsCount !== undefined) appProperties.tagsCount = String(extraMetadata.tagsCount);
+    if (extraMetadata?.playlistsCount !== undefined) appProperties.playlistsCount = String(extraMetadata.playlistsCount);
+    if (extraMetadata?.bookmarksCount !== undefined) appProperties.bookmarksCount = String(extraMetadata.bookmarksCount);
 
     const metadata = {
       name,
@@ -498,54 +552,65 @@ export class GoogleDriveManager {
     const uploadUrl = `https://www.googleapis.com/upload/drive/v3/files/${fileInfo.id}?uploadType=media`;
 
     let uploadedFile: any;
-    if (typeof XMLHttpRequest !== 'undefined') {
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('PATCH', uploadUrl);
-        xhr.setRequestHeader('Authorization', `Bearer ${this.accessToken}`);
-        xhr.setRequestHeader('Content-Type', blob.type || 'application/octet-stream');
+    try {
+      if (typeof XMLHttpRequest !== 'undefined') {
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('PATCH', uploadUrl);
+          xhr.setRequestHeader('Authorization', `Bearer ${this.accessToken}`);
+          xhr.setRequestHeader('Content-Type', blob.type || 'application/octet-stream');
 
-        if (xhr.upload && onProgress) {
-          xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable && e.total > 0) {
-              const percent = Math.min(99, Math.round((e.loaded / e.total) * 100));
-              onProgress(percent);
+          if (xhr.upload && onProgress) {
+            xhr.upload.onprogress = (e) => {
+              if (e.lengthComputable && e.total > 0) {
+                const percent = Math.min(99, Math.round((e.loaded / e.total) * 100));
+                onProgress(percent);
+              }
+            };
+          }
+
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                uploadedFile = JSON.parse(xhr.responseText);
+                onProgress?.(100);
+                resolve();
+              } catch (e) {
+                reject(new Error('Failed to parse Google Drive response'));
+              }
+            } else {
+              reject(new Error(`Upload to Google Drive failed: ${xhr.statusText || xhr.status}`));
             }
           };
+
+          xhr.onerror = () => reject(new Error('Network error during Google Drive upload'));
+          xhr.onabort = () => reject(new Error('Upload aborted'));
+          xhr.send(blob);
+        });
+      } else {
+        const response = await fetch(uploadUrl, {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${this.accessToken}`,
+            'Content-Type': blob.type || 'application/octet-stream',
+          },
+          body: blob,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Upload to Google Drive failed: ${response.statusText}`);
         }
-
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              uploadedFile = JSON.parse(xhr.responseText);
-              onProgress?.(100);
-              resolve();
-            } catch (e) {
-              reject(new Error('Failed to parse Google Drive response'));
-            }
-          } else {
-            reject(new Error(`Upload to Google Drive failed: ${xhr.statusText || xhr.status}`));
-          }
-        };
-
-        xhr.onerror = () => reject(new Error('Network error during Google Drive upload'));
-        xhr.send(blob);
-      });
-    } else {
-      const response = await fetch(uploadUrl, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${this.accessToken}`,
-          'Content-Type': blob.type || 'application/octet-stream',
-        },
-        body: blob,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Upload to Google Drive failed: ${response.statusText}`);
+        uploadedFile = await response.json();
+        onProgress?.(100);
       }
-      uploadedFile = await response.json();
-      onProgress?.(100);
+    } catch (uploadErr) {
+      // Auto-delete incomplete/aborted file draft on Google Drive
+      try {
+        await this.request(`/files/${fileInfo.id}`, { method: 'DELETE' });
+      } catch (cleanupErr) {
+        console.warn('Failed to delete incomplete upload draft:', cleanupErr);
+      }
+      throw uploadErr;
     }
 
     // Update .jwsync_index.json
@@ -563,6 +628,10 @@ export class GoogleDriveManager {
         deviceId: extraMetadata?.deviceId || getLocalDeviceId(),
         deviceName: extraMetadata?.deviceName || getLocalDeviceName(),
         uploadedAt: new Date().toISOString(),
+        notesCount: extraMetadata?.notesCount,
+        tagsCount: extraMetadata?.tagsCount,
+        playlistsCount: extraMetadata?.playlistsCount,
+        bookmarksCount: extraMetadata?.bookmarksCount,
       });
       await this.saveIndex(index);
     } catch (err) {
@@ -574,10 +643,18 @@ export class GoogleDriveManager {
       sha256: extraMetadata?.sha256,
       deviceId: extraMetadata?.deviceId || getLocalDeviceId(),
       deviceName: extraMetadata?.deviceName || getLocalDeviceName(),
+      isValidated: !!extraMetadata?.sha256,
+      notesCount: extraMetadata?.notesCount,
+      tagsCount: extraMetadata?.tagsCount,
+      playlistsCount: extraMetadata?.playlistsCount,
+      bookmarksCount: extraMetadata?.bookmarksCount,
     };
   }
 
-  async downloadBackup(fileId: string): Promise<ArrayBuffer> {
+  async downloadBackup(
+    fileId: string,
+    onProgress?: (percent: number) => void
+  ): Promise<ArrayBuffer> {
     const url = `${this.baseUrl}/files/${fileId}?alt=media`;
     const response = await fetch(url, {
       method: 'GET',
@@ -586,7 +663,39 @@ export class GoogleDriveManager {
     if (!response.ok) {
       throw new Error(`Download from Google Drive failed: ${response.statusText}`);
     }
-    return await response.arrayBuffer();
+
+    const contentLength = response.headers.get('content-length');
+    const total = contentLength ? parseInt(contentLength, 10) : 0;
+
+    if (!onProgress || !response.body || !total || total <= 0) {
+      const buffer = await response.arrayBuffer();
+      onProgress?.(100);
+      return buffer;
+    }
+
+    const reader = response.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let received = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) {
+        chunks.push(value);
+        received += value.length;
+        const pct = Math.min(99, Math.round((received / total) * 100));
+        onProgress(pct);
+      }
+    }
+
+    onProgress(100);
+    const fullBytes = new Uint8Array(received);
+    let offset = 0;
+    for (const chunk of chunks) {
+      fullBytes.set(chunk, offset);
+      offset += chunk.length;
+    }
+    return fullBytes.buffer;
   }
 }
 

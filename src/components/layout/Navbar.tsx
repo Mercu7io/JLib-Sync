@@ -18,6 +18,7 @@ import {
   Type,
   Upload,
   WifiOff,
+  Loader2,
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { useCloudStore } from '../../store/useCloudStore';
@@ -48,6 +49,7 @@ export const Navbar: React.FC = () => {
     isShaInCloud,
     backupCurrentLibrary,
     isUploading,
+    uploadProgress,
     setShowCloudModal,
     initCloud,
   } = useCloudStore();
@@ -221,11 +223,27 @@ export const Navbar: React.FC = () => {
                       type="button"
                       onClick={handleQuickCloudUpload}
                       disabled={isUploading}
-                      className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-sm transition-all animate-in fade-in"
-                      title={t('nav.uploadToDrive', 'Upload to Drive')}
+                      className="relative overflow-hidden flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-sm transition-all animate-in fade-in disabled:opacity-90"
+                      title={isUploading && uploadProgress !== null ? `${t('cloud.uploading', 'Uploading...')} ${uploadProgress}%` : t('nav.uploadToDrive', 'Upload to Drive')}
                     >
-                      <Upload className={`w-3.5 h-3.5 ${isUploading ? 'animate-bounce' : ''}`} />
-                      <span>{isUploading ? t('cloud.uploading', 'Uploading...') : t('nav.uploadToDrive', 'Upload to Drive')}</span>
+                      {isUploading ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Upload className="w-3.5 h-3.5" />
+                      )}
+                      <span>
+                        {isUploading
+                          ? uploadProgress !== null
+                            ? `${t('cloud.uploading', 'Uploading...')} ${uploadProgress}%`
+                            : t('cloud.uploading', 'Uploading...')
+                          : t('nav.uploadToDrive', 'Upload to Drive')}
+                      </span>
+                      {isUploading && uploadProgress !== null && (
+                        <div
+                          className="absolute bottom-0 left-0 h-1 bg-white/40 transition-all duration-200"
+                          style={{ width: `${Math.max(5, uploadProgress)}%` }}
+                        />
+                      )}
                     </button>
                   )}
                 </div>
@@ -247,25 +265,25 @@ export const Navbar: React.FC = () => {
                 type="button"
                 onClick={() => setShowCloudModal(true)}
                 className={`relative flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                  isConnected
-                    ? isOnline
-                      ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
-                      : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30'
+                  !isOnline
+                    ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30'
+                    : isConnected
+                    ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
                     : isSessionExpired
                     ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30'
                     : 'bg-slate-100/80 hover:bg-slate-200/80 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-white/[0.08]'
                 }`}
                 title={
-                  isConnected
-                    ? isOnline
-                      ? 'Google Drive Connected'
-                      : 'Google Drive Offline'
+                  !isOnline
+                    ? t('common.offline', 'Offline')
+                    : isConnected
+                    ? 'Google Drive Connected'
                     : isSessionExpired
                     ? t('nav.driveSessionExpiredTooltip', 'Session Google Drive expirée - Cliquez pour reconnecter')
                     : 'Google Drive Cloud Sync'
                 }
               >
-                {isConnected && !isOnline ? (
+                {!isOnline ? (
                   <WifiOff className="w-3.5 h-3.5 flex-shrink-0 text-amber-500" />
                 ) : isSessionExpired ? (
                   <Cloud className="w-3.5 h-3.5 flex-shrink-0 text-amber-500" />
@@ -277,10 +295,10 @@ export const Navbar: React.FC = () => {
                   />
                 )}
                 <span>
-                  {isConnected
-                    ? isOnline
-                      ? t('nav.driveConnected', 'Drive Connected')
-                      : t('nav.driveOffline', 'Drive Offline')
+                  {!isOnline
+                    ? t('common.offline', 'Offline')
+                    : isConnected
+                    ? t('nav.driveConnected', 'Drive Connected')
                     : isSessionExpired
                     ? t('nav.driveSessionExpired', 'Drive Expiré')
                     : t('nav.driveCloud', 'Drive Cloud')}
@@ -497,28 +515,30 @@ export const Navbar: React.FC = () => {
                 type="button"
                 onClick={() => setShowCloudModal(true)}
                 className={`relative p-2 rounded-xl border text-xs font-semibold transition-all flex-shrink-0 ${
-                  isConnected
-                    ? isOnline
-                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600'
-                      : 'bg-amber-500/10 border-amber-500/30 text-amber-600'
+                  !isOnline
+                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-600'
+                    : isConnected
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600'
                     : isSessionExpired
                     ? 'bg-amber-500/10 border-amber-500/30 text-amber-600'
                     : 'bg-slate-100 dark:bg-white/[0.04] border-slate-200/80 dark:border-white/[0.08] text-slate-600 dark:text-slate-400'
                 }`}
                 title={
-                  isConnected
-                    ? (isOnline ? 'Google Drive Connected' : 'Google Drive Offline')
+                  !isOnline
+                    ? t('common.offline', 'Offline')
+                    : isConnected
+                    ? 'Google Drive Connected'
                     : isSessionExpired
                     ? t('nav.driveSessionExpiredTooltip', 'Session Google Drive expirée - Cliquez pour reconnecter')
                     : 'Google Drive Cloud'
                 }
               >
-                {isConnected && !isOnline ? (
+                {!isOnline ? (
                   <WifiOff className="w-4 h-4 text-amber-500" />
                 ) : isSessionExpired ? (
                   <Cloud className="w-4 h-4 text-amber-500" />
                 ) : (
-                  <Cloud className="w-4 h-4" />
+                  <Cloud className={`w-4 h-4 ${isConnected ? 'text-emerald-600 dark:text-emerald-400' : ''}`} />
                 )}
                 {isSessionExpired && (
                   <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500 animate-ping" />
@@ -610,10 +630,23 @@ export const Navbar: React.FC = () => {
                         setMobileMenuOpen(false);
                       }}
                       disabled={isUploading}
-                      className="p-2 rounded-xl bg-blue-600 text-white shadow-sm hover:bg-blue-500 transition-colors"
-                      title={t('nav.uploadToDrive', 'Upload to Drive')}
+                      className="relative overflow-hidden flex items-center space-x-1.5 px-2.5 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold shadow-sm hover:bg-blue-500 transition-colors disabled:opacity-90"
+                      title={isUploading && uploadProgress !== null ? `${t('cloud.uploading', 'Uploading...')} ${uploadProgress}%` : t('nav.uploadToDrive', 'Upload to Drive')}
                     >
-                      <Upload className={`w-3.5 h-3.5 ${isUploading ? 'animate-bounce' : ''}`} />
+                      {isUploading ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Upload className="w-3.5 h-3.5" />
+                      )}
+                      {isUploading && uploadProgress !== null && (
+                        <span className="font-mono text-[10px]">{uploadProgress}%</span>
+                      )}
+                      {isUploading && uploadProgress !== null && (
+                        <div
+                          className="absolute bottom-0 left-0 h-0.5 bg-white/40 transition-all duration-200"
+                          style={{ width: `${Math.max(5, uploadProgress)}%` }}
+                        />
+                      )}
                     </button>
                   )}
                   <button

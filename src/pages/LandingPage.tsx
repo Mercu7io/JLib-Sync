@@ -21,11 +21,15 @@ import {
   Sliders,
   HelpCircle,
   Tag,
+  Database,
+  Lock,
+  WifiOff,
+  AlertCircle,
 } from 'lucide-react';
 import { extractJwLibrary } from '../lib/jw/zip';
 import { openDatabase, getLibrarySummary, queryAll } from '../lib/jw/sqlite';
 import { computeSha256 } from '../lib/jw/hash';
-import { mergeJwLibraries, IMergeResult } from '../lib/jw/merge';
+import { mergeJwLibraries, IMergeResult, getDefaultMergeFilename } from '../lib/jw/merge';
 import { IManifest, ILibrarySummary, IMergeProgress, TagManagerMap, IMergeDetailedNote } from '../lib/jw/types';
 import { detectRealConflicts, IConflictItem } from '../lib/jw/conflicts';
 import { MergeDetailedBreakdown } from '../components/merge/MergeDetailedBreakdown';
@@ -46,9 +50,19 @@ interface ILoadedFileState {
 export const LandingPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { updateActiveDatabase, setIsLoading: setAppIsLoading } = useAppStore();
+  const {
+    activeLibraryFile,
+    activeLibraryBytes,
+    activeManifest,
+    activeSha256,
+    extraFiles,
+    summary: activeSummary,
+    updateActiveDatabase,
+    setIsLoading: setAppIsLoading,
+  } = useAppStore();
   const {
     isConnected,
+    isOnline,
     backups,
     refreshBackups,
     connect,
@@ -57,6 +71,9 @@ export const LandingPage: React.FC = () => {
     backupFileDirectly,
     isShaInCloud,
     isUploading,
+    encryptionPassword,
+    setEncryptionConfig,
+    cachedEncryptedDownload,
   } = useCloudStore();
 
   const [primaryFile, setPrimaryFile] = useState<ILoadedFileState | null>(null);
@@ -74,7 +91,7 @@ export const LandingPage: React.FC = () => {
   const [uploadProgressSecondary, setUploadProgressSecondary] = useState<number | null>(null);
   const [isDraggingPrimary, setIsDraggingPrimary] = useState<boolean>(false);
   const [isDraggingSecondary, setIsDraggingSecondary] = useState<boolean>(false);
-  const [outputName, setOutputName] = useState<string>('Merge_Merged_Study.jwlibrary');
+  const [outputName, setOutputName] = useState<string>(getDefaultMergeFilename());
 
   // Conflict Resolution State
   const [conflicts, setConflicts] = useState<IConflictItem[]>([]);
@@ -86,6 +103,48 @@ export const LandingPage: React.FC = () => {
   // Cloud Picker State
   const [cloudPickerTarget, setCloudPickerTarget] = useState<'primary' | 'secondary' | null>(null);
   const [isDownloadingCloud, setIsDownloadingCloud] = useState<boolean>(false);
+  const [cloudDownloadProgress, setCloudDownloadProgress] = useState<number | null>(null);
+  const [cloudPasswordPromptFile, setCloudPasswordPromptFile] = useState<IDriveFile | null>(null);
+  const [cloudPasswordInput, setCloudPasswordInput] = useState<string>('');
+  const [cloudPasswordError, setCloudPasswordError] = useState<string | null>(null);
+  const [isVerifyingPassword, setIsVerifyingPassword] = useState<boolean>(false);
+  const [passwordAttemptCount, setPasswordAttemptCount] = useState<number>(0);
+
+  // In-Memory Library Presence & Label formatting
+  const hasActiveInMemory = !!(activeLibraryBytes && activeManifest && activeSummary);
+  const inMemoryShortName = activeSummary?.deviceName
+    ? activeSummary.deviceName.length > 14
+      ? activeSummary.deviceName.slice(0, 13) + '…'
+      : activeSummary.deviceName
+    : activeSummary?.name
+    ? activeSummary.name.length > 14
+      ? activeSummary.name.slice(0, 13) + '…'
+      : activeSummary.name
+    : 'In-Memory';
+
+  const handleUseInMemory = (target: 'primary' | 'secondary') => {
+    if (!activeLibraryBytes || !activeManifest || !activeSummary) return;
+    const fileObj =
+      (activeLibraryFile as File) ||
+      new File([activeLibraryBytes as unknown as BlobPart], activeSummary.name || 'in_memory_backup.jwlibrary', {
+        type: 'application/zip',
+      });
+    const loadedState: ILoadedFileState = {
+      file: fileObj,
+      dbBytes: activeLibraryBytes,
+      manifest: activeManifest,
+      extraFiles: extraFiles || new Map(),
+      summary: activeSummary,
+      sha256: activeSha256 || '',
+    };
+    if (target === 'primary') {
+      setPrimaryFile(loadedState);
+      setPrimaryProgress({ stage: t('merge.progressReady', 'Ready!'), percent: 100 });
+    } else {
+      setSecondaryFile(loadedState);
+      setSecondaryProgress({ stage: t('merge.progressReady', 'Ready!'), percent: 100 });
+    }
+  };
 
   const [isMerging, setIsMerging] = useState<boolean>(false);
   const [mergeProgress, setMergeProgress] = useState<IMergeProgress | null>(null);
@@ -200,7 +259,6 @@ export const LandingPage: React.FC = () => {
       db.close();
 
       setPrimaryFile({ file, dbBytes, manifest, summary, extraFiles, sha256 });
-      setOutputName(`Merge_${(manifest.name || 'Merged').replace(/[^a-z0-9_\-]/gi, '_')}.jwlibrary`);
       setPrimaryProgress({ stage: t('merge.progressReady', 'Ready!'), percent: 100 });
     } catch (err: any) {
       setErrorMessage(t('merge.loadPrimaryError', 'Failed to load Source A: ') + (err?.message || String(err)));
@@ -320,22 +378,82 @@ export const LandingPage: React.FC = () => {
     setCloudPickerTarget(target);
   };
 
-  const handleSelectCloudBackup = async (b: IDriveFile) => {
+  const handleSelectCloudBackup = async (b: IDriveFile, overridePass?: string) => {
     if (!cloudPickerTarget) return;
+    const target = cloudPickerTarget;
+    const passToUse = overridePass || cloudPasswordInput || encryptionPassword || undefined;
+
+    // Point 9: Check password BEFORE downloading if file is encrypted
+    if (b.name.endsWith('.enc') && !passToUse) {
+      setCloudPasswordPromptFile(b);
+      setCloudPasswordError(null);
+      setPasswordAttemptCount(0);
+      return;
+    }
+
     try {
-      setIsDownloadingCloud(true);
-      const file = await downloadCloudFile(b.id, b.name);
-      if (cloudPickerTarget === 'primary') {
+      setIsVerifyingPassword(true);
+      const isAlreadyCached = cachedEncryptedDownload?.fileId === b.id;
+      if (!isAlreadyCached) {
+        setIsDownloadingCloud(true);
+        setCloudDownloadProgress(0);
+      }
+      const file = await downloadCloudFile(
+        b.id,
+        b.name,
+        (pct) => setCloudDownloadProgress(pct),
+        passToUse
+      );
+
+      // Point 7: Close download modal immediately upon download completion!
+      setIsDownloadingCloud(false);
+      setCloudDownloadProgress(null);
+      setIsVerifyingPassword(false);
+      setPasswordAttemptCount(0);
+      setCloudPickerTarget(null);
+      setCloudPasswordPromptFile(null);
+      setCloudPasswordInput('');
+      setCloudPasswordError(null);
+
+      // Now start decompression and SQLite load — user sees progress on the target backup card!
+      if (target === 'primary') {
         await loadPrimary(file);
       } else {
         await loadSecondary(file);
       }
+    } catch (err: any) {
       setIsDownloadingCloud(false);
-      setCloudPickerTarget(null);
-    } catch (err) {
-      setIsDownloadingCloud(false);
-      setErrorMessage('Failed to load cloud backup: ' + (err as Error).message);
+      setCloudDownloadProgress(null);
+      setIsVerifyingPassword(false);
+      setPasswordAttemptCount((prev) => prev + 1);
+      if (err?.message === 'PASSWORD_REQUIRED') {
+        setCloudPasswordPromptFile(b);
+        setCloudPasswordError(null);
+        return;
+      }
+      if (
+        err?.message?.includes('decrypt') ||
+        err?.message?.includes('tag') ||
+        err?.message?.includes('password') ||
+        err?.message?.includes('Decryption failed')
+      ) {
+        setCloudPasswordPromptFile(b);
+        setCloudPasswordError(t('cloud.invalidPassword', 'Incorrect password. Please try again.'));
+        return;
+      }
+      setErrorMessage(t('cloud.loadCloudError', 'Failed to load cloud backup: ') + (err?.message || String(err)));
     }
+  };
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cloudPasswordPromptFile || isVerifyingPassword || isDownloadingCloud) return;
+    setCloudPasswordError(null);
+    setIsVerifyingPassword(true);
+    if (cloudPasswordInput) {
+      setEncryptionConfig(true, cloudPasswordInput, 0);
+    }
+    handleSelectCloudBackup(cloudPasswordPromptFile, cloudPasswordInput);
   };
 
   const handleOpenPrimaryInApp = async () => {
@@ -373,7 +491,8 @@ export const LandingPage: React.FC = () => {
         primaryFile.file,
         primaryFile.file.name,
         primaryFile.sha256,
-        (percent) => setUploadProgressPrimary(percent)
+        (percent) => setUploadProgressPrimary(percent),
+        primaryFile.summary
       );
     } catch (err: any) {
       setErrorMessage(t('cloud.uploadError', 'Cloud upload error: ') + (err?.message || String(err)));
@@ -392,7 +511,8 @@ export const LandingPage: React.FC = () => {
         secondaryFile.file,
         secondaryFile.file.name,
         secondaryFile.sha256,
-        (percent) => setUploadProgressSecondary(percent)
+        (percent) => setUploadProgressSecondary(percent),
+        secondaryFile.summary
       );
     } catch (err: any) {
       setErrorMessage(t('cloud.uploadError', 'Cloud upload error: ') + (err?.message || String(err)));
@@ -423,7 +543,7 @@ export const LandingPage: React.FC = () => {
     setLastMergedNoteOverrides({});
     setTagImportedNotes(false);
     setCustomImportTagName('From Merge');
-    setOutputName('Merge_Merged_Study.jwlibrary');
+    setOutputName(getDefaultMergeFilename());
     if (primaryInputRef.current) primaryInputRef.current.value = '';
     if (secondaryInputRef.current) secondaryInputRef.current.value = '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -539,7 +659,13 @@ export const LandingPage: React.FC = () => {
         mergeResult.mergedBlob
       );
       const sha256 = await computeSha256(mergeResult.mergedDbBytes);
-      await backupFileDirectly(mergeResult.mergedBlob, outputName, sha256);
+      await backupFileDirectly(
+        mergeResult.mergedBlob,
+        outputName,
+        sha256,
+        undefined,
+        useAppStore.getState().summary || undefined
+      );
       setCloudSaveSuccess(true);
     } catch (err: any) {
       setErrorMessage(t('cloud.saveError', 'Cloud save error: ') + (err?.message || String(err)));
@@ -768,14 +894,68 @@ export const LandingPage: React.FC = () => {
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={() => handlePickFromCloud('primary')}
-              className="w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-center space-x-1.5 transition-all"
-            >
-              <Cloud className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              <span>{isConnected ? t('merge.chooseFromDrive', 'Choose from Google Drive') : t('nav.connectDrive', 'Pick from Google Drive')}</span>
-            </button>
+            {hasActiveInMemory ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleUseInMemory('primary')}
+                  className="py-2 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-xs font-semibold text-emerald-700 dark:text-emerald-300 border border-emerald-500/25 flex items-center justify-center space-x-1.5 transition-all truncate"
+                  title={activeSummary?.name ? `${t('merge.useInMemory', 'Use Active File')}: ${activeSummary.name}` : t('merge.useInMemory', 'Use Active File')}
+                >
+                  <Database className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                  <span className="truncate">{t('merge.activeFile', 'Active')}: {inMemoryShortName}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => isOnline && handlePickFromCloud('primary')}
+                  disabled={!isOnline}
+                  className={`py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all truncate ${
+                    !isOnline
+                      ? 'bg-slate-100 dark:bg-white/[0.02] text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed border border-dashed border-slate-200 dark:border-white/[0.06]'
+                      : 'bg-slate-100 hover:bg-slate-200/80 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300'
+                  }`}
+                  title={!isOnline ? t('common.offlineDriveDisabled', 'Google Drive unavailable while offline') : ''}
+                >
+                  {!isOnline ? (
+                    <WifiOff className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                  ) : (
+                    <Cloud className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                  )}
+                  <span className="truncate">
+                    {!isOnline
+                      ? t('common.offline', 'Offline')
+                      : isConnected
+                      ? t('merge.chooseFromDrive', 'Choose from Google Drive')
+                      : t('nav.connectDrive', 'Pick from Google Drive')}
+                  </span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => isOnline && handlePickFromCloud('primary')}
+                disabled={!isOnline}
+                className={`w-full py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all ${
+                  !isOnline
+                    ? 'bg-slate-100 dark:bg-white/[0.02] text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed border border-dashed border-slate-200 dark:border-white/[0.06]'
+                    : 'bg-slate-100 hover:bg-slate-200/80 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300'
+                }`}
+                title={!isOnline ? t('common.offlineDriveDisabled', 'Google Drive unavailable while offline') : ''}
+              >
+                {!isOnline ? (
+                  <WifiOff className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                ) : (
+                  <Cloud className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                )}
+                <span>
+                  {!isOnline
+                    ? t('common.offline', 'Offline')
+                    : isConnected
+                    ? t('merge.chooseFromDrive', 'Choose from Google Drive')
+                    : t('nav.connectDrive', 'Pick from Google Drive')}
+                </span>
+              </button>
+            )}
           </div>
 
           {/* CONNECTOR CIRCLE */}
@@ -977,14 +1157,68 @@ export const LandingPage: React.FC = () => {
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={() => handlePickFromCloud('secondary')}
-              className="w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-center space-x-1.5 transition-all"
-            >
-              <Cloud className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-              <span>{isConnected ? t('merge.chooseFromDrive', 'Choose from Google Drive') : t('nav.connectDrive', 'Pick from Google Drive')}</span>
-            </button>
+            {hasActiveInMemory ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleUseInMemory('secondary')}
+                  className="py-2 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-xs font-semibold text-emerald-700 dark:text-emerald-300 border border-emerald-500/25 flex items-center justify-center space-x-1.5 transition-all truncate"
+                  title={activeSummary?.name ? `${t('merge.useInMemory', 'Use Active File')}: ${activeSummary.name}` : t('merge.useInMemory', 'Use Active File')}
+                >
+                  <Database className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                  <span className="truncate">{t('merge.activeFile', 'Active')}: {inMemoryShortName}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => isOnline && handlePickFromCloud('secondary')}
+                  disabled={!isOnline}
+                  className={`py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all truncate ${
+                    !isOnline
+                      ? 'bg-slate-100 dark:bg-white/[0.02] text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed border border-dashed border-slate-200 dark:border-white/[0.06]'
+                      : 'bg-slate-100 hover:bg-slate-200/80 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300'
+                  }`}
+                  title={!isOnline ? t('common.offlineDriveDisabled', 'Google Drive unavailable while offline') : ''}
+                >
+                  {!isOnline ? (
+                    <WifiOff className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                  ) : (
+                    <Cloud className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 flex-shrink-0" />
+                  )}
+                  <span className="truncate">
+                    {!isOnline
+                      ? t('common.offline', 'Offline')
+                      : isConnected
+                      ? t('merge.chooseFromDrive', 'Choose from Google Drive')
+                      : t('nav.connectDrive', 'Pick from Google Drive')}
+                  </span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => isOnline && handlePickFromCloud('secondary')}
+                disabled={!isOnline}
+                className={`w-full py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all ${
+                  !isOnline
+                    ? 'bg-slate-100 dark:bg-white/[0.02] text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed border border-dashed border-slate-200 dark:border-white/[0.06]'
+                    : 'bg-slate-100 hover:bg-slate-200/80 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300'
+                }`}
+                title={!isOnline ? t('common.offlineDriveDisabled', 'Google Drive unavailable while offline') : ''}
+              >
+                {!isOnline ? (
+                  <WifiOff className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                ) : (
+                  <Cloud className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 flex-shrink-0" />
+                )}
+                <span>
+                  {!isOnline
+                    ? t('common.offline', 'Offline')
+                    : isConnected
+                    ? t('merge.chooseFromDrive', 'Choose from Google Drive')
+                    : t('nav.connectDrive', 'Pick from Google Drive')}
+                </span>
+              </button>
+            )}
           </div>
 
         </div>
@@ -1323,40 +1557,178 @@ export const LandingPage: React.FC = () => {
               </div>
               <button
                 type="button"
-                onClick={() => setCloudPickerTarget(null)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1"
+                onClick={() => {
+                  setCloudPickerTarget(null);
+                  setCloudPasswordPromptFile(null);
+                  setCloudPasswordInput('');
+                  setCloudPasswordError(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {isDownloadingCloud ? (
-              <div className="py-10 text-center space-y-3">
-                <RefreshCw className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin mx-auto" />
-                <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">Downloading backup from Google Drive...</p>
+              <div className="py-8 text-center space-y-3">
+                <div className="relative mx-auto w-12 h-12 flex items-center justify-center">
+                  <RefreshCw className="w-10 h-10 text-blue-600 dark:text-blue-400 animate-spin opacity-40" />
+                  <span className="absolute font-bold text-xs text-blue-600 dark:text-blue-400 font-mono">
+                    {cloudDownloadProgress ?? 0}%
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-slate-700 dark:text-slate-200 font-semibold">
+                    {t('cloud.downloadingFromDrive', 'Downloading backup from Google Drive...')}
+                  </p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {t('cloud.closingWindowNote', 'Window will close automatically once download completes.')}
+                  </p>
+                </div>
+                <div className="w-48 mx-auto bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="bg-blue-600 h-full transition-all duration-150 rounded-full"
+                    style={{ width: `${Math.max(5, cloudDownloadProgress ?? 5)}%` }}
+                  />
+                </div>
               </div>
+            ) : cloudPasswordPromptFile ? (
+              <form onSubmit={handlePasswordSubmit} className="space-y-4 py-2">
+                <div className="p-3.5 bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 rounded-2xl space-y-1.5">
+                  <div className="flex items-center space-x-2 text-xs font-bold text-amber-800 dark:text-amber-300">
+                    <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                    <span className="truncate">{cloudPasswordPromptFile.name}</span>
+                  </div>
+                  <p className="text-[11px] text-amber-700/90 dark:text-amber-300/80 leading-relaxed">
+                    {t('cloud.encryptedBackupPrompt', 'This backup is encrypted with AES-256-GCM. Please enter the password to decrypt it.')}
+                  </p>
+                </div>
+
+                {cloudPasswordError && (
+                  <div
+                    key={passwordAttemptCount}
+                    className="p-2.5 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-600 dark:text-red-400 font-medium flex items-center space-x-2 animate-shake"
+                  >
+                    <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-500" />
+                    <div className="flex-1">
+                      <span>{cloudPasswordError}</span>
+                      {passwordAttemptCount > 1 && (
+                        <span className="block text-[10px] text-red-500/80 mt-0.5 font-normal">
+                          {t('cloud.attemptFailed', { count: passwordAttemptCount, defaultValue: `Attempt ${passwordAttemptCount} failed` })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    {t('cloud.encryptionPassword', 'Decryption Password')}
+                  </label>
+                  <input
+                    type="password"
+                    autoFocus
+                    required
+                    disabled={isVerifyingPassword}
+                    value={cloudPasswordInput}
+                    onChange={(e) => {
+                      setCloudPasswordInput(e.target.value);
+                      if (cloudPasswordError) setCloudPasswordError(null);
+                    }}
+                    placeholder="Enter password..."
+                    className="w-full bg-slate-50 dark:bg-[#0b0f17] border border-slate-300 dark:border-white/[0.1] rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-200 focus:border-blue-500 focus:outline-none disabled:opacity-50"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end space-x-2 pt-2">
+                  <button
+                    type="button"
+                    disabled={isVerifyingPassword}
+                    onClick={() => {
+                      setCloudPasswordPromptFile(null);
+                      setCloudPasswordInput('');
+                      setCloudPasswordError(null);
+                      setPasswordAttemptCount(0);
+                    }}
+                    className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors disabled:opacity-50"
+                  >
+                    {t('common.cancel', 'Cancel')}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isVerifyingPassword || !cloudPasswordInput.trim()}
+                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold text-xs transition-all shadow-md shadow-blue-600/20 flex items-center space-x-1.5"
+                  >
+                    {isVerifyingPassword && (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    )}
+                    <span>
+                      {isVerifyingPassword
+                        ? t('cloud.verifyingPassword', 'Verifying password...')
+                        : cachedEncryptedDownload?.fileId === cloudPasswordPromptFile.id
+                        ? t('cloud.unlockCached', 'Unlock Backup')
+                        : t('cloud.unlockAndDownload', 'Unlock & Download')}
+                    </span>
+                  </button>
+                </div>
+              </form>
             ) : backups.length === 0 ? (
               <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400 space-y-2">
-                <p>No backups found in your Google Drive “JW Sync” folder.</p>
+                <p>{t('cloud.noBackupsFound', 'No backups found in your Google Drive “JW Sync” folder.')}</p>
               </div>
             ) : (
               <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
-                {backups.map((b) => (
-                  <div
-                    key={b.id}
-                    onClick={() => handleSelectCloudBackup(b)}
-                    className="p-3 rounded-xl bg-slate-50 hover:bg-blue-50 dark:bg-white/[0.02] dark:hover:bg-blue-500/10 border border-slate-200 dark:border-white/[0.06] hover:border-blue-500/40 cursor-pointer flex items-center justify-between text-xs transition-colors"
-                  >
-                    <div className="truncate max-w-[80%]">
-                      <div className="font-semibold text-slate-800 dark:text-slate-200 truncate">{b.name}</div>
-                      <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                        {b.createdTime ? new Date(b.createdTime).toLocaleDateString() : 'Recent'} •{' '}
-                        {b.size ? `${(parseInt(b.size, 10) / 1024).toFixed(1)} KB` : ''}
+                {backups.map((b) => {
+                  const isEncrypted = b.name.endsWith('.enc');
+                  const displayName = isEncrypted ? b.name.slice(0, -4) : b.name;
+                  return (
+                    <div
+                      key={b.id}
+                      onClick={() => handleSelectCloudBackup(b)}
+                      className="p-3 rounded-xl bg-slate-50 hover:bg-blue-50 dark:bg-white/[0.02] dark:hover:bg-blue-500/10 border border-slate-200 dark:border-white/[0.06] hover:border-blue-500/40 cursor-pointer flex items-center justify-between text-xs transition-colors"
+                    >
+                      <div className="truncate max-w-[80%] space-y-1">
+                        <div className="font-semibold text-slate-800 dark:text-slate-200 truncate flex items-center space-x-1.5">
+                          <span className="truncate">{displayName}</span>
+                          {isEncrypted && (
+                            <span
+                              className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex-shrink-0"
+                              title={t('cloud.encryptedTooltip', 'AES-256 Encrypted')}
+                            >
+                              <Lock className="w-2.5 h-2.5" />
+                              <span>{t('cloud.encryptedBadge', 'Encrypted')}</span>
+                            </span>
+                          )}
+                          {b.isValidated === false && (
+                            <span
+                              className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 flex-shrink-0"
+                              title={t('cloud.unverifiedTooltip', 'This backup has not been integrity-validated or may be incomplete.')}
+                            >
+                              <AlertCircle className="w-2.5 h-2.5 text-amber-500" />
+                              <span>{t('cloud.unverifiedBadge', 'Unverified')}</span>
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center space-x-2 flex-wrap">
+                          <span>
+                            {b.createdTime ? new Date(b.createdTime).toLocaleDateString() : 'Recent'}
+                            {b.size ? ` • ${(parseInt(b.size, 10) / 1024).toFixed(1)} KB` : ''}
+                          </span>
+                          {(b.notesCount !== undefined || b.tagsCount !== undefined || b.playlistsCount !== undefined) && (
+                            <span className="text-slate-600 dark:text-slate-300 font-medium">
+                              • {[
+                                  b.notesCount !== undefined ? `${b.notesCount} ${t('nav.notes', 'notes')}` : null,
+                                  b.tagsCount !== undefined ? `${b.tagsCount} ${t('nav.tags', 'tags')}` : null,
+                                  b.playlistsCount !== undefined ? `${b.playlistsCount} ${t('nav.playlists', 'playlists')}` : null,
+                                ].filter(Boolean).join(' • ')}
+                            </span>
+                          )}
+                        </div>
                       </div>
+                      <span className="text-blue-600 dark:text-blue-400 font-semibold text-xs flex-shrink-0 ml-2">Select →</span>
                     </div>
-                    <span className="text-blue-600 dark:text-blue-400 font-semibold text-xs">Select →</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

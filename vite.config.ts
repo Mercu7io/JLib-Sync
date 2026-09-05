@@ -27,6 +27,27 @@ export default defineConfig({
         orientation: 'portrait-primary',
         scope: '/',
         start_url: '/',
+        file_handlers: [
+          {
+            action: '/',
+            name: 'JW Library Backup',
+            icons: [
+              {
+                src: '/pwa-192x192.png',
+                sizes: '192x192',
+                type: 'image/png',
+              },
+            ],
+            accept: {
+              'application/zip': ['.jwlibrary'],
+              'application/x-jwlibrary': ['.jwlibrary'],
+              'application/octet-stream': ['.jwlibrary'],
+            },
+          },
+        ] as any,
+        launch_handler: {
+          client_mode: ['navigate-existing', 'auto'],
+        },
         icons: [
           {
             src: '/pwa-192x192.png',
@@ -47,6 +68,9 @@ export default defineConfig({
         ],
       },
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
         // Increase limit to 10MB to precache sql-wasm.wasm and all application assets for offline use
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,

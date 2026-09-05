@@ -443,5 +443,260 @@ test('GoogleDriveManager: renameBackup sends PATCH request and updates index', a
   }
 });
 
+test('APP_VERSION: adheres to semver and defines build date', async () => {
+  const { APP_VERSION, APP_BUILD_DATE } = await import('../src/lib/version.ts');
+  assert.ok(typeof APP_VERSION === 'string');
+  assert.match(APP_VERSION, /^\d+\.\d+\.\d+/);
+  assert.ok(typeof APP_BUILD_DATE === 'string');
+  assert.ok(APP_BUILD_DATE.length > 0);
+});
 
+test('forceAppUpdate: executes safely in non-browser or mock environments', async () => {
+  const { forceAppUpdate } = await import('../src/lib/pwaUpdate.ts');
+  // In node environment without window, should return cleanly without error
+  await assert.doesNotReject(async () => {
+    await forceAppUpdate();
+  });
+});
 
+test('i18n: en and fr contain all required cloud and help keys', async () => {
+  const { en } = await import('../src/locales/en.ts');
+  const { fr } = await import('../src/locales/fr.ts');
+
+  // Cloud keys
+  assert.equal(en.cloud.encryptedBadge, 'Encrypted');
+  assert.equal(fr.cloud.encryptedBadge, 'Chiffré');
+  assert.equal(en.cloud.encryptedTooltip, 'AES-256 Encrypted');
+  assert.equal(fr.cloud.encryptedTooltip, 'Chiffré AES-256');
+  assert.equal(en.cloud.unverifiedBadge, 'Unverified');
+  assert.equal(fr.cloud.unverifiedBadge, 'Non vérifié');
+  assert.ok(en.cloud.uploadingWithProgress.includes('{{percent}}'));
+  assert.ok(fr.cloud.uploadingWithProgress.includes('{{percent}}'));
+
+  // Help keys
+  assert.ok(en.help.faqLockQ.length > 5);
+  assert.ok(fr.help.faqLockQ.length > 5);
+  assert.ok(en.help.faqPwaQ.length > 5);
+  assert.ok(fr.help.faqPwaA.length > 10);
+  assert.ok(en.help.gdprTitle.length > 5);
+  assert.ok(fr.help.gdprTitle.length > 5);
+  assert.ok(en.help.gdprDesc.length > 20);
+  assert.ok(fr.help.gdprDesc.length > 20);
+  assert.ok(en.help.viewFullPolicy.length > 5);
+  assert.ok(fr.help.viewFullPolicy.length > 5);
+});
+
+test('GoogleDriveManager: uploadBackup emits accurate progressive percentages up to 100%', async () => {
+  const { driveManager } = await import('../src/lib/cloud/googleDrive.ts');
+
+  // Setup mock folder and token
+  (driveManager as any).accessToken = 'mock_token';
+  (driveManager as any).folderId = 'mock_folder_id';
+
+  const originalRequest = (driveManager as any).request;
+  (driveManager as any).request = async (endpoint: string) => {
+    if (endpoint === '/files') {
+      return { id: 'mock_uploaded_file_id', name: 'test.jwlibrary' };
+    }
+    return {};
+  };
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => {
+    return {
+      ok: true,
+      json: async () => ({ id: 'mock_uploaded_file_id', name: 'test.jwlibrary' }),
+    } as any;
+  };
+
+  const progressUpdates: number[] = [];
+  const fakeBlob = new Blob(['test content for progress'], { type: 'application/octet-stream' });
+
+  try {
+    const res = await driveManager.uploadBackup('test_progress.jwlibrary', fakeBlob, undefined, (percent) => {
+      progressUpdates.push(percent);
+    });
+
+    assert.equal(res.id, 'mock_uploaded_file_id');
+    assert.ok(progressUpdates.length > 0);
+    assert.equal(progressUpdates[progressUpdates.length - 1], 100);
+  } finally {
+    (driveManager as any).request = originalRequest;
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('getDefaultMergeFilename: formats default merge name as YYYY-MM-DD_Panda_JWL.jwlibrary', async () => {
+  const { getDefaultMergeFilename } = await import('../src/lib/jw/merge.ts');
+
+  // Specific date test (2026-09-01)
+  const specificDate = new Date(2026, 8, 1); // Month is 0-indexed (8 = September)
+  assert.equal(getDefaultMergeFilename(specificDate), '2026-09-01_Panda_JWL.jwlibrary');
+
+  // Default (current) date test format
+  const currentDefault = getDefaultMergeFilename();
+  assert.match(currentDefault, /^\d{4}-\d{2}-\d{2}_Panda_JWL\.jwlibrary$/);
+});
+
+test('GoogleDriveManager: uploadBackup deletes draft stub on upload failure (rollback)', async () => {
+  const { driveManager } = await import('../src/lib/cloud/googleDrive.ts');
+
+  (driveManager as any).accessToken = 'mock_token';
+  (driveManager as any).folderId = 'mock_folder_id';
+
+  const deletedIds: string[] = [];
+  const originalRequest = (driveManager as any).request;
+  (driveManager as any).request = async (endpoint: string, options: any = {}) => {
+    if (endpoint === '/files' && options.method === 'POST') {
+      return { id: 'stub_to_delete', name: 'failed_backup.jwlibrary' };
+    }
+    if (endpoint === '/files/stub_to_delete' && options.method === 'DELETE') {
+      deletedIds.push('stub_to_delete');
+      return {};
+    }
+    return {};
+  };
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => {
+    // Simulate failed network upload
+    return {
+      ok: false,
+      statusText: 'Network connection dropped',
+    } as any;
+  };
+
+  const fakeBlob = new Blob(['sample data'], { type: 'application/octet-stream' });
+
+  try {
+    await assert.rejects(
+      async () => {
+        await driveManager.uploadBackup('failed_backup.jwlibrary', fakeBlob);
+      },
+      /Upload to Google Drive failed/
+    );
+
+    // Verify stub was automatically deleted
+    assert.deepEqual(deletedIds, ['stub_to_delete'], 'Draft file must be rolled back on upload failure');
+  } finally {
+    (driveManager as any).request = originalRequest;
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('GoogleDriveManager: listBackups filters 0-byte stubs, triggers cleanup, and marks isValidated', async () => {
+  const { driveManager } = await import('../src/lib/cloud/googleDrive.ts');
+
+  (driveManager as any).accessToken = 'mock_token';
+  (driveManager as any).folderId = 'mock_folder_id';
+
+  const originalRequest = (driveManager as any).request;
+  const deletedBatches: string[][] = [];
+
+  (driveManager as any).request = async (endpoint: string) => {
+    if (endpoint.startsWith('/files?')) {
+      return {
+        files: [
+          { id: 'zero_byte_1', name: 'aborted.jwlibrary', size: '0' },
+          { id: 'zero_byte_2', name: 'corrupted.jwlibrary', size: '0' },
+          { id: 'valid_with_sha', name: 'valid.jwlibrary', size: '5000', appProperties: { sha256: 'abcdef1234567890' } },
+          { id: 'valid_no_sha', name: 'unverified.jwlibrary', size: '3000', appProperties: {} },
+        ],
+      };
+    }
+    return {};
+  };
+
+  const originalBatchDelete = (driveManager as any).batchDeleteBackups;
+  (driveManager as any).batchDeleteBackups = async (ids: string[]) => {
+    deletedBatches.push(ids);
+  };
+
+  const originalFetchIndex = (driveManager as any).fetchIndex;
+  (driveManager as any).fetchIndex = async () => null;
+
+  try {
+    const list = await driveManager.listBackups();
+
+    // 0-byte files should be hidden
+    assert.equal(list.length, 2);
+    assert.equal(list[0].id, 'valid_with_sha');
+    assert.equal(list[0].isValidated, true);
+    assert.equal(list[1].id, 'valid_no_sha');
+    assert.equal(list[1].isValidated, false);
+
+    // 0-byte files should be queued for cleanup
+    assert.deepEqual(deletedBatches, [['zero_byte_1', 'zero_byte_2']]);
+  } finally {
+    (driveManager as any).request = originalRequest;
+    (driveManager as any).batchDeleteBackups = originalBatchDelete;
+    (driveManager as any).fetchIndex = originalFetchIndex;
+  }
+});
+
+test('GoogleDriveManager: stores and returns notes, tags, and playlists metrics', async () => {
+  const { driveManager } = await import('../src/lib/cloud/googleDrive.ts');
+
+  (driveManager as any).accessToken = 'mock_token';
+  (driveManager as any).folderId = 'mock_folder_id';
+
+  let capturedMetadata: any = null;
+  const originalRequest = (driveManager as any).request;
+  (driveManager as any).request = async (endpoint: string, options: any = {}) => {
+    if (endpoint === '/files' && options.method === 'POST') {
+      capturedMetadata = JSON.parse(options.body);
+      return { id: 'file_with_metrics', name: 'metrics_test.jwlibrary' };
+    }
+    if (endpoint.startsWith('/files?')) {
+      return {
+        files: [
+          {
+            id: 'file_with_metrics',
+            name: 'metrics_test.jwlibrary',
+            size: '8192',
+            appProperties: {
+              sha256: 'fedcba9876543210',
+              notesCount: '45',
+              tagsCount: '7',
+              playlistsCount: '3',
+            },
+          },
+        ],
+      };
+    }
+    return {};
+  };
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => ({ id: 'file_with_metrics', name: 'metrics_test.jwlibrary' }),
+  } as any);
+
+  const fakeBlob = new Blob(['dummy content'], { type: 'application/octet-stream' });
+
+  try {
+    const uploaded = await driveManager.uploadBackup('metrics_test.jwlibrary', fakeBlob, {
+      sha256: 'fedcba9876543210',
+      notesCount: 45,
+      tagsCount: 7,
+      playlistsCount: 3,
+    });
+
+    assert.equal(uploaded.notesCount, 45);
+    assert.equal(uploaded.tagsCount, 7);
+    assert.equal(uploaded.playlistsCount, 3);
+    assert.equal(capturedMetadata.appProperties.notesCount, '45');
+    assert.equal(capturedMetadata.appProperties.tagsCount, '7');
+    assert.equal(capturedMetadata.appProperties.playlistsCount, '3');
+
+    const listed = await driveManager.listBackups();
+    assert.equal(listed.length, 1);
+    assert.equal(listed[0].notesCount, 45);
+    assert.equal(listed[0].tagsCount, 7);
+    assert.equal(listed[0].playlistsCount, 3);
+  } finally {
+    (driveManager as any).request = originalRequest;
+    globalThis.fetch = originalFetch;
+  }
+});

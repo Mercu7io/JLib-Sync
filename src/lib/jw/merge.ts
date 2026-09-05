@@ -1097,3 +1097,15 @@ export async function mergeJwLibraries(
     previewNotes,
   };
 }
+
+/**
+ * Generates the default filename for merged backup archives.
+ * Format: YYYY-MM-DD_Panda_JWL.jwlibrary (e.g. 2026-09-01_Panda_JWL.jwlibrary)
+ */
+export const getDefaultMergeFilename = (date: Date = new Date()): string => {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}_Panda_JWL.jwlibrary`;
+};
+

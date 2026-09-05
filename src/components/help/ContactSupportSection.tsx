@@ -17,6 +17,7 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { APP_VERSION } from '../../lib/version';
 
 /**
  * Obfuscated email getter.
@@ -102,7 +103,7 @@ export const ContactSupportSection: React.FC = () => {
     // 2. Anti-bot speed trap: must have taken at least 2.5 seconds
     const elapsedMs = Date.now() - mountTimeRef.current;
     if (elapsedMs < 2500) {
-      setError(t('help.botTooFast', 'Veuillez patienter un instant avant de soumettre le formulaire.'));
+      setError(t('help.botTooFast', 'Please wait a moment before submitting the form.'));
       return;
     }
 
@@ -110,26 +111,26 @@ export const ContactSupportSection: React.FC = () => {
     try {
       const lastSend = sessionStorage.getItem('jwsync_last_contact_ts');
       if (lastSend && Date.now() - Number(lastSend) < 25000) {
-        setError(t('help.botCooldown', 'Veuillez patienter 30 secondes avant d’envoyer un nouveau message.'));
+        setError(t('help.botCooldown', 'Please wait 30 seconds before sending another message.'));
         return;
       }
     } catch (_) {}
 
     // 4. Form validation
     if (!subject.trim()) {
-      setError(t('help.contactErrSubject', 'Veuillez renseigner un sujet pour votre message.'));
+      setError(t('help.contactErrSubject', 'Please provide a subject for your message.'));
       return;
     }
 
     if (!message.trim() || message.trim().length < 10) {
-      setError(t('help.contactErrMessage', 'Veuillez saisir un message d’au moins 10 caractères.'));
+      setError(t('help.contactErrMessage', 'Please enter a message with at least 10 characters.'));
       return;
     }
 
     // 5. Math Captcha verification
     const parsedAnswer = parseInt(captchaAnswer.trim(), 10);
     if (isNaN(parsedAnswer) || parsedAnswer !== num1 + num2) {
-      setError(t('help.botWrongAnswer', 'Résultat du calcul anti-robot incorrect. Veuillez réessayer.'));
+      setError(t('help.botWrongAnswer', 'Incorrect anti-bot calculation. Please try again.'));
       resetCaptcha();
       return;
     }
@@ -137,10 +138,10 @@ export const ContactSupportSection: React.FC = () => {
     // Build message contents
     const recipient = getSecureContactEmail();
     const categoryLabels: Record<string, string> = {
-      question: t('help.contactCatQuestion', 'Question / Aide d’utilisation'),
-      bug: t('help.contactCatBug', 'Rapport de bug / Problème technique'),
-      feature: t('help.contactCatFeature', 'Suggestion d’amélioration'),
-      other: t('help.contactCatOther', 'Autre demande'),
+      question: t('help.contactCatQuestion', 'Question / General Help'),
+      bug: t('help.contactCatBug', 'Bug Report / Technical Issue'),
+      feature: t('help.contactCatFeature', 'Feature Suggestion'),
+      other: t('help.contactCatOther', 'Other Inquiry'),
     };
 
     const fullSubject = `[Panda JWL-Sync] [${categoryLabels[category] || category}] ${subject.trim()}`;
@@ -148,12 +149,12 @@ export const ContactSupportSection: React.FC = () => {
 
     const fullBody = [
       `=== Panda JWL-Sync Contact ===`,
-      `Type de demande : ${categoryLabels[category] || category}`,
-      `Sujet : ${subject.trim()}`,
-      replyEmail.trim() ? `Email de réponse souhaité : ${replyEmail.trim()}` : null,
+      `${t('help.emailReqType', 'Request type')} : ${categoryLabels[category] || category}`,
+      `${t('help.emailSubject', 'Subject')} : ${subject.trim()}`,
+      replyEmail.trim() ? `${t('help.emailReplyTo', 'Reply email')} : ${replyEmail.trim()}` : null,
       `Date : ${new Date().toLocaleString()}`,
-      `Navigateur / Système : ${userAgent}`,
-      `Application : Panda JWL-Sync v3.0`,
+      `Browser / OS : ${userAgent}`,
+      `Application : Panda JWL-Sync v${APP_VERSION}`,
       ``,
       `=== Message ===`,
       message.trim(),
@@ -206,15 +207,15 @@ export const ContactSupportSection: React.FC = () => {
         <div className="space-y-1.5">
           <div className="inline-flex items-center space-x-2 px-3 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-semibold">
             <Mail className="w-3.5 h-3.5" />
-            <span>{t('help.contactBadge', 'Support direct')}</span>
+            <span>{t('help.contactBadge', 'Direct Support')}</span>
           </div>
           <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-            {t('help.contactTitle', 'Contact & Assistance')}
+            {t('help.contactTitle', 'Contact & Support')}
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl leading-relaxed">
             {t(
               'help.contactSubtitle',
-              'Une question, un problème technique ou une suggestion pour améliorer Panda JWL-Sync ? Envoyez-nous un message !'
+              'Have a question, encountered a bug, or have an idea to improve Panda JWL-Sync? Send us an email!'
             )}
           </p>
         </div>
@@ -222,7 +223,7 @@ export const ContactSupportSection: React.FC = () => {
         {/* Anti-spam security guarantee badge */}
         <div className="flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-[11px] font-semibold px-3 py-1.5 rounded-xl self-start sm:self-center">
           <ShieldCheck className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-          <span>{t('help.contactProtectedNotice', 'Protection anti-bot & anti-spam active')}</span>
+          <span>{t('help.contactProtectedNotice', 'Anti-bot & anti-spam protected')}</span>
         </div>
       </div>
 
@@ -235,12 +236,12 @@ export const ContactSupportSection: React.FC = () => {
             </div>
             <div className="space-y-1">
               <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-                {t('help.contactSuccessTitle', 'Email préparé avec succès !')}
+                {t('help.contactSuccessTitle', 'Email prepared successfully!')}
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                 {t(
                   'help.contactSuccessDesc',
-                  'Votre message a été généré. Cliquez ci-dessous pour l’ouvrir dans votre messagerie préférée ou copiez directement le contenu.'
+                  'Your email has been prepared. Click below to open in your favorite email app or webmail, or copy the details directly.'
                 )}
               </p>
             </div>
@@ -253,7 +254,7 @@ export const ContactSupportSection: React.FC = () => {
               className="flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-sm"
             >
               <Mail className="w-4 h-4" />
-              <span>{t('help.contactOpenMailApp', 'Ouvrir l’app Mail')}</span>
+              <span>{t('help.contactOpenMailApp', 'Open in Email Client')}</span>
             </a>
             <a
               href={preparedLinks.gmailUrl}
@@ -262,7 +263,7 @@ export const ContactSupportSection: React.FC = () => {
               className="flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] text-slate-800 dark:text-white text-xs font-semibold transition-all border border-slate-200/80 dark:border-white/[0.08]"
             >
               <ExternalLink className="w-3.5 h-3.5 text-red-500" />
-              <span>{t('help.contactOpenGmail', 'Ouvrir dans Gmail')}</span>
+              <span>{t('help.contactOpenGmail', 'Open in Gmail')}</span>
             </a>
             <a
               href={preparedLinks.outlookUrl}
@@ -271,7 +272,7 @@ export const ContactSupportSection: React.FC = () => {
               className="flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] text-slate-800 dark:text-white text-xs font-semibold transition-all border border-slate-200/80 dark:border-white/[0.08]"
             >
               <ExternalLink className="w-3.5 h-3.5 text-blue-500" />
-              <span>{t('help.contactOpenOutlook', 'Ouvrir dans Outlook')}</span>
+              <span>{t('help.contactOpenOutlook', 'Open in Outlook')}</span>
             </a>
           </div>
 
@@ -283,7 +284,7 @@ export const ContactSupportSection: React.FC = () => {
               className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/[0.08] text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors"
             >
               {copiedEmail ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedEmail ? t('help.contactEmailCopied', 'Adresse copiée !') : t('help.contactCopyEmail', 'Copier l’adresse email')}</span>
+              <span>{copiedEmail ? t('help.contactEmailCopied', 'Email address copied!') : t('help.contactCopyEmail', 'Copy Email Address')}</span>
             </button>
             <button
               type="button"
@@ -291,7 +292,7 @@ export const ContactSupportSection: React.FC = () => {
               className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/[0.08] text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors"
             >
               {copiedMessage ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedMessage ? t('help.contactMessageCopied', 'Message copié !') : t('help.contactCopyMessage', 'Copier le texte complet')}</span>
+              <span>{copiedMessage ? t('help.contactMessageCopied', 'Message text copied!') : t('help.contactCopyMessage', 'Copy Full Text')}</span>
             </button>
             <button
               type="button"
@@ -299,7 +300,7 @@ export const ContactSupportSection: React.FC = () => {
               className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors ml-auto"
             >
               <RefreshCw className="w-3 h-3" />
-              <span>{t('help.contactNewMessage', 'Rédiger un autre message')}</span>
+              <span>{t('help.contactNewMessage', 'Write another message')}</span>
             </button>
           </div>
         </div>
@@ -323,14 +324,14 @@ export const ContactSupportSection: React.FC = () => {
           {/* Category selection */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
-              <span>{t('help.contactCategory', 'Type de demande')}</span>
+              <span>{t('help.contactCategory', 'Inquiry Type')}</span>
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
                 { id: 'question', label: t('help.contactCatQuestion', 'Question'), icon: HelpCircle },
-                { id: 'bug', label: t('help.contactCatBug', 'Rapport de bug'), icon: Bug },
+                { id: 'bug', label: t('help.contactCatBug', 'Bug Report'), icon: Bug },
                 { id: 'feature', label: t('help.contactCatFeature', 'Suggestion'), icon: Sparkles },
-                { id: 'other', label: t('help.contactCatOther', 'Autre'), icon: MessageSquare },
+                { id: 'other', label: t('help.contactCatOther', 'Other'), icon: MessageSquare },
               ].map((item) => {
                 const Icon = item.icon;
                 const isSelected = category === item.id;
@@ -357,28 +358,28 @@ export const ContactSupportSection: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label htmlFor="contact_subject" className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                {t('help.contactSubject', 'Sujet')} <span className="text-red-500">*</span>
+                {t('help.contactSubject', 'Subject')} <span className="text-red-500">*</span>
               </label>
               <input
                 id="contact_subject"
                 type="text"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                placeholder={t('help.contactSubjectPlaceholder', 'Ex : Souci lors de la fusion de surlignages...')}
+                placeholder={t('help.contactSubjectPlaceholder', 'e.g. Issue merging highlights on Android...')}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/[0.08] text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
                 required
               />
             </div>
             <div className="space-y-1.5">
               <label htmlFor="contact_reply_email" className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                {t('help.contactReplyEmail', 'Votre email (optionnel, pour vous répondre)')}
+                {t('help.contactReplyEmail', 'Your email (optional, for reply)')}
               </label>
               <input
                 id="contact_reply_email"
                 type="email"
                 value={replyEmail}
                 onChange={(e) => setReplyEmail(e.target.value)}
-                placeholder={t('help.contactReplyEmailPlaceholder', 'votre.nom@example.com')}
+                placeholder={t('help.contactReplyEmailPlaceholder', 'your.name@example.com')}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/[0.08] text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
               />
             </div>
@@ -394,7 +395,7 @@ export const ContactSupportSection: React.FC = () => {
               rows={4}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder={t('help.contactMessagePlaceholder', 'Décrivez votre demande, problème ou suggestion en détail...')}
+              placeholder={t('help.contactMessagePlaceholder', 'Please describe your request, issue, or suggestion in detail...')}
               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/[0.08] text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 resize-y"
               required
             />
@@ -408,10 +409,10 @@ export const ContactSupportSection: React.FC = () => {
               </div>
               <div className="space-y-0.5">
                 <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
-                  <span>{t('help.contactCaptcha', `Vérification anti-robot : Combien font ${num1} + ${num2} ?`, { n1: num1, n2: num2 })}</span>
+                  <span>{t('help.contactCaptcha', `Security check: What is ${num1} + ${num2} ?`, { n1: num1, n2: num2 })}</span>
                 </div>
                 <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                  {t('help.contactCaptchaHint', 'Validation humaine requise avant l’envoi')}
+                  {t('help.contactCaptchaHint', 'Human verification required before sending')}
                 </div>
               </div>
             </div>
@@ -421,14 +422,14 @@ export const ContactSupportSection: React.FC = () => {
                 type="number"
                 value={captchaAnswer}
                 onChange={(e) => setCaptchaAnswer(e.target.value)}
-                placeholder={t('help.contactCaptchaPlaceholder', 'Résultat')}
+                placeholder={t('help.contactCaptchaPlaceholder', 'Answer')}
                 className="w-24 px-3 py-2 text-center font-bold text-xs sm:text-sm rounded-xl bg-white dark:bg-[#070A12] border border-slate-200/80 dark:border-white/[0.1] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
                 required
               />
               <button
                 type="button"
                 onClick={resetCaptcha}
-                title="Changer de question"
+                title={t('help.contactChangeQuestion', 'Change question')}
                 className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/[0.06] transition-colors"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
@@ -451,19 +452,19 @@ export const ContactSupportSection: React.FC = () => {
               className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs tracking-wide transition-all shadow-md shadow-blue-600/20"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>{t('help.contactSendBtn', 'Préparer & envoyer l’email')}</span>
+              <span>{t('help.contactSendBtn', 'Prepare & Send Email')}</span>
             </button>
 
             {/* Direct Email Toggle for users who prefer copying the address */}
             <div className="flex items-center space-x-2 text-[11px] text-slate-500 dark:text-slate-400">
-              <span>{t('help.contactOrDirect', 'Ou sans le formulaire :')}</span>
+              <span>{t('help.contactOrDirect', 'Or without the form:')}</span>
               <button
                 type="button"
                 onClick={() => setShowDirectEmail(!showDirectEmail)}
                 className="text-blue-600 dark:text-blue-400 hover:underline font-semibold flex items-center space-x-1"
               >
                 {showDirectEmail ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                <span>{showDirectEmail ? t('help.contactHideEmail', 'Masquer') : t('help.contactRevealEmail', 'Afficher l’adresse')}</span>
+                <span>{showDirectEmail ? t('help.contactHideEmail', 'Hide') : t('help.contactRevealEmail', 'Reveal email address')}</span>
               </button>
             </div>
           </div>
@@ -481,15 +482,15 @@ export const ContactSupportSection: React.FC = () => {
                   onClick={handleCopyEmail}
                   className="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-white dark:bg-white/[0.06] border border-slate-200/80 dark:border-white/[0.08] text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors"
                 >
-                  {copiedEmail ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                  <span>{copiedEmail ? t('help.contactEmailCopied', 'Copié !') : t('help.contactCopyEmail', 'Copier')}</span>
+                  {copiedEmail ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedEmail ? t('help.contactEmailCopied', 'Email address copied!') : t('help.contactCopyEmail', 'Copy Email Address')}</span>
                 </button>
                 <a
                   href={`mailto:${getSecureContactEmail()}`}
                   className="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold transition-all"
                 >
                   <Mail className="w-3 h-3" />
-                  <span>{t('help.contactWriteEmail', 'Écrire')}</span>
+                  <span>{t('help.contactWriteEmail', 'Write')}</span>
                 </a>
               </div>
             </div>

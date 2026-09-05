@@ -21,6 +21,9 @@ interface ICloudState {
   deviceSyncNotificationsEnabled: boolean;
   isLoading: boolean;
   isUploading: boolean;
+  uploadProgress: number | null;
+  downloadProgress: number | null;
+  cachedEncryptedDownload: { fileId: string; fileName: string; buffer: ArrayBuffer } | null;
   statusMessage: string;
   error: string | null;
   showCloudModal: boolean;
@@ -31,12 +34,19 @@ interface ICloudState {
   disconnect: () => void;
   refreshBackups: () => Promise<void>;
   backupCurrentLibrary: (customName?: string, onProgress?: (percent: number) => void) => Promise<void>;
-  backupFileDirectly: (blobOrFile: Blob | File, fileName: string, sha256?: string, onProgress?: (percent: number) => void) => Promise<void>;
-  restoreCloudBackup: (fileId: string, fileName: string) => Promise<void>;
+  backupFileDirectly: (
+    blobOrFile: Blob | File,
+    fileName: string,
+    sha256?: string,
+    onProgress?: (percent: number) => void,
+    summary?: { notesCount?: number; tagsCount?: number; playlistsCount?: number; bookmarksCount?: number }
+  ) => Promise<void>;
+  restoreCloudBackup: (fileId: string, fileName: string, overridePassword?: string, onProgress?: (pct: number) => void) => Promise<void>;
   renameCloudBackup: (fileId: string, newName: string) => Promise<void>;
   deleteCloudBackup: (fileId: string) => Promise<void>;
   batchDeleteBackups: (fileIds: string[]) => Promise<void>;
-  downloadCloudFile: (fileId: string, fileName: string) => Promise<File>;
+  downloadCloudFile: (fileId: string, fileName: string, onProgress?: (pct: number) => void, overridePassword?: string) => Promise<File>;
+  clearCachedEncryptedDownload: () => void;
   setShowCloudModal: (show: boolean) => void;
   clearError: () => void;
   setDeviceSyncNotificationsEnabled: (enabled: boolean) => void;
@@ -102,10 +112,15 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
   deviceSyncNotificationsEnabled: getInitialNotificationsEnabled(),
   isLoading: false,
   isUploading: false,
+  uploadProgress: null,
+  downloadProgress: null,
+  cachedEncryptedDownload: null,
   statusMessage: '',
   error: null,
   showCloudModal: false,
   ...loadEncryptionConfig(),
+
+  clearCachedEncryptedDownload: () => set({ cachedEncryptedDownload: null }),
 
   setEncryptionConfig: (enabled: boolean, password: null | string, expiresInMs?: number) => {
     const passwordExpiresAt = expiresInMs ? Date.now() + expiresInMs : null;
@@ -225,10 +240,9 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
       });
     }
   },
-
-  backupCurrentLibrary: async (customName?: string, onProgress?: (percent: number) => void) => {
+    backupCurrentLibrary: async (customName?: string, onProgress?: (percent: number) => void) => {
     try {
-      set({ isUploading: true, statusMessage: 'Preparing backup for Google Drive...' });
+      set({ isUploading: true, uploadProgress: 0, statusMessage: 'Preparing backup for Google Drive...' });
       const {
         activeDb,
         activeLibraryBytes,
@@ -236,6 +250,7 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
         activeSha256,
         extraFiles,
         activeLibraryFile,
+        summary,
       } = useAppStore.getState();
 
       if ((!activeLibraryBytes && !activeDb) || !activeManifest) {
@@ -286,7 +301,7 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
         });
       }
 
-      set({ statusMessage: 'Uploading to Google Drive (0%)...' });
+      set({ uploadProgress: 0, statusMessage: 'Uploading to Google Drive (0%)...' });
       onProgress?.(0);
       await driveManager.uploadBackup(
         name,
@@ -295,9 +310,13 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
           sha256: currentSha256 || undefined,
           deviceId: getLocalDeviceId(),
           deviceName: getLocalDeviceName(),
+          notesCount: summary?.notesCount,
+          tagsCount: summary?.tagsCount,
+          playlistsCount: summary?.playlistsCount,
+          bookmarksCount: summary?.bookmarksCount,
         },
         (percent) => {
-          set({ statusMessage: `Uploading to Google Drive (${percent}%)...` });
+          set({ uploadProgress: percent, statusMessage: `Uploading to Google Drive (${percent}%)...` });
           onProgress?.(percent);
         }
       );
@@ -311,10 +330,10 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
       }
 
       await get().refreshBackups();
-      set({ isUploading: false, statusMessage: 'Backup uploaded successfully!' });
+      set({ isUploading: false, uploadProgress: null, statusMessage: 'Backup uploaded successfully!' });
       setTimeout(() => set({ statusMessage: '' }), 4000);
     } catch (err) {
-      set({ isUploading: false, error: (err as Error).message, statusMessage: '' });
+      set({ isUploading: false, uploadProgress: null, error: (err as Error).message, statusMessage: '' });
       throw err;
     }
   },
@@ -323,10 +342,11 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
     blobOrFile: Blob | File,
     fileName: string,
     sha256?: string,
-    onProgress?: (percent: number) => void
+    onProgress?: (percent: number) => void,
+    summary?: { notesCount?: number; tagsCount?: number; playlistsCount?: number; bookmarksCount?: number }
   ) => {
     try {
-      set({ isUploading: true, statusMessage: 'Uploading to Google Drive...' });
+      set({ isUploading: true, uploadProgress: 0, statusMessage: 'Uploading to Google Drive (0%)...' });
       let blob: Blob = blobOrFile;
       let name = fileName.endsWith('.jwlibrary') ? fileName : `${fileName}.jwlibrary`;
 
@@ -350,7 +370,7 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
         });
       }
 
-      set({ statusMessage: 'Uploading to Google Drive (0%)...' });
+      set({ uploadProgress: 0, statusMessage: 'Uploading to Google Drive (0%)...' });
       onProgress?.(0);
       await driveManager.uploadBackup(
         name,
@@ -359,9 +379,13 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
           sha256: sha256 || undefined,
           deviceId: getLocalDeviceId(),
           deviceName: getLocalDeviceName(),
+          notesCount: summary?.notesCount,
+          tagsCount: summary?.tagsCount,
+          playlistsCount: summary?.playlistsCount,
+          bookmarksCount: summary?.bookmarksCount,
         },
         (percent) => {
-          set({ statusMessage: `Uploading to Google Drive (${percent}%)...` });
+          set({ uploadProgress: percent, statusMessage: `Uploading to Google Drive (${percent}%)...` });
           onProgress?.(percent);
         }
       );
@@ -375,51 +399,133 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
       }
 
       await get().refreshBackups();
-      set({ isUploading: false, statusMessage: 'Backup uploaded successfully!' });
+      set({ isUploading: false, uploadProgress: null, statusMessage: 'Backup uploaded successfully!' });
       setTimeout(() => set({ statusMessage: '' }), 4000);
     } catch (err) {
-      set({ isUploading: false, error: (err as Error).message, statusMessage: '' });
+      set({ isUploading: false, uploadProgress: null, error: (err as Error).message, statusMessage: '' });
       throw err;
     }
   },
 
-  restoreCloudBackup: async (fileId: string, fileName: string) => {
+  restoreCloudBackup: async (
+    fileId: string,
+    fileName: string,
+    overridePassword?: string,
+    onProgress?: (pct: number) => void
+  ) => {
     try {
-      set({ isLoading: true, statusMessage: `Downloading "${fileName}" from Google Drive...` });
-      let dataBuffer: ArrayBuffer | Uint8Array = await driveManager.downloadBackup(fileId);
+      const isEncrypted = fileName.endsWith('.enc');
+      const effectivePassword = overridePassword || get().encryptionPassword;
 
-      if (fileName.endsWith('.enc')) {
-        const { encryptionPassword } = get();
-        if (!encryptionPassword) {
-          set({ isLoading: false, statusMessage: '' });
-          throw new Error('PASSWORD_REQUIRED');
+      // 1. Password check BEFORE downloading
+      if (isEncrypted && !effectivePassword) {
+        set({ isLoading: false, statusMessage: '' });
+        throw new Error('PASSWORD_REQUIRED');
+      }
+
+      set({ isLoading: true, statusMessage: `Downloading "${fileName}" from Google Drive (0%)...`, downloadProgress: 0 });
+
+      let dataBuffer: ArrayBuffer | Uint8Array;
+      const cached = get().cachedEncryptedDownload;
+
+      // Check if we already have the raw encrypted bytes cached in memory
+      if (isEncrypted && cached && cached.fileId === fileId) {
+        dataBuffer = cached.buffer;
+      } else {
+        dataBuffer = await driveManager.downloadBackup(fileId, (pct) => {
+          set({
+            downloadProgress: pct,
+            statusMessage: `Downloading "${fileName}" (${pct}%)...`,
+          });
+          onProgress?.(pct);
+        });
+      }
+      set({ downloadProgress: 100 });
+
+      if (isEncrypted) {
+        try {
+          set({ statusMessage: 'Decrypting backup...' });
+          const crypto = new CloudCrypto();
+          dataBuffer = await crypto.decrypt(dataBuffer, effectivePassword!);
+          // Clear cached encrypted download on successful decryption
+          set({ cachedEncryptedDownload: null });
+        } catch (decryptErr) {
+          // Keep the downloaded encrypted bytes in memory so the user doesn't have to re-download!
+          set({
+            cachedEncryptedDownload: { fileId, fileName, buffer: dataBuffer as ArrayBuffer },
+            isLoading: false,
+            downloadProgress: null,
+            statusMessage: '',
+          });
+          throw decryptErr;
         }
-        set({ statusMessage: 'Decrypting backup...' });
-        const crypto = new CloudCrypto();
-        dataBuffer = await crypto.decrypt(dataBuffer, encryptionPassword);
       }
 
       const blob = new Blob([dataBuffer as any], { type: 'application/zip' });
-      // Load into main app store in-memory
-      await useAppStore.getState().loadLibrary(blob, fileName.replace(/\.enc$/, ''));
-      set({ isLoading: false, statusMessage: '', showCloudModal: false });
+      const cleanFileName = fileName.replace(/\.enc$/, '');
+
+      // Close cloud download modal immediately before decompression begins so user sees progress on page
+      set({
+        showCloudModal: false,
+        isLoading: false,
+        downloadProgress: null,
+        statusMessage: '',
+      });
+
+      // Load into main app store in-memory (decompresses SQLite and parses manifest)
+      await useAppStore.getState().loadLibrary(blob, cleanFileName);
     } catch (err) {
-      set({ isLoading: false, statusMessage: '', error: (err as Error).message });
+      set({ isLoading: false, downloadProgress: null, statusMessage: '', error: (err as Error).message });
       throw err;
     }
   },
 
-  downloadCloudFile: async (fileId: string, fileName: string): Promise<File> => {
-    let dataBuffer: ArrayBuffer | Uint8Array = await driveManager.downloadBackup(fileId);
-    if (fileName.endsWith('.enc')) {
-      const { encryptionPassword } = get();
-      if (!encryptionPassword) {
-        throw new Error('PASSWORD_REQUIRED');
+  downloadCloudFile: async (
+    fileId: string,
+    fileName: string,
+    onProgress?: (pct: number) => void,
+    overridePassword?: string
+  ): Promise<File> => {
+    const isEncrypted = fileName.endsWith('.enc');
+    const effectivePassword = overridePassword || get().encryptionPassword;
+
+    // 1. Password check BEFORE downloading
+    if (isEncrypted && !effectivePassword) {
+      throw new Error('PASSWORD_REQUIRED');
+    }
+
+    set({ downloadProgress: 0 });
+
+    let dataBuffer: ArrayBuffer | Uint8Array;
+    const cached = get().cachedEncryptedDownload;
+
+    if (isEncrypted && cached && cached.fileId === fileId) {
+      dataBuffer = cached.buffer;
+    } else {
+      dataBuffer = await driveManager.downloadBackup(fileId, (pct) => {
+        set({ downloadProgress: pct });
+        onProgress?.(pct);
+      });
+    }
+    set({ downloadProgress: 100 });
+
+    if (isEncrypted) {
+      try {
+        const crypto = new CloudCrypto();
+        dataBuffer = await crypto.decrypt(dataBuffer, effectivePassword!);
+        set({ cachedEncryptedDownload: null });
+      } catch (decryptErr) {
+        // Cache encrypted bytes in memory to avoid re-downloading on password re-entry
+        set({
+          cachedEncryptedDownload: { fileId, fileName, buffer: dataBuffer as ArrayBuffer },
+          downloadProgress: null,
+        });
+        throw decryptErr;
       }
-      const crypto = new CloudCrypto();
-      dataBuffer = await crypto.decrypt(dataBuffer, encryptionPassword);
       fileName = fileName.replace(/\.enc$/, '');
     }
+
+    set({ downloadProgress: null });
     return new File([dataBuffer as any], fileName, { type: 'application/zip' });
   },
 

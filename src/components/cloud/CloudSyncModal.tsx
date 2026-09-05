@@ -21,6 +21,9 @@ import {
   Bell,
   CheckCircle2,
   Edit3,
+  FileText,
+  Tag,
+  ListMusic,
 } from 'lucide-react';
 import { useCloudStore } from '../../store/useCloudStore';
 import { useAppStore } from '../../store/useAppStore';
@@ -39,6 +42,8 @@ export const CloudSyncModal: React.FC = () => {
     isUploading,
     statusMessage,
     error,
+    downloadProgress,
+    uploadProgress,
     connect,
     disconnect,
     refreshBackups,
@@ -80,6 +85,8 @@ export const CloudSyncModal: React.FC = () => {
   const [promptAction, setPromptAction] = useState<'load' | 'merge'>('load');
   const [decryptPass, setDecryptPass] = useState('');
   const [decryptError, setDecryptError] = useState('');
+  const [isDecrypting, setIsDecrypting] = useState(false);
+  const [decryptAttemptCount, setDecryptAttemptCount] = useState(0);
 
   // Rename Prompt UI
   const [renamingBackup, setRenamingBackup] = useState<IDriveFile | null>(null);
@@ -201,11 +208,11 @@ export const CloudSyncModal: React.FC = () => {
     try {
       await restoreCloudBackup(b.id, b.name);
     } catch (err: any) {
-      if (err.message === 'PASSWORD_REQUIRED' || err.message.includes('Decryption failed')) {
+      if (err.message === 'PASSWORD_REQUIRED' || err.message.includes('Decryption failed') || err.message.includes('decrypt')) {
         setPromptFileId(b.id);
         setPromptFileName(b.name);
         setPromptAction('load');
-        setDecryptError(err.message === 'PASSWORD_REQUIRED' ? '' : 'Incorrect password.');
+        setDecryptError(err.message === 'PASSWORD_REQUIRED' ? '' : t('cloud.invalidPassword', 'Incorrect password.'));
       }
     }
   };
@@ -216,20 +223,27 @@ export const CloudSyncModal: React.FC = () => {
 
     setEncryptionConfig(true, decryptPass, 0);
     setDecryptError('');
+    setIsDecrypting(true);
 
     try {
       if (promptAction === 'load') {
-        await restoreCloudBackup(promptFileId, promptFileName);
+        // Will decrypt in-memory cached buffer if already downloaded!
+        await restoreCloudBackup(promptFileId, promptFileName, decryptPass);
         setPromptFileId(null);
         setDecryptPass('');
+        setDecryptAttemptCount(0);
       } else {
         await handleMergeSelected();
         setPromptFileId(null);
         setDecryptPass('');
+        setDecryptAttemptCount(0);
       }
     } catch (err: any) {
-      setDecryptError('Decryption failed. Incorrect password?');
+      setDecryptAttemptCount((c) => c + 1);
+      setDecryptError(t('cloud.invalidPassword', 'Incorrect password. Please try again.'));
       setEncryptionConfig(encryptionEnabled, encryptionPassword, 0);
+    } finally {
+      setIsDecrypting(false);
     }
   };
 
@@ -302,33 +316,55 @@ export const CloudSyncModal: React.FC = () => {
               <div className="space-y-1">
                 <input
                   type="password"
+                  disabled={isDecrypting}
                   value={decryptPass}
-                  onChange={(e) => setDecryptPass(e.target.value)}
+                  onChange={(e) => {
+                    setDecryptPass(e.target.value);
+                    if (decryptError) setDecryptError('');
+                  }}
                   placeholder={t('cloud.encryptionPassword', 'Encryption Password')}
-                  className="w-full bg-white dark:bg-[#0b0f17] border border-slate-300 dark:border-white/[0.1] rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-slate-200 focus:border-blue-500 focus:outline-none"
+                  className="w-full bg-white dark:bg-[#0b0f17] border border-slate-300 dark:border-white/[0.1] rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-slate-200 focus:border-blue-500 focus:outline-none disabled:opacity-50"
                   autoFocus
                 />
-                {decryptError && <p className="text-[11px] text-red-500 mt-1">{decryptError}</p>}
+                {decryptError && (
+                  <div
+                    key={decryptAttemptCount}
+                    className="p-2 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-600 dark:text-red-400 font-medium flex items-center space-x-2 animate-shake mt-2"
+                  >
+                    <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-500" />
+                    <div className="flex-1">
+                      <span>{decryptError}</span>
+                      {decryptAttemptCount > 1 && (
+                        <span className="block text-[10px] text-red-500/80 mt-0.5 font-normal">
+                          {t('cloud.attemptFailed', { count: decryptAttemptCount, defaultValue: `Attempt ${decryptAttemptCount} failed` })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center space-x-2 pt-2">
                 <button
                   type="button"
+                  disabled={isDecrypting}
                   onClick={() => {
                     setPromptFileId(null);
                     setDecryptError('');
                     setDecryptPass('');
+                    setDecryptAttemptCount(0);
                   }}
-                  className="flex-1 py-2 rounded-xl border border-slate-300 dark:border-white/[0.1] text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.05]"
+                  className="flex-1 py-2 rounded-xl border border-slate-300 dark:border-white/[0.1] text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.05] disabled:opacity-50"
                 >
                   {t('common.cancel', 'Cancel')}
                 </button>
                 <button
                   type="submit"
-                  disabled={!decryptPass}
-                  className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-xs font-semibold text-white shadow-md"
+                  disabled={isDecrypting || !decryptPass.trim()}
+                  className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-xs font-semibold text-white shadow-md flex items-center justify-center space-x-1.5"
                 >
-                  {t('cloud.decryptAndLoad', 'Decrypt & Load')}
+                  {isDecrypting && <RefreshCw className="w-3 h-3 animate-spin" />}
+                  <span>{isDecrypting ? t('cloud.verifyingPassword', 'Verifying password...') : t('cloud.decryptAndLoad', 'Decrypt & Load')}</span>
                 </button>
               </div>
             </form>
@@ -475,9 +511,26 @@ export const CloudSyncModal: React.FC = () => {
         )}
 
         {statusMessage && (
-          <div className="p-3 bg-blue-500/10 dark:bg-blue-950/40 border border-blue-500/40 rounded-xl text-xs text-blue-600 dark:text-blue-300 flex items-center space-x-2">
-            <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-600 dark:text-blue-400" />
-            <span>{statusMessage}</span>
+          <div className="p-3.5 bg-blue-500/10 dark:bg-blue-950/40 border border-blue-500/40 rounded-xl text-xs text-blue-600 dark:text-blue-300 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                <span className="font-semibold">{statusMessage}</span>
+              </div>
+              {(downloadProgress !== null || uploadProgress !== null) && (
+                <span className="font-mono text-[11px] font-bold">
+                  {downloadProgress ?? uploadProgress ?? 0}%
+                </span>
+              )}
+            </div>
+            {(downloadProgress !== null || uploadProgress !== null) && (
+              <div className="w-full bg-blue-200 dark:bg-blue-900/50 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="bg-blue-600 dark:bg-blue-400 h-full transition-all duration-150 rounded-full"
+                  style={{ width: `${Math.max(5, downloadProgress ?? uploadProgress ?? 0)}%` }}
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -933,6 +986,15 @@ export const CloudSyncModal: React.FC = () => {
                                 <Lock className="w-3 h-3 text-amber-500 flex-shrink-0" />
                               )}
                               <span className="truncate" title={b.name}>{b.name}</span>
+                              {b.isValidated === false && (
+                                <span
+                                  className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-[10px] font-medium flex-shrink-0"
+                                  title={t('cloud.unverifiedTooltip', 'This backup has not been integrity-validated or may be incomplete.')}
+                                >
+                                  <AlertCircle className="w-2.5 h-2.5 text-amber-500" />
+                                  <span>{t('cloud.unverifiedBadge', 'Unverified')}</span>
+                                </span>
+                              )}
                             </div>
                             <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center space-x-2 flex-wrap">
                               <span>
@@ -941,6 +1003,29 @@ export const CloudSyncModal: React.FC = () => {
                                   : t('cloud.recent', 'Recent')}
                               </span>
                               {b.size && <span>• {(parseInt(b.size, 10) / 1024).toFixed(1)} KB</span>}
+                              {(b.notesCount !== undefined || b.tagsCount !== undefined || b.playlistsCount !== undefined) && (
+                                <span className="inline-flex items-center space-x-2 text-slate-600 dark:text-slate-300 font-medium">
+                                  <span>•</span>
+                                  {b.notesCount !== undefined && (
+                                    <span className="inline-flex items-center space-x-0.5">
+                                      <FileText className="w-3 h-3 text-blue-500" />
+                                      <span>{b.notesCount} {t('nav.notes', 'notes')}</span>
+                                    </span>
+                                  )}
+                                  {b.tagsCount !== undefined && (
+                                    <span className="inline-flex items-center space-x-0.5">
+                                      <Tag className="w-3 h-3 text-emerald-500" />
+                                      <span>{b.tagsCount} {t('nav.tags', 'tags')}</span>
+                                    </span>
+                                  )}
+                                  {b.playlistsCount !== undefined && (
+                                    <span className="inline-flex items-center space-x-0.5">
+                                      <ListMusic className="w-3 h-3 text-purple-500" />
+                                      <span>{b.playlistsCount} {t('nav.playlists', 'playlists')}</span>
+                                    </span>
+                                  )}
+                                </span>
+                              )}
                               {isFromOther && (
                                 <span className="inline-flex items-center space-x-1 px-1.5 py-0.2 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-[10px] font-medium">
                                   <span>{t('cloud.fromOtherDevice', 'From another device')}</span>

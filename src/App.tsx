@@ -11,9 +11,12 @@ import { HelpPage } from './pages/HelpPage';
 import { CloudSyncModal } from './components/cloud/CloudSyncModal';
 import { useCloudStore } from './store/useCloudStore';
 import { applyTheme, getThemePreference, initThemeWatcher, applyTextSize, getTextSizePreference } from './lib/theme';
+import { usePwaFileHandler } from './hooks/usePwaFileHandler';
 
 export const App: React.FC = () => {
-  const { showCloudModal } = useCloudStore();
+  const { showCloudModal, isUploading } = useCloudStore();
+
+  usePwaFileHandler();
 
   React.useEffect(() => {
     applyTheme(getThemePreference());
@@ -21,6 +24,19 @@ export const App: React.FC = () => {
     const cleanup = initThemeWatcher();
     return cleanup;
   }, []);
+
+  // Intercept window close / reload during active cloud upload to prevent corrupted / truncated files
+  React.useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isUploading) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isUploading]);
 
   return (
     <BrowserRouter>
