@@ -178,6 +178,10 @@ export const ContactSupportSection: React.FC = () => {
     });
 
     // 7. Dispatch via Web3Forms API
+    const formElem = e.currentTarget as HTMLFormElement;
+    const hCaptchaInput = formElem?.querySelector<HTMLInputElement | HTMLTextAreaElement>('[name="h-captcha-response"]');
+    const hCaptchaResponse = hCaptchaInput?.value || undefined;
+
     setIsSubmitting(true);
     try {
       const result = await sendContactMessage({
@@ -189,6 +193,7 @@ export const ContactSupportSection: React.FC = () => {
         userAgent,
         appVersion: APP_VERSION,
         botcheck: honeypot,
+        hCaptchaResponse,
       });
 
       if (result.success) {

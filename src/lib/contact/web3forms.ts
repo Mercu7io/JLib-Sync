@@ -14,6 +14,7 @@ export interface IContactInput {
   userAgent?: string;
   appVersion?: string;
   botcheck?: string;
+  hCaptchaResponse?: string;
 }
 
 export interface IValidationResult {
@@ -169,20 +170,25 @@ export async function sendContactMessage(
 
   formData.append('message', formattedMessage);
 
+  if (input.hCaptchaResponse && input.hCaptchaResponse.trim()) {
+    formData.append('h-captcha-response', input.hCaptchaResponse.trim());
+  }
+
   try {
     const response = await fetchFn('https://api.web3forms.com/submit', {
       method: 'POST',
       body: formData,
     });
 
+    const data = typeof response.json === 'function' ? await response.json().catch(() => null) : null;
+
     if (!response.ok) {
       return {
         success: false,
-        message: `HTTP error: ${response.status}`,
+        message: data?.message || `HTTP error: ${response.status}`,
       };
     }
 
-    const data = await response.json();
     return {
       success: Boolean(data?.success),
       message: data?.message || (data?.success ? 'Success!' : 'Error'),
