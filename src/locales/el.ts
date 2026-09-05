@@ -408,7 +408,13 @@ export const el: TranslationSchema = {
     "unverifiedTooltip": "Η υπογραφή ακεραιότητας αυτού του αντιγράφου δεν μπόρεσε να επαληθευτεί πλήρως.",
     "invalidPassword": "Λανθασμένος κωδικός πρόσβασης. Δοκιμάστε ξανά.",
     "attemptFailed": "Ανεπιτυχής προσπάθεια ({{count}}). Ελέγξτε τον κωδικό.",
-    "verifyingPassword": "Επαλήθευση κωδικού πρόσβασης..."
+    "verifyingPassword": "Επαλήθευση κωδικού πρόσβασης...",
+    "uploadDirectFile": "Μεταφόρτωση αρχείου .jwlibrary",
+    "uploadDirectFileDesc": "Ανεβάστε και αναλύστε απευθείας ένα αντίγραφο ασφαλείας από τον υπολογιστή σας.",
+    "uploadDirectFileLink": "Ή μεταφορτώστε άλλο αρχείο .jwlibrary από το δίσκο",
+    "chooseFile": "Επιλογή .jwlibrary",
+    "uploadDirectBtn": "Μεταφόρτωση .jwlibrary",
+    "analyzingFile": "Ανάλυση αρχείου .jwlibrary...",
   },
   "help": {
     "title": "Οδηγός χρήσης και Συχνές ερωτήσεις",

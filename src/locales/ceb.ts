@@ -408,7 +408,13 @@ export const ceb: TranslationSchema = {
     "unverifiedTooltip": "Wala pa hingpit nga mapamatud-i ang integridad niining maong backup.",
     "invalidPassword": "Sayop nga password. Palihog sulayi pag-usab.",
     "attemptFailed": "Napakyas nga pagsulay (ika-{{count}}). Palihog susiha ang password.",
-    "verifyingPassword": "Gisusi ang password..."
+    "verifyingPassword": "Gisusi ang password...",
+    "uploadDirectFile": "I-upload ang .jwlibrary File",
+    "uploadDirectFileDesc": "Direktang i-upload ug analisa ang backup file gikan sa imong kompyuter.",
+    "uploadDirectFileLink": "O pag-upload ug laing .jwlibrary file gikan sa disk",
+    "chooseFile": "Pagpili og .jwlibrary",
+    "uploadDirectBtn": "I-upload ang .jwlibrary",
+    "analyzingFile": "Gisusi ang .jwlibrary file...",
   },
   "help": {
     "title": "Giya sa Gumagamit ug Kanunayng mga Pangutana",

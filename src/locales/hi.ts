@@ -408,7 +408,13 @@ export const hi: TranslationSchema = {
     "unverifiedTooltip": "इस बैकअप के अखंडता हस्ताक्षर को पूरी तरह सत्यापित नहीं किया जा सका।",
     "invalidPassword": "गलत पासवर्ड। कृपया पुनः प्रयास करें।",
     "attemptFailed": "प्रयास विफल (संख्या {{count}})। कृपया पासवर्ड जांचें।",
-    "verifyingPassword": "पासवर्ड सत्यापित किया जा रहा है..."
+    "verifyingPassword": "पासवर्ड सत्यापित किया जा रहा है...",
+    "uploadDirectFile": ".jwlibrary फ़ाइल अपलोड करें",
+    "uploadDirectFileDesc": "अपने कंप्यूटर से सीधे बैकअप फ़ाइल अपलोड करें और उसका विश्लेषण करें।",
+    "uploadDirectFileLink": "या डिस्क से दूसरी .jwlibrary फ़ाइल अपलोड करें",
+    "chooseFile": ".jwlibrary चुनें",
+    "uploadDirectBtn": ".jwlibrary अपलोड करें",
+    "analyzingFile": ".jwlibrary फ़ाइल का विश्लेषण हो रहा है...",
   },
   "help": {
     "title": "उपयोगकर्ता गाइड और अक्सर पूछे जाने वाले प्रश्न",

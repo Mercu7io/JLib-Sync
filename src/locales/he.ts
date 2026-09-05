@@ -408,7 +408,13 @@ export const he: TranslationSchema = {
     "unverifiedTooltip": "לא ניתן היה לאמת במלואה את חתימת התקינות של גיבוי זה.",
     "invalidPassword": "סיסמה שגויה. אנא נסה שוב.",
     "attemptFailed": "ניסיון נכשל (ניסיון מס' {{count}}). אנא בדוק את הסיסמה.",
-    "verifyingPassword": "מאמת סיסמה..."
+    "verifyingPassword": "מאמת סיסמה...",
+    "uploadDirectFile": "העלה קובץ .jwlibrary",
+    "uploadDirectFileDesc": "העלה ונתח ישירות קובץ גיבוי מהמחשב שלך.",
+    "uploadDirectFileLink": "או העלה קובץ .jwlibrary אחר מהדיסק",
+    "chooseFile": "בחר .jwlibrary",
+    "uploadDirectBtn": "העלה .jwlibrary",
+    "analyzingFile": "מנתח קובץ .jwlibrary...",
   },
   "help": {
     "title": "מדריך למשתמש ושאלות נפוצות",

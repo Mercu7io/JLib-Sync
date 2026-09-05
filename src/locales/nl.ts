@@ -408,7 +408,13 @@ export const nl: TranslationSchema = {
     "unverifiedTooltip": "De integriteit van deze back-up kon niet volledig worden geverifieerd.",
     "invalidPassword": "Onjuist wachtwoord. Probeer het opnieuw.",
     "attemptFailed": "Mislukte poging ({{count}}). Controleer uw wachtwoord.",
-    "verifyingPassword": "Wachtwoord controleren..."
+    "verifyingPassword": "Wachtwoord controleren...",
+    "uploadDirectFile": ".jwlibrary-bestand uploaden",
+    "uploadDirectFileDesc": "Upload en analyseer direct een back-up vanaf uw computer.",
+    "uploadDirectFileLink": "Of upload een ander .jwlibrary-bestand vanaf de schijf",
+    "chooseFile": ".jwlibrary kiezen",
+    "uploadDirectBtn": ".jwlibrary uploaden",
+    "analyzingFile": ".jwlibrary-bestand analyseren...",
   },
   "help": {
     "title": "Handleiding en veelgestelde vragen",

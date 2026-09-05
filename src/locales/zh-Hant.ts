@@ -408,7 +408,13 @@ export const zh_Hant: TranslationSchema = {
     "unverifiedTooltip": "無法完全驗證此備份的完整性簽章。",
     "invalidPassword": "密碼錯誤，請重試。",
     "attemptFailed": "嘗試失敗 (第 {{count}} 次)。請檢查密碼。",
-    "verifyingPassword": "正在驗證密碼..."
+    "verifyingPassword": "正在驗證密碼...",
+    "uploadDirectFile": "上傳 .jwlibrary 檔案",
+    "uploadDirectFileDesc": "直接從電腦上傳並分析備份檔案。",
+    "uploadDirectFileLink": "或者從磁碟上傳另一個 .jwlibrary 檔案",
+    "chooseFile": "選擇 .jwlibrary",
+    "uploadDirectBtn": "上傳 .jwlibrary",
+    "analyzingFile": "正在分析 .jwlibrary 檔案...",
   },
   "help": {
     "title": "使用手冊與常見問題",

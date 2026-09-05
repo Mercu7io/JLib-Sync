@@ -408,7 +408,13 @@ export const zh_Hans: TranslationSchema = {
     "unverifiedTooltip": "无法完全验证此备份的完整性签名。",
     "invalidPassword": "密码错误，请重试。",
     "attemptFailed": "尝试失败 (第 {{count}} 次)。请检查密码。",
-    "verifyingPassword": "正在验证密码..."
+    "verifyingPassword": "正在验证密码...",
+    "uploadDirectFile": "上传 .jwlibrary 文件",
+    "uploadDirectFileDesc": "直接从电脑上传并分析备份文件。",
+    "uploadDirectFileLink": "或者从磁盘上传另一个 .jwlibrary 文件",
+    "chooseFile": "选择 .jwlibrary",
+    "uploadDirectBtn": "上传 .jwlibrary",
+    "analyzingFile": "正在分析 .jwlibrary 文件...",
   },
   "help": {
     "title": "使用指南与常见问题",

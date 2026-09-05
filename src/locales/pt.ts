@@ -408,7 +408,13 @@ export const pt: TranslationSchema = {
     "unverifiedTooltip": "A assinatura de integridade deste arquivo não pôde ser totalmente verificada.",
     "invalidPassword": "Senha incorreta. Tente novamente.",
     "attemptFailed": "Tentativa incorreta ({{count}}). Verifique sua senha.",
-    "verifyingPassword": "Verificando senha..."
+    "verifyingPassword": "Verificando senha...",
+    "uploadDirectFile": "Enviar arquivo .jwlibrary",
+    "uploadDirectFileDesc": "Envie e analise diretamente um backup do seu computador.",
+    "uploadDirectFileLink": "Ou enviar outro arquivo .jwlibrary do disco",
+    "chooseFile": "Escolher .jwlibrary",
+    "uploadDirectBtn": "Enviar .jwlibrary",
+    "analyzingFile": "Analisando arquivo .jwlibrary...",
   },
   "help": {
     "title": "Guia do usuário e perguntas frequentes",

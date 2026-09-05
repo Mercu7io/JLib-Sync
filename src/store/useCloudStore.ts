@@ -3,12 +3,13 @@
  */
 
 import { create } from 'zustand';
-import { driveManager, IDriveFile, getLocalDeviceId, getLocalDeviceName } from '../lib/cloud/googleDrive';
-import { useAppStore } from './useAppStore';
-import { packageJwLibrary } from '../lib/jw/zip';
-import { CloudCrypto } from '../lib/cloud/crypto';
-import { exportDatabase } from '../lib/jw/sqlite';
-import { computeSha256 } from '../lib/jw/hash';
+import { driveManager, IDriveFile, getLocalDeviceId, getLocalDeviceName } from '../lib/cloud/googleDrive.ts';
+import { useAppStore } from './useAppStore.ts';
+import { packageJwLibrary } from '../lib/jw/zip.ts';
+import { CloudCrypto } from '../lib/cloud/crypto.ts';
+import { exportDatabase } from '../lib/jw/sqlite.ts';
+import { computeSha256 } from '../lib/jw/hash.ts';
+import { analyzeJwLibraryFile } from '../lib/jw/archiveAnalysis.ts';
 
 interface ICloudState {
   isConnected: boolean;
@@ -40,6 +41,10 @@ interface ICloudState {
     sha256?: string,
     onProgress?: (percent: number) => void,
     summary?: { notesCount?: number; tagsCount?: number; playlistsCount?: number; bookmarksCount?: number }
+  ) => Promise<void>;
+  uploadCustomFile: (
+    file: File,
+    onProgress?: (percent: number) => void
   ) => Promise<void>;
   restoreCloudBackup: (fileId: string, fileName: string, overridePassword?: string, onProgress?: (pct: number) => void) => Promise<void>;
   renameCloudBackup: (fileId: string, newName: string) => Promise<void>;
@@ -401,6 +406,35 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
       await get().refreshBackups();
       set({ isUploading: false, uploadProgress: null, statusMessage: 'Backup uploaded successfully!' });
       setTimeout(() => set({ statusMessage: '' }), 4000);
+    } catch (err) {
+      set({ isUploading: false, uploadProgress: null, error: (err as Error).message, statusMessage: '' });
+      throw err;
+    }
+  },
+
+  uploadCustomFile: async (file: File, onProgress?: (percent: number) => void) => {
+    try {
+      set({ isUploading: true, uploadProgress: 0, statusMessage: 'Analyzing .jwlibrary file...' });
+
+      let summary: { notesCount?: number; tagsCount?: number; playlistsCount?: number; bookmarksCount?: number } | undefined;
+      let sha256: string | undefined;
+
+      try {
+        const analysis = await analyzeJwLibraryFile(file);
+        if (analysis) {
+          sha256 = analysis.sha256;
+          summary = {
+            notesCount: analysis.notesCount,
+            tagsCount: analysis.tagsCount,
+            playlistsCount: analysis.playlistsCount,
+            bookmarksCount: analysis.bookmarksCount,
+          };
+        }
+      } catch (analysisErr) {
+        console.warn('Could not analyze .jwlibrary file before upload:', analysisErr);
+      }
+
+      await get().backupFileDirectly(file, file.name, sha256, onProgress, summary);
     } catch (err) {
       set({ isUploading: false, uploadProgress: null, error: (err as Error).message, statusMessage: '' });
       throw err;

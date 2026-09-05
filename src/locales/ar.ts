@@ -408,7 +408,13 @@ export const ar: TranslationSchema = {
     "unverifiedTooltip": "تعذر التحقق من توقيع السلامة الرقمي لهذه النسخة بشكل كامل.",
     "invalidPassword": "كلمة المرور غير صحيحة. يرجى المحاولة مرة أخرى.",
     "attemptFailed": "محاولة غير صحيحة (المحاولة {{count}}). يرجى التأكد من كلمة المرور.",
-    "verifyingPassword": "جارٍ التحقق من كلمة المرور..."
+    "verifyingPassword": "جارٍ التحقق من كلمة المرور...",
+    "uploadDirectFile": "رفع ملف .jwlibrary",
+    "uploadDirectFileDesc": "قم برفع وتحليل نسخة احتياطية مباشرة من جهاز الكمبيوتر الخاص بك.",
+    "uploadDirectFileLink": "أو ارفع ملف .jwlibrary آخر من القرص",
+    "chooseFile": "اختر .jwlibrary",
+    "uploadDirectBtn": "رفع .jwlibrary",
+    "analyzingFile": "جاري تحليل ملف .jwlibrary...",
   },
   "help": {
     "title": "دليل الاستخدام والأسئلة الشائعة",

@@ -408,7 +408,13 @@ export const vi: TranslationSchema = {
     "unverifiedTooltip": "Chữ ký toàn vẹn của bản sao lưu này chưa thể xác thực trọn vẹn.",
     "invalidPassword": "Mật khẩu không đúng. Vui lòng thử lại.",
     "attemptFailed": "Thử thất bại (lần {{count}}). Vui lòng kiểm tra mật khẩu.",
-    "verifyingPassword": "Đang kiểm tra mật khẩu..."
+    "verifyingPassword": "Đang kiểm tra mật khẩu...",
+    "uploadDirectFile": "Tải lên tệp .jwlibrary",
+    "uploadDirectFileDesc": "Tải lên và phân tích trực tiếp tệp sao lưu từ máy tính của bạn.",
+    "uploadDirectFileLink": "Hoặc tải lên tệp .jwlibrary khác từ ổ đĩa",
+    "chooseFile": "Chọn .jwlibrary",
+    "uploadDirectBtn": "Tải lên .jwlibrary",
+    "analyzingFile": "Đang phân tích tệp .jwlibrary...",
   },
   "help": {
     "title": "Hướng dẫn sử dụng và Câu hỏi thường gặp",

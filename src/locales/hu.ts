@@ -408,7 +408,13 @@ export const hu: TranslationSchema = {
     "unverifiedTooltip": "A mentés integritási aláírását nem sikerült teljesen ellenőrizni.",
     "invalidPassword": "Helytelen jelszó. Próbáld újra.",
     "attemptFailed": "Sikertelen kísérlet ({{count}}). Ellenőrizd a jelszót.",
-    "verifyingPassword": "Jelszó ellenőrzése..."
+    "verifyingPassword": "Jelszó ellenőrzése...",
+    "uploadDirectFile": ".jwlibrary fájl feltöltése",
+    "uploadDirectFileDesc": "Töltsön fel és elemezzen egy biztonsági másolatot közvetlenül a számítógépéről.",
+    "uploadDirectFileLink": "Vagy töltsön fel egy másik .jwlibrary fájlt a lemezről",
+    "chooseFile": ".jwlibrary kiválasztása",
+    "uploadDirectBtn": ".jwlibrary feltöltése",
+    "analyzingFile": "A .jwlibrary fájl elemzése folyamatban...",
   },
   "help": {
     "title": "Felhasználói útmutató és Gyakori kérdések",

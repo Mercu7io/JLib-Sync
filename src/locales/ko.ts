@@ -408,7 +408,13 @@ export const ko: TranslationSchema = {
     "unverifiedTooltip": "이 백업 파일의 무결성 서명을 완전히 검증할 수 없습니다.",
     "invalidPassword": "암호가 잘못되었습니다. 다시 시도하세요.",
     "attemptFailed": "시도 실패 ({{count}}회). 암호를 확인하세요.",
-    "verifyingPassword": "암호 확인 중..."
+    "verifyingPassword": "암호 확인 중...",
+    "uploadDirectFile": ".jwlibrary 파일 업로드",
+    "uploadDirectFileDesc": "컴퓨터에서 백업 파일을 직접 업로드하고 분석합니다.",
+    "uploadDirectFileLink": "또는 디스크에서 다른 .jwlibrary 파일 업로드",
+    "chooseFile": ".jwlibrary 선택",
+    "uploadDirectBtn": ".jwlibrary 업로드",
+    "analyzingFile": ".jwlibrary 파일 분석 중...",
   },
   "help": {
     "title": "사용자 가이드 및 자주 묻는 질문",

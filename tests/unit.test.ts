@@ -470,6 +470,10 @@ test('i18n: en and fr contain all required cloud and help keys', async () => {
   assert.equal(fr.cloud.encryptedTooltip, 'Chiffré AES-256');
   assert.equal(en.cloud.unverifiedBadge, 'Unverified');
   assert.equal(fr.cloud.unverifiedBadge, 'Non vérifié');
+  assert.equal(en.cloud.uploadDirectFile, 'Upload .jwlibrary File');
+  assert.equal(fr.cloud.uploadDirectFile, 'Uploader un fichier .jwlibrary');
+  assert.equal(en.stats.bookmarks, 'Bookmarks');
+  assert.equal(fr.stats.bookmarks, 'Signets');
   assert.ok(en.cloud.uploadingWithProgress.includes('{{percent}}'));
   assert.ok(fr.cloud.uploadingWithProgress.includes('{{percent}}'));
 
@@ -872,4 +876,57 @@ test('Web3Forms: access key is never hardcoded in tracked source code', async ()
     }
   }
 });
+
+test('analyzeJwLibraryFile: unpacks archive, extracts notes, tags, playlists, and bookmarks, and handles edge cases', async () => {
+  const { openDatabase, execute, exportDatabase } = await import('../src/lib/jw/sqlite.ts');
+  const { packageJwLibrary } = await import('../src/lib/jw/zip.ts');
+  const { analyzeJwLibraryFile } = await import('../src/lib/jw/archiveAnalysis.ts');
+
+  // 1. Create a SQLite DB with test records
+  const db = await openDatabase();
+  execute(db, 'CREATE TABLE Note (NoteId INTEGER PRIMARY KEY, Title TEXT);');
+  execute(db, "INSERT INTO Note VALUES (1, 'Note 1'), (2, 'Note 2'), (3, 'Note 3');");
+  execute(db, 'CREATE TABLE Tag (TagId INTEGER PRIMARY KEY, Name TEXT, Type INTEGER);');
+  execute(db, "INSERT INTO Tag VALUES (1, 'Tag 1', 1), (2, 'Playlist 1', 2);");
+  execute(db, 'CREATE TABLE Bookmark (BookmarkId INTEGER PRIMARY KEY, Title TEXT);');
+  execute(db, "INSERT INTO Bookmark VALUES (1, 'Mark 1'), (2, 'Mark 2');");
+
+  const dbBytes = exportDatabase(db);
+  db.close();
+
+  const manifest = {
+    name: 'DirectUploadTest',
+    creationDate: '2026-09-05T20:00:00Z',
+    userDataBackupVersion: 1,
+    deviceName: 'TestDevice',
+    version: 1,
+    type: 0,
+    userDataBackup: {
+      lastModifiedDate: '2026-09-05T20:00:00Z',
+      deviceName: 'TestDevice',
+      databaseName: 'userData.db',
+      schemaVersion: 14,
+    },
+  };
+
+  const zipBlob = await packageJwLibrary(dbBytes, manifest as any, new Map());
+  const testFile = new File([zipBlob], 'DirectUploadTest.jwlibrary', { type: 'application/zip' });
+
+  // Nominal case: analyzing .jwlibrary file
+  const analysis = await analyzeJwLibraryFile(testFile);
+  assert.ok(analysis !== null);
+  assert.equal(analysis.notesCount, 3);
+  assert.equal(analysis.tagsCount, 1);
+  assert.equal(analysis.playlistsCount, 1);
+  assert.equal(analysis.bookmarksCount, 2);
+  assert.equal(analysis.manifest.name, 'DirectUploadTest');
+  assert.ok(typeof analysis.sha256 === 'string' && analysis.sha256.length === 64);
+  assert.ok(analysis.dbBytes.byteLength > 0);
+
+  // Edge case 1: encrypted file returns null
+  const encFile = new File([new Uint8Array(100)], 'Encrypted.jwlibrary.enc', { type: 'application/octet-stream' });
+  const encAnalysis = await analyzeJwLibraryFile(encFile);
+  assert.equal(encAnalysis, null);
+});
+
 

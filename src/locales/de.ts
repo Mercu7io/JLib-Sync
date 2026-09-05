@@ -408,7 +408,13 @@ export const de: TranslationSchema = {
     "unverifiedTooltip": "Die Integritätssignatur dieser Sicherung konnte nicht vollständig überprüft werden.",
     "invalidPassword": "Falsches Passwort. Bitte versuchen Sie es erneut.",
     "attemptFailed": "Fehlversuch ({{count}}). Überprüfen Sie Ihr Passwort.",
-    "verifyingPassword": "Passwort wird überprüft..."
+    "verifyingPassword": "Passwort wird überprüft...",
+    "uploadDirectFile": ".jwlibrary-Datei hochladen",
+    "uploadDirectFileDesc": "Laden Sie ein Backup direkt von Ihrem Computer hoch und analysieren Sie es.",
+    "uploadDirectFileLink": "Oder eine andere .jwlibrary-Datei von der Festplatte hochladen",
+    "chooseFile": ".jwlibrary auswählen",
+    "uploadDirectBtn": ".jwlibrary hochladen",
+    "analyzingFile": ".jwlibrary-Datei wird analysiert...",
   },
   "help": {
     "title": "Benutzerhandbuch & Häufige Fragen",

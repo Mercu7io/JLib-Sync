@@ -408,7 +408,13 @@ export const pl: TranslationSchema = {
     "unverifiedTooltip": "Nie udało się w pełni zweryfikować podpisu integralności tej kopii.",
     "invalidPassword": "Nieprawidłowe hasło. Spróbuj ponownie.",
     "attemptFailed": "Nieudana próba ({{count}}). Sprawdź hasło.",
-    "verifyingPassword": "Weryfikowanie hasła..."
+    "verifyingPassword": "Weryfikowanie hasła...",
+    "uploadDirectFile": "Prześlij plik .jwlibrary",
+    "uploadDirectFileDesc": "Bezpośrednio prześlij i przeanalizuj kopię zapasową ze swojego komputera.",
+    "uploadDirectFileLink": "Lub prześlij inny plik .jwlibrary z dysku",
+    "chooseFile": "Wybierz .jwlibrary",
+    "uploadDirectBtn": "Prześlij .jwlibrary",
+    "analyzingFile": "Analizowanie pliku .jwlibrary...",
   },
   "help": {
     "title": "Podręcznik użytkownika i Najczęstsze pytania",

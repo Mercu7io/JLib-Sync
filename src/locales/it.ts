@@ -408,7 +408,13 @@ export const it: TranslationSchema = {
     "unverifiedTooltip": "Impossibile verificare completamente la firma di integrità di questo backup.",
     "invalidPassword": "Password errata. Riprova.",
     "attemptFailed": "Tentativo errato ({{count}}). Controlla la password.",
-    "verifyingPassword": "Verifica della password in corso..."
+    "verifyingPassword": "Verifica della password in corso...",
+    "uploadDirectFile": "Carica file .jwlibrary",
+    "uploadDirectFileDesc": "Carica e analizza direttamente un backup dal tuo computer.",
+    "uploadDirectFileLink": "Oppure carica un altro file .jwlibrary dal disco",
+    "chooseFile": "Scegli .jwlibrary",
+    "uploadDirectBtn": "Carica .jwlibrary",
+    "analyzingFile": "Analisi del file .jwlibrary in corso...",
   },
   "help": {
     "title": "Manuale utente e Domande frequenti",

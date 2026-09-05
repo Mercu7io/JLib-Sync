@@ -408,7 +408,13 @@ export const sw: TranslationSchema = {
     "unverifiedTooltip": "Saini ya uadilifu ya nakala hii haikuweza kuthibitishwa kikamilifu.",
     "invalidPassword": "Nenosiri si sahihi. Tafadhali jaribu tena.",
     "attemptFailed": "Majaribio yasiyofaulu (ya {{count}}). Tafadhali kagua nenosiri.",
-    "verifyingPassword": "Inathibitisha nenosiri..."
+    "verifyingPassword": "Inathibitisha nenosiri...",
+    "uploadDirectFile": "Pakia Faili la .jwlibrary",
+    "uploadDirectFileDesc": "Pakia na uchanganue faili la nakala rudufu moja kwa moja kutoka kwa kompyuta yako.",
+    "uploadDirectFileLink": "Au pakia faili lingine la .jwlibrary kutoka kwa diski",
+    "chooseFile": "Chagua .jwlibrary",
+    "uploadDirectBtn": "Pakia .jwlibrary",
+    "analyzingFile": "Inachanganua faili la .jwlibrary...",
   },
   "help": {
     "title": "Mwongozo wa Mtumiaji na Maswali Yanayoulizwa Mara kwa Mara",

@@ -408,7 +408,13 @@ export const uk: TranslationSchema = {
     "unverifiedTooltip": "Підпис цілісності цієї копії не вдалося повністю підтвердити.",
     "invalidPassword": "Невірний пароль. Спробуйте ще раз.",
     "attemptFailed": "Невдала спроба ({{count}}). Перевірте пароль.",
-    "verifyingPassword": "Перевірка пароля..."
+    "verifyingPassword": "Перевірка пароля...",
+    "uploadDirectFile": "Завантажити файл .jwlibrary",
+    "uploadDirectFileDesc": "Прямо завантажте та проаналізуйте резервну копію з комп’ютера.",
+    "uploadDirectFileLink": "Або завантажте інший файл .jwlibrary з диска",
+    "chooseFile": "Вибрати .jwlibrary",
+    "uploadDirectBtn": "Завантажити .jwlibrary",
+    "analyzingFile": "Аналіз файлу .jwlibrary...",
   },
   "help": {
     "title": "Інструкція користувача та поширені запитання",

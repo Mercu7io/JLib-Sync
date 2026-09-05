@@ -407,6 +407,12 @@ export const en = {
     invalidPassword: 'Incorrect password. Please try again.',
     attemptFailed: 'Attempt {{count}} failed',
     verifyingPassword: 'Verifying password...',
+    uploadDirectFile: 'Upload .jwlibrary File',
+    uploadDirectFileDesc: 'Directly upload and analyze a backup file from your computer.',
+    uploadDirectFileLink: 'Or upload another .jwlibrary file from disk',
+    chooseFile: 'Choose .jwlibrary',
+    uploadDirectBtn: 'Upload .jwlibrary',
+    analyzingFile: 'Analyzing .jwlibrary file...',
   },
   help: {
     title: 'User Guide & Help',

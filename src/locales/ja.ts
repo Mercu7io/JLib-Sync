@@ -408,7 +408,13 @@ export const ja: TranslationSchema = {
     "unverifiedTooltip": "このバックアップの整合性署名を完全には検証できませんでした。",
     "invalidPassword": "パスワードが正しくありません。もう一度お試しください。",
     "attemptFailed": "試行失敗 ({{count}}回目)。パスワードをご確認ください。",
-    "verifyingPassword": "パスワードを確認中..."
+    "verifyingPassword": "パスワードを確認中...",
+    "uploadDirectFile": ".jwlibraryファイルをアップロード",
+    "uploadDirectFileDesc": "コンピューターからバックアップファイルを直接アップロードして解析します。",
+    "uploadDirectFileLink": "またはディスクから別の.jwlibraryファイルをアップロード",
+    "chooseFile": ".jwlibraryを選択",
+    "uploadDirectBtn": ".jwlibraryをアップロード",
+    "analyzingFile": ".jwlibraryファイルを解析中...",
   },
   "help": {
     "title": "ユーザーガイド & よくある質問",

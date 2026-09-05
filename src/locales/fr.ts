@@ -408,7 +408,13 @@ export const fr: TranslationSchema = {
     "unverifiedTooltip": "Cette sauvegarde n'a pas d'empreinte validée ou pourrait être incomplète.",
     "invalidPassword": "Mot de passe incorrect. Veuillez réessayer.",
     "attemptFailed": "Tentative {{count}} échouée",
-    "verifyingPassword": "Vérification du mot de passe..."
+    "verifyingPassword": "Vérification du mot de passe...",
+    "uploadDirectFile": "Uploader un fichier .jwlibrary",
+    "uploadDirectFileDesc": "Uploadez et analysez directement une sauvegarde depuis votre ordinateur.",
+    "uploadDirectFileLink": "Ou uploader un autre fichier .jwlibrary depuis le disque",
+    "chooseFile": "Choisir un fichier .jwlibrary",
+    "uploadDirectBtn": "Uploader un fichier",
+    "analyzingFile": "Analyse du fichier .jwlibrary en cours...",
   },
   "help": {
     "title": "Guide d'Utilisation & Aide",

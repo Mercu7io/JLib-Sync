@@ -408,7 +408,13 @@ export const ru: TranslationSchema = {
     "unverifiedTooltip": "Подпись целостности этой копии не удалось полностью проверить.",
     "invalidPassword": "Неверный пароль. Попробуйте еще раз.",
     "attemptFailed": "Неверная попытка ({{count}}). Проверьте пароль.",
-    "verifyingPassword": "Проверка пароля..."
+    "verifyingPassword": "Проверка пароля...",
+    "uploadDirectFile": "Загрузить файл .jwlibrary",
+    "uploadDirectFileDesc": "Напрямую загрузите и проанализируйте резервную копию с компьютера.",
+    "uploadDirectFileLink": "Или загрузить другой файл .jwlibrary с диска",
+    "chooseFile": "Выбрать .jwlibrary",
+    "uploadDirectBtn": "Загрузить .jwlibrary",
+    "analyzingFile": "Анализ файла .jwlibrary...",
   },
   "help": {
     "title": "Руководство пользователя и частые вопросы",

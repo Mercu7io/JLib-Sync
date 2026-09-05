@@ -408,7 +408,13 @@ export const id: TranslationSchema = {
     "unverifiedTooltip": "Tanda tangan integritas cadangan ini belum dapat diverifikasi sepenuhnya.",
     "invalidPassword": "Kata sandi salah. Silakan coba lagi.",
     "attemptFailed": "Percobaan gagal (ke-{{count}}). Periksa kata sandi Anda.",
-    "verifyingPassword": "Memeriksa kata sandi..."
+    "verifyingPassword": "Memeriksa kata sandi...",
+    "uploadDirectFile": "Unggah Berkas .jwlibrary",
+    "uploadDirectFileDesc": "Unggah dan analisis berkas cadangan langsung dari komputer Anda.",
+    "uploadDirectFileLink": "Atau unggah berkas .jwlibrary lain dari disk",
+    "chooseFile": "Pilih .jwlibrary",
+    "uploadDirectBtn": "Unggah .jwlibrary",
+    "analyzingFile": "Menganalisis berkas .jwlibrary...",
   },
   "help": {
     "title": "Panduan Pengguna & Pertanyaan Umum",

@@ -408,7 +408,13 @@ export const ro: TranslationSchema = {
     "unverifiedTooltip": "Semnătura de integritate a acestei copii nu a putut fi verificată complet.",
     "invalidPassword": "Parolă incorectă. Încearcă din nou.",
     "attemptFailed": "Încercare eșuată ({{count}}). Verifică parola.",
-    "verifyingPassword": "Se verifică parola..."
+    "verifyingPassword": "Se verifică parola...",
+    "uploadDirectFile": "Încărcați fișierul .jwlibrary",
+    "uploadDirectFileDesc": "Încărcați și analizați direct o copie de rezervă de pe computer.",
+    "uploadDirectFileLink": "Sau încărcați un alt fișier .jwlibrary de pe disc",
+    "chooseFile": "Alegeți .jwlibrary",
+    "uploadDirectBtn": "Încărcați .jwlibrary",
+    "analyzingFile": "Se analizează fișierul .jwlibrary...",
   },
   "help": {
     "title": "Ghid de utilizare și Întrebări frecvente",

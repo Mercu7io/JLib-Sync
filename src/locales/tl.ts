@@ -408,7 +408,13 @@ export const tl: TranslationSchema = {
     "unverifiedTooltip": "Hindi ganap na maberipika ang lagda ng integridad ng backup na ito.",
     "invalidPassword": "Maling password. Pakisubukang muli.",
     "attemptFailed": "Nabigong pagsubok (ika-{{count}}). Pakisuri ang password.",
-    "verifyingPassword": "Sinusuri ang password..."
+    "verifyingPassword": "Sinusuri ang password...",
+    "uploadDirectFile": "I-upload ang .jwlibrary File",
+    "uploadDirectFileDesc": "Direktang mag-upload at sumuri ng backup file mula sa iyong computer.",
+    "uploadDirectFileLink": "O mag-upload ng ibang .jwlibrary file mula sa disk",
+    "chooseFile": "Pumili ng .jwlibrary",
+    "uploadDirectBtn": "I-upload ang .jwlibrary",
+    "analyzingFile": "Sinusuri ang .jwlibrary file...",
   },
   "help": {
     "title": "Gabay ng User at mga Madalas Itanong",

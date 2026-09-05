@@ -408,7 +408,13 @@ export const sv: TranslationSchema = {
     "unverifiedTooltip": "Säkerhetskopians integritetssignatur kunde inte verifieras fullständigt.",
     "invalidPassword": "Felaktigt lösenord. Försök igen.",
     "attemptFailed": "Misslyckat försök ({{count}}). Kontrollera lösenordet.",
-    "verifyingPassword": "Verifierar lösenord..."
+    "verifyingPassword": "Verifierar lösenord...",
+    "uploadDirectFile": "Ladda upp .jwlibrary-fil",
+    "uploadDirectFileDesc": "Ladda upp och analysera en säkerhetskopia direkt från din dator.",
+    "uploadDirectFileLink": "Eller ladda upp en annan .jwlibrary-fil från disken",
+    "chooseFile": "Välj .jwlibrary",
+    "uploadDirectBtn": "Ladda upp .jwlibrary",
+    "analyzingFile": "Analyserar .jwlibrary-fil...",
   },
   "help": {
     "title": "Användarguide & Vanliga frågor",

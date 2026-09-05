@@ -408,7 +408,13 @@ export const es: TranslationSchema = {
     "unverifiedTooltip": "La firma de seguridad de esta copia no se ha podido verificar por completo.",
     "invalidPassword": "Contraseña incorrecta. Inténtalo de nuevo.",
     "attemptFailed": "Intento fallido ({{count}}). Comprueba tu contraseña.",
-    "verifyingPassword": "Comprobando contraseña..."
+    "verifyingPassword": "Comprobando contraseña...",
+    "uploadDirectFile": "Subir archivo .jwlibrary",
+    "uploadDirectFileDesc": "Sube y analiza directamente una copia de seguridad desde tu equipo.",
+    "uploadDirectFileLink": "O subir otro archivo .jwlibrary desde el disco",
+    "chooseFile": "Elegir .jwlibrary",
+    "uploadDirectBtn": "Subir .jwlibrary",
+    "analyzingFile": "Analizando archivo .jwlibrary...",
   },
   "help": {
     "title": "Guía del usuario y preguntas frecuentes",
