@@ -458,6 +458,8 @@ export const ceb: TranslationSchema = {
     "faqPwaA": "Oo! Ang Panda JL Studio maoy usa ka Progressive Web App (PWA). Mahimo nimo kining i-install sa home screen o desktop ug gamiton offline.",
     "gdprTitle": "Pribasiya ug Pagpanag-iya sa Datos",
     "gdprDesc": "Ang imong mga nota sa pagtuon, pag-ampo, ug personal nga pagsiksik maoy imoha lamang. Wala kami magkolektag datos ug walay mga anunsiyo.",
+    "inspirationTitle": "Gigikanan ug Inspirasyon sa Proyekto",
+    "inspirationDesc": "Kini nga buhat gibase sa ideya sa https://jwsync.org/. Ang direktang fork magkinahanglan ug dako kaayong trabaho aron maapil ang Google Drive cloud sync, apan ang trabaho nga nahimo didto ug daghan sa mga bahin niini maoy usa ka dakong tinubdan sa inspirasyon nga may maayong mga ideya.",
     "viewFullPolicy": "Tan-awa ang palisiya sa pribasiya",
     "contactChangeQuestion": "Aduna ka bay pangutana o sugyot?",
     "emailReqType": "Matang sa mensahe",

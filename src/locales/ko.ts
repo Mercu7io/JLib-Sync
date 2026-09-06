@@ -458,6 +458,8 @@ export const ko: TranslationSchema = {
     "faqPwaA": "네! Panda JL Studio는 프로그레시브 웹 앱(PWA)입니다. 홈 화면이나 컴퓨터에 설치하여 오프라인에서도 모든 기능을 이용할 수 있습니다.",
     "gdprTitle": "데이터 프라이버시 및 소유권",
     "gdprDesc": "개인 연구 메모, 기도, 조사 내용은 오직 당신만의 것입니다. 사용 현황을 추적하지 않으며 광고도 게재하지 않습니다.",
+    "inspirationTitle": "프로젝트의 기원 및 영감",
+    "inspirationDesc": "이 프로젝트는 https://jwsync.org/ 의 아이디어를 바탕으로 개발되었습니다. Google Drive 클라우드 동기화 기능을 통합하기 위해 직접 포크하는 것은 너무 많은 작업이 필요했으나, 해당 프로젝트에서 이루어진 작업과 수많은 기능들은 훌륭한 아이디어와 함께 큰 영감의 원천이 되었습니다.",
     "viewFullPolicy": "개인정보 보호방침 보기",
     "contactChangeQuestion": "궁금한 점이나 개선 제안이 있으신가요?",
     "emailReqType": "문의 유형",

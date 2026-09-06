@@ -458,6 +458,8 @@ export const sw: TranslationSchema = {
     "faqPwaA": "Ndiyo! Panda JL Studio ni Progressive Web App (PWA). Unaweza kuiweka kwenye skrini ya simu au kompyuta yako na kuitumia hata ukiwa nje ya mtandao.",
     "gdprTitle": "Faragha na Umiliki wa Data Yako",
     "gdprDesc": "Maelezo yako ya funzo la kibinafsi, sala, na utafiti ni mali yako mwenyewe. Hatukusanyi takwimu zozote na hatuonyeshi matangazo.",
+    "inspirationTitle": "Asili na Msukumo wa Mradi",
+    "inspirationDesc": "Kazi hii inategemea wazo la https://jwsync.org/. Kufanya fork moja kwa moja kungehitaji kazi nyingi sana kujumuisha usawazishaji wa Google Drive, lakini kazi iliyofanywa kule na vipengele vyake vingi vilikuwa chanzo kikuu cha msukumo chenye mawazo mazuri.",
     "viewFullPolicy": "Tazama sera za faragha",
     "contactChangeQuestion": "Una swali au pendekezo lolote?",
     "emailReqType": "Aina ya ujumbe",

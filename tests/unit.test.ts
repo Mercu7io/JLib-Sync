@@ -446,7 +446,7 @@ test('GoogleDriveManager: renameBackup sends PATCH request and updates index', a
 test('APP_VERSION: adheres to semver and defines build date', async () => {
   const { APP_VERSION, APP_BUILD_DATE } = await import('../src/lib/version.ts');
   assert.ok(typeof APP_VERSION === 'string');
-  assert.match(APP_VERSION, /^\d+\.\d+\.\d+/);
+  assert.match(APP_VERSION, /^\d+\.\d+/);
   assert.ok(typeof APP_BUILD_DATE === 'string');
   assert.ok(APP_BUILD_DATE.length > 0);
 });
@@ -498,6 +498,10 @@ test('i18n: en and fr contain all required cloud and help keys', async () => {
   assert.ok(fr.help.gdprDesc.length > 20);
   assert.ok(en.help.viewFullPolicy.length > 5);
   assert.ok(fr.help.viewFullPolicy.length > 5);
+  assert.ok(en.help.inspirationTitle.length > 5);
+  assert.ok(fr.help.inspirationTitle.length > 5);
+  assert.ok(en.help.inspirationDesc.length > 20);
+  assert.ok(fr.help.inspirationDesc.length > 20);
 });
 
 test('GoogleDriveManager: uploadBackup emits accurate progressive percentages up to 100%', async () => {

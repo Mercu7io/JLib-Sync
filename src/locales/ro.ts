@@ -458,6 +458,8 @@ export const ro: TranslationSchema = {
     "faqPwaA": "Da! Panda JL Studio este o aplicație web progresivă (PWA). O poți instala pe ecranul principal sau computer și o poți folosi offline.",
     "gdprTitle": "Confidențialitatea și suveranitatea datelor tale",
     "gdprDesc": "Notițele tale de studiu, rugăciunile și cercetările personale îți aparțin exclusiv ție. Nu colectăm date de telemetrie și nu afișăm reclame.",
+    "inspirationTitle": "Originea și inspirația proiectului",
+    "inspirationDesc": "Acest proiect se bazează pe ideea https://jwsync.org/. Un fork direct ar fi necesitat mult prea multă muncă pentru a integra sincronizarea Google Drive, dar munca realizată acolo și multe dintre funcții au fost o sursă minunată de inspirație cu idei excelente.",
     "viewFullPolicy": "Vezi politica de confidențialitate",
     "contactChangeQuestion": "Ai o întrebare sau o sugestie?",
     "emailReqType": "Tipul mesajului",
