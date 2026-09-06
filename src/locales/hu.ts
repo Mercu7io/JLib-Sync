@@ -458,6 +458,8 @@ export const hu: TranslationSchema = {
     "faqPwaA": "Igen! A Panda JL Studio egy Progressive Web App (PWA). Telepítheted a kezdőképernyőre vagy számítógépre, és teljesen offline is működik.",
     "gdprTitle": "Adatvédelem és a te adataid feletti uralom",
     "gdprDesc": "Személyes tanulmányozási jegyzeteid, imáid és kutatásaid kizárólag a tieid. Nem gyűjtünk telemetriai adatokat és nem jelenítünk meg hirdetéseket.",
+    "inspirationTitle": "A projekt eredete és inspirációja",
+    "inspirationDesc": "Ez a projekt a https://jwsync.org/ ötletén alapul. Egy közvetlen fork túl sok munkát igényelt volna a Google Drive felhőszinkronizálás integrálásához, de az ott elvégzett munka és számos funkció remek inspirációt és nagyszerű ötleteket jelentett.",
     "viewFullPolicy": "Adatvédelmi irányelvek megtekintése",
     "contactChangeQuestion": "Kérdésed vagy javaslatod van?",
     "emailReqType": "Megkeresés típusa",

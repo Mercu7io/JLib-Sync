@@ -458,6 +458,8 @@ export const vi: TranslationSchema = {
     "faqPwaA": "Có! Panda JL Studio là ứng dụng web lũy tiến (PWA). Bạn có thể cài vào màn hình chính hoặc máy tính và dùng ngoại tuyến hoàn toàn.",
     "gdprTitle": "Quyền riêng tư và chủ quyền dữ liệu",
     "gdprDesc": "Các ghi chú nghiên cứu cá nhân, lời cầu nguyện và tâm tư của bạn là của riêng bạn. Chúng tôi không thu thập dữ liệu theo dõi và không gắn quảng cáo.",
+    "inspirationTitle": "Nguồn gốc và Cảm hứng của Dự án",
+    "inspirationDesc": "Dự án này được phát triển dựa trên ý tưởng của https://jwsync.org/. Một bản fork trực tiếp sẽ đòi hỏi quá nhiều công sức để tích hợp đồng bộ hóa Google Drive, tuy nhiên công việc và nhiều tính năng tại đó đã trở thành nguồn cảm hứng tuyệt vời với những ý tưởng xuất sắc.",
     "viewFullPolicy": "Xem nguyên tắc chính sách riêng tư",
     "contactChangeQuestion": "Bạn có câu hỏi hoặc đề xuất nào không?",
     "emailReqType": "Loại phản hồi",

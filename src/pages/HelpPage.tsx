@@ -14,6 +14,7 @@ import {
   WifiOff,
   ExternalLink,
   FileText,
+  Sparkles,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ContactSupportSection } from '../components/help/ContactSupportSection';
@@ -45,7 +46,7 @@ export const HelpPage: React.FC = () => {
       title: t('help.step2Title', '2. Merge them together on Panda JL Studio'),
       description: t(
         'help.step2Desc',
-        'Drop your primary archive on the left and your incoming archive on the right. Our algorithm unifies notes on identical verses, consolidates tags, and avoids duplicates.'
+        'Drop Backup 1 on the left and Backup 2 on the right. Our algorithm unifies notes on identical verses, consolidates tags, and avoids duplicates.'
       ),
       tips: [
         t('help.step2Tip1', 'Automatic deduplication of highlights & bookmarks'),
@@ -237,6 +238,31 @@ export const HelpPage: React.FC = () => {
           {t(
             'help.gdprDesc',
             'In strict compliance with the European General Data Protection Regulation (RGPD/GDPR), Panda JL Studio does not store, collect, process, or sell any personal data on external servers. All personal notes and markings remain under your absolute control on your device and in your private Google Drive.'
+          )}
+        </p>
+      </div>
+
+      {/* ── PROJECT ORIGINS & INSPIRATION ──────────────────────────── */}
+      <div className="rounded-3xl border border-blue-500/20 bg-blue-50/40 dark:bg-blue-950/15 p-6 space-y-3 shadow-sm">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center space-x-2.5 text-blue-700 dark:text-blue-400">
+            <Sparkles className="w-4 h-4 flex-shrink-0" />
+            <h3 className="text-sm font-bold">{t('help.inspirationTitle', 'Project Origins & Inspiration')}</h3>
+          </div>
+          <a
+            href="https://jwsync.org/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center space-x-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            <span>jwsync.org</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
+        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+          {t(
+            'help.inspirationDesc',
+            'This work is based on the idea of https://jwsync.org/. While a direct fork would have required too much work to integrate our Google Drive cloud synchronization architecture, the work accomplished there and many of its features were a great source of inspiration with excellent ideas.'
           )}
         </p>
       </div>

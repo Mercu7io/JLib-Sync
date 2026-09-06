@@ -458,6 +458,8 @@ export const id: TranslationSchema = {
     "faqPwaA": "Ya! Panda JL Studio adalah Progressive Web App (PWA). Anda dapat menambahkannya ke layar utama atau desktop dan menggunakannya secara offline.",
     "gdprTitle": "Privasi dan kepemilikan data",
     "gdprDesc": "Catatan pelajaran pribadi, doa, dan riset Anda adalah milik Anda sepenuhnya. Kami tidak memantau data Anda dan tidak menampilkan iklan.",
+    "inspirationTitle": "Asal Usul & Inspirasi Proyek",
+    "inspirationDesc": "Karya ini didasarkan pada gagasan https://jwsync.org/. Fork langsung akan membutuhkan terlalu banyak pekerjaan untuk mengintegrasikan sinkronisasi Google Drive, tetapi karya yang dilakukan di sana dan banyak fiturnya merupakan sumber inspirasi yang luar biasa dengan ide-ide hebat.",
     "viewFullPolicy": "Lihat prinsip kebijakan privasi",
     "contactChangeQuestion": "Punya pertanyaan atau saran?",
     "emailReqType": "Jenis pesan",

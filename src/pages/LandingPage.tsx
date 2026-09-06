@@ -704,11 +704,11 @@ export const LandingPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── CARDS: PRIMARY BASE & SECONDARY INCOMING DROPZONES ──────── */}
+      {/* ── CARDS: BACKUP 1 & BACKUP 2 DROPZONES ──────── */}
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-11 gap-4 items-center">
 
-          {/* LEFT CARD: PRIMARY BASE ARCHIVE */}
+          {/* LEFT CARD: BACKUP 1 */}
           <div
             onDragOver={(e) => {
               e.preventDefault();
@@ -742,7 +742,7 @@ export const LandingPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                 <Database className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>{t('merge.backup1', 'Primary Base Archive')}</span>
+                <span>{t('merge.backup1', 'Backup 1')}</span>
               </div>
               {isLoadingPrimary ? (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 flex items-center space-x-1">
@@ -807,7 +807,7 @@ export const LandingPage: React.FC = () => {
                   <div className="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors leading-snug">
                     {t('merge.dropHere', 'Drop .jwlibrary file here or click to browse')}
                   </div>
-                  <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">{t('merge.backup1Desc', 'Base study archive')}</div>
+                  <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">{t('merge.backup1Desc', 'First study backup (.jwlibrary)')}</div>
                 </div>
               </div>
             ) : (
@@ -964,7 +964,7 @@ export const LandingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* RIGHT CARD: SECONDARY INCOMING ARCHIVE */}
+          {/* RIGHT CARD: BACKUP 2 */}
           <div
             onDragOver={(e) => {
               e.preventDefault();
@@ -998,7 +998,7 @@ export const LandingPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                 <GitMerge className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-                <span>{t('merge.backup2', 'Secondary Incoming Archive')}</span>
+                <span>{t('merge.backup2', 'Backup 2')}</span>
               </div>
               {isLoadingSecondary ? (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/25 flex items-center space-x-1">
@@ -1063,7 +1063,7 @@ export const LandingPage: React.FC = () => {
                   <div className="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors leading-snug">
                     {t('merge.dropHere', 'Drop .jwlibrary file here or click to browse')}
                   </div>
-                  <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">{t('merge.backup2Desc', 'Secondary incoming archive')}</div>
+                  <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">{t('merge.backup2Desc', 'Second study backup (.jwlibrary)')}</div>
                 </div>
               </div>
             ) : (
@@ -1232,14 +1232,14 @@ export const LandingPage: React.FC = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <label className={`p-3 rounded-xl border cursor-pointer transition-all ${conf.choice === 'a' ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-200 dark:border-white/[0.06]'}`}>
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-xs">{t('merge.backup1', 'Primary Archive')} ({primaryFile.summary.deviceName || 'Source 1'})</span>
+                        <span className="font-semibold text-xs">{t('merge.backup1', 'Backup 1')} ({primaryFile.summary.deviceName || 'Source 1'})</span>
                         <input type="radio" name={`conf_${conf.id}`} checked={conf.choice === 'a'} onChange={() => setConflicts(prev => prev.map(c => c.id === conf.id ? { ...c, choice: 'a' } : c))} className="accent-emerald-600" />
                       </div>
                       <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2 mt-1">&ldquo;{conf.sourceAText}&rdquo;</p>
                     </label>
                     <label className={`p-3 rounded-xl border cursor-pointer transition-all ${conf.choice === 'b' ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-200 dark:border-white/[0.06]'}`}>
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-xs">{t('merge.backup2', 'Incoming Archive')} ({secondaryFile.summary.deviceName || 'Source 2'})</span>
+                        <span className="font-semibold text-xs">{t('merge.backup2', 'Backup 2')} ({secondaryFile.summary.deviceName || 'Source 2'})</span>
                         <input type="radio" name={`conf_${conf.id}`} checked={conf.choice === 'b'} onChange={() => setConflicts(prev => prev.map(c => c.id === conf.id ? { ...c, choice: 'b' } : c))} className="accent-emerald-600" />
                       </div>
                       <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2 mt-1">&ldquo;{conf.sourceBText}&rdquo;</p>
@@ -1270,10 +1270,10 @@ export const LandingPage: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-xs font-bold text-slate-900 dark:text-white">
-                    {t('merge.tagImportedNotes', 'Tag notes imported from Secondary Archive')}
+                    {t('merge.tagImportedNotes', 'Tag notes imported from Backup 2')}
                   </div>
                   <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                    {t('merge.tagImportedNotesDesc', 'Attach a tag to all notes imported from the incoming archive so you can easily review them under Personal Study > Tags in JW Library.')}
+                    {t('merge.tagImportedNotesDesc', 'Attach a tag to all notes imported from Backup 2 so you can easily review them under Personal Study > Tags in JW Library.')}
                   </div>
                 </div>
               </div>
@@ -1319,10 +1319,10 @@ export const LandingPage: React.FC = () => {
                   )}
                   <button
                     type="button"
-                    onClick={() => setCustomImportTagName(t('merge.backup2', 'Secondary Archive'))}
+                    onClick={() => setCustomImportTagName(t('merge.backup2', 'Backup 2'))}
                     className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-300 transition-colors"
                   >
-                    {t('merge.backup2', 'Secondary Archive')}
+                    {t('merge.backup2', 'Backup 2')}
                   </button>
                 </div>
               </div>
@@ -1545,7 +1545,7 @@ export const LandingPage: React.FC = () => {
               <div className="flex items-center space-x-2 text-sm font-bold text-slate-900 dark:text-white">
                 <Cloud className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>
-                  Select Backup for {cloudPickerTarget === 'primary' ? t('merge.backup1', 'Primary Archive') : t('merge.backup2', 'Secondary Archive')}
+                  Select Backup for {cloudPickerTarget === 'primary' ? t('merge.backup1', 'Backup 1') : t('merge.backup2', 'Backup 2')}
                 </span>
               </div>
               <button

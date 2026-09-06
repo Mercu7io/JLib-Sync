@@ -458,6 +458,8 @@ export const yue_Hant: TranslationSchema = {
     "faqPwaA": "可以！Panda JL Studio 是一項漸進式網頁應用程式（PWA）。您可以將其新增至主畫面或桌面，完全離線使用。",
     "gdprTitle": "隱私與資料主權",
     "gdprDesc": "您的個人研讀筆記、心得與禱告只屬於您自己。我們不蒐集遙測資料，也絕不投放任何廣告。",
+    "inspirationTitle": "項目緣起與靈感來源",
+    "inspirationDesc": "本項目基於 https://jwsync.org/ 的創意構建。直接派生（Fork）需要花費過多精力來整合 Google Drive 雲端同步架構，但該項目所做的工作及其眾多功能提供了極佳的靈感來源與優秀創意。",
     "viewFullPolicy": "檢視隱私權政策原則",
     "contactChangeQuestion": "有任何疑問或改進建議嗎？",
     "emailReqType": "意見反饋類別",
