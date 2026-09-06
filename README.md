@@ -1,4 +1,4 @@
-# Panda JWL-Studio
+# Panda JLib-Studio
 
 > A privacy-first, 100% client-side utility for merging, organizing, searching, and sharing JW Library backups.
 > 
