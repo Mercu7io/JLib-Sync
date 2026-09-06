@@ -1,6 +1,6 @@
 # Panda JL Studio
 
-> **🌐 Live Application:** [https://jwlsync.redpandaium.com/](https://jwlsync.redpandaium.com/)  
+> **🌐 Live Application:** [https://jlstudio.redpandaium.com](https://jlstudio.redpandaium.com)  
 >
 > A privacy-first, 100% client-side utility for merging, organizing, searching, and sharing JW Library backups. 
 >
@@ -40,7 +40,7 @@ You can deploy Panda JWL-Sync on any server or NAS with **just a `docker-compose
 ```yaml
 services:
   panda-jwl-sync:
-    image: ghcr.io/mercu7io/jlib-sync:latest
+    image: ghcr.io/mercu7io/jl-studio:latest
     container_name: panda-jwl-sync
     ports:
       - "8080:80"
