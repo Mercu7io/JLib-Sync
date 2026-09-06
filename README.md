@@ -39,9 +39,9 @@ You can deploy Panda JWL-Sync on any server or NAS with **just a `docker-compose
 
 ```yaml
 services:
-  panda-jwl-sync:
+  panda-jl-studioc:
     image: ghcr.io/mercu7io/jl-studio:latest
-    container_name: panda-jwl-sync
+    container_name: panda-jl-studio
     ports:
       - "8080:80"
     restart: unless-stopped
