@@ -1,5 +1,5 @@
 /**
- * JW Sync v3 — WebAssembly SQLite Management via sql.js
+ * Panda JL Studio — WebAssembly SQLite Management via sql.js
  * 100% Client-side. No network calls or server uploads for user data.
  * Bulletproof WASM loader with magic number verification (\0asm) and CDN fallback.
  */

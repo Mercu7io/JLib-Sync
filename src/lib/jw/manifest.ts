@@ -1,5 +1,5 @@
 /**
- * JW Sync v3 — Manifest Generator & SHA-256 Verification
+ * Panda JL Studio — Manifest Generator & SHA-256 Verification
  * Crucial: If manifest.json is missing or hash doesn't match userData.db,
  * JW Library will silently refuse to restore without any error prompt.
  */
@@ -123,8 +123,8 @@ export async function createOrUpdateManifest(
   // JW Library standard lastModifiedDate: 2026-09-01T10:35:23Z
   const zuluTime = nowIso.replace(/\.\d{3}Z$/, 'Z');
 
-  const baseName = options?.name || existingManifest?.name || 'JW Sync Backup';
-  const deviceName = options?.deviceName || existingManifest?.deviceName || 'JW Sync (Web)';
+  const baseName = options?.name || existingManifest?.name || 'Panda JL Archive';
+  const deviceName = options?.deviceName || existingManifest?.deviceName || 'Panda JL Studio (Web)';
 
   return {
     name: baseName,
@@ -137,7 +137,7 @@ export async function createOrUpdateManifest(
       hash,
       lastModifiedDate: zuluTime,
       databaseName: 'userData.db',
-      deviceName: 'JW Sync',
+      deviceName: 'Panda JL Studio',
       schemaVersion: existingManifest?.userDataBackup?.schemaVersion ?? 16,
     },
   };

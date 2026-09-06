@@ -1,5 +1,5 @@
 /**
- * JW Sync v3 — Semantic & AI Search ("Ask Your Library")
+ * Panda JL Studio — Semantic & Search Utilities
  * 100% Client-Side. Runs embeddings in-browser or uses smart semantic keyword matching.
  */
 

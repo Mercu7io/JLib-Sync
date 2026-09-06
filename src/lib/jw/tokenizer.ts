@@ -1,5 +1,5 @@
 /**
- * JW Sync v3 — Text Tokenization Engine for UserMark & BlockRange Highlighting
+ * Panda JL Studio — Text Tokenization Engine for UserMark & BlockRange Highlighting
  * Strictly adheres to JW Library highlighting specs:
  * 1. Strip zero-width chars.
  * 2. Split on whitespace.

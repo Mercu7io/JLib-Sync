@@ -151,15 +151,15 @@ export async function sendContactMessage(
   formData.append('access_key', accessKey);
   formData.append('name', input.name.trim());
   formData.append('email', input.email.trim());
-  formData.append('subject', `[Panda JWL-Sync] [${input.category || 'Inquiry'}] ${input.subject.trim()}`);
-  formData.append('from_name', 'Panda JWL-Sync Support');
+  formData.append('subject', `[Panda JL Studio] [${input.category || 'Inquiry'}] ${input.subject.trim()}`);
+  formData.append('from_name', 'Panda JL Studio Support');
 
   const formattedMessage = [
-    `=== Panda JWL-Sync Support Submission ===`,
+    `=== Panda JL Studio Support Submission ===`,
     `Category: ${input.category || 'General'}`,
     `Sender: ${input.name.trim()} <${input.email.trim()}>`,
     `Date: ${new Date().toISOString()}`,
-    input.appVersion ? `Application Version: Panda JWL-Sync v${input.appVersion}` : null,
+    input.appVersion ? `Application Version: Panda JL Studio v${input.appVersion}` : null,
     input.userAgent ? `User Agent / Environment: ${input.userAgent}` : null,
     ``,
     `=== Message ===`,

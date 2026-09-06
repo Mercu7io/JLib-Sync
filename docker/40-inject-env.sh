@@ -17,4 +17,4 @@ window.__ENV__ = {
 EOF
 
 chmod 644 /usr/share/nginx/html/env.js
-echo "Panda JWL-Sync: Runtime environment configured (Client ID: ${CLIENT_ID:+configured}, Web3Forms: ${WEB3FORMS_KEY:+configured})"
+echo "Panda JL Studio: Runtime environment configured (Client ID: ${CLIENT_ID:+configured}, Web3Forms: ${WEB3FORMS_KEY:+configured})"

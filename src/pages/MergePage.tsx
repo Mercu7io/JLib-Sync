@@ -1691,7 +1691,7 @@ export const MergePage: React.FC = () => {
               </form>
             ) : backups.length === 0 ? (
               <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400 space-y-2">
-                <p>{t('merge.noCloudBackups', 'No backups found in your Google Drive “JW Sync” folder.')}</p>
+                <p>{t('merge.noCloudBackups', 'No backups found in your Google Drive “Panda JL Studio” folder.')}</p>
               </div>
             ) : (
               <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">

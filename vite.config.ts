@@ -18,9 +18,9 @@ export default defineConfig({
         'maskable-icon-512x512.png',
       ],
       manifest: {
-        name: 'Panda JWL-Sync',
-        short_name: 'JWL-Sync',
-        description: 'Merge, organize, and search your JW Library backups client-side with 100% privacy.',
+        name: 'Panda JL Studio',
+        short_name: 'Panda JL Studio',
+        description: 'Merge, organize, explore, and selectively export your JW Library backup archives with 100% privacy.',
         theme_color: '#0B0F19',
         background_color: '#0B0F19',
         display: 'standalone',

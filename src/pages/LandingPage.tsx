@@ -117,10 +117,10 @@ export const LandingPage: React.FC = () => {
       ? activeSummary.deviceName.slice(0, 13) + '…'
       : activeSummary.deviceName
     : activeSummary?.name
-    ? activeSummary.name.length > 14
-      ? activeSummary.name.slice(0, 13) + '…'
-      : activeSummary.name
-    : 'In-Memory';
+      ? activeSummary.name.length > 14
+        ? activeSummary.name.slice(0, 13) + '…'
+        : activeSummary.name
+      : 'In-Memory';
 
   const handleUseInMemory = (target: 'primary' | 'secondary') => {
     if (!activeLibraryBytes || !activeManifest || !activeSummary) return;
@@ -677,21 +677,21 @@ export const LandingPage: React.FC = () => {
   return (
     <div className="relative overflow-hidden pb-12 space-y-8">
       {/* Background ambient lighting */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-gradient-to-b from-indigo-600/15 via-blue-600/5 to-transparent blur-3xl pointer-events-none -z-10" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-gradient-to-b from-emerald-600/15 via-teal-600/5 to-transparent blur-3xl pointer-events-none -z-10" />
 
       {/* ── HEADER HERO ────────────────────────────────────────────── */}
       <section className="pt-6 sm:pt-10 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto text-center space-y-3">
-        <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/25 text-blue-600 dark:text-blue-400 text-xs font-semibold backdrop-blur-md">
-          <ShieldCheck className="w-3.5 h-3.5 text-blue-500" />
+        <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 text-xs font-semibold backdrop-blur-md">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
           <span>{t('landing.privacyBadge', '100% Client-Side SQLite WASM • Zero Upload')}</span>
         </div>
 
         <h1 className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-          {t('merge.heroTitle', 'Universal Multi-Device Merge')}
+          {t('merge.heroTitle', 'JW Library Backup Merge & Reconciler')}
         </h1>
 
         <p className="text-xs sm:text-base text-slate-600 dark:text-slate-300 max-w-xl mx-auto leading-relaxed">
-          {t('merge.heroSubtitle', 'Combine your phone and tablet backups seamlessly into one unified archive.')}
+          {t('merge.heroSubtitle', 'Harmonize and synthesize study notes, marks, and tags across independent backups without data loss.')}
         </p>
       </section>
 
@@ -704,11 +704,11 @@ export const LandingPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── CARDS: UNIVERSAL PHONE & TABLET DROPZONES ──────────────── */}
+      {/* ── CARDS: PRIMARY BASE & SECONDARY INCOMING DROPZONES ──────── */}
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-11 gap-4 items-center">
-          
-          {/* LEFT CARD: UNIVERSAL PHONE */}
+
+          {/* LEFT CARD: PRIMARY BASE ARCHIVE */}
           <div
             onDragOver={(e) => {
               e.preventDefault();
@@ -734,24 +734,23 @@ export const LandingPage: React.FC = () => {
                 await loadSecondary(files[1]);
               }
             }}
-            className={`md:col-span-5 rounded-3xl border transition-all p-6 space-y-4 backdrop-blur-xl shadow-lg shadow-slate-900/5 dark:shadow-black/40 ${
-              isDraggingPrimary
-                ? 'border-blue-500 ring-2 ring-blue-500/30 bg-blue-50/20 dark:bg-blue-950/20'
-                : 'border-slate-200/90 dark:border-white/[0.08] bg-white/90 dark:bg-[#101625]/85 hover:border-blue-500/40'
-            }`}
+            className={`md:col-span-5 rounded-3xl border transition-all p-6 space-y-4 backdrop-blur-xl shadow-lg shadow-slate-900/5 dark:shadow-black/40 ${isDraggingPrimary
+                ? 'border-emerald-500 ring-2 ring-emerald-500/30 bg-emerald-50/20 dark:bg-emerald-950/20'
+                : 'border-slate-200/90 dark:border-white/[0.08] bg-white/90 dark:bg-[#101625]/85 hover:border-emerald-500/40'
+              }`}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                <Smartphone className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <span>{t('merge.backup1', 'Backup 1')}</span>
+                <Database className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span>{t('merge.backup1', 'Primary Base Archive')}</span>
               </div>
               {isLoadingPrimary ? (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25 flex items-center space-x-1">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 flex items-center space-x-1">
                   <Loader2 className="w-3 h-3 animate-spin" />
                   <span>{primaryProgress?.percent ?? 10}%</span>
                 </span>
               ) : isUploadingPrimary ? (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25 flex items-center space-x-1">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 flex items-center space-x-1">
                   <Loader2 className="w-3 h-3 animate-spin" />
                   <span>Cloud {uploadProgressPrimary ?? 0}%</span>
                 </span>
@@ -774,24 +773,24 @@ export const LandingPage: React.FC = () => {
             />
 
             {isLoadingPrimary ? (
-              <div className="border-2 border-dashed border-blue-400 dark:border-blue-600/60 rounded-2xl p-6 text-center space-y-3 bg-blue-50/40 dark:bg-blue-950/20">
-                <div className="flex items-center justify-center space-x-2 text-blue-600 dark:text-blue-400">
+              <div className="border-2 border-dashed border-emerald-400 dark:border-emerald-600/60 rounded-2xl p-6 text-center space-y-3 bg-emerald-50/40 dark:bg-emerald-950/20">
+                <div className="flex items-center justify-center space-x-2 text-emerald-600 dark:text-emerald-400">
                   <div className="relative">
-                    <div className="w-8 h-8 rounded-full border-2 border-blue-600/30 border-t-blue-600 animate-spin" />
-                    <Loader2 className="w-4 h-4 text-blue-600 animate-spin absolute inset-0 m-auto" />
+                    <div className="w-8 h-8 rounded-full border-2 border-emerald-600/30 border-t-emerald-600 animate-spin" />
+                    <Loader2 className="w-4 h-4 text-emerald-600 animate-spin absolute inset-0 m-auto" />
                   </div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
                     {primaryProgress?.stage || t('merge.loadingBackup', 'Reading backup archive...')}
                   </div>
-                  <div className="text-[11px] font-mono text-blue-600 dark:text-blue-400 font-semibold">
+                  <div className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
                     {primaryProgress?.percent ?? 10}%
                   </div>
                 </div>
                 <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
                   <div
-                    className="bg-blue-600 h-full transition-all duration-200 rounded-full"
+                    className="bg-emerald-600 h-full transition-all duration-200 rounded-full"
                     style={{ width: `${primaryProgress?.percent ?? 10}%` }}
                   />
                 </div>
@@ -799,19 +798,16 @@ export const LandingPage: React.FC = () => {
             ) : !primaryFile ? (
               <div
                 onClick={() => primaryInputRef.current?.click()}
-                className="group border-2 border-dashed border-slate-200 dark:border-white/[0.08] hover:border-blue-500/50 rounded-2xl p-7 text-center cursor-pointer transition-all space-y-3 bg-slate-50/60 hover:bg-blue-50/20 dark:bg-white/[0.01] dark:hover:bg-white/[0.03]"
+                className="group border-2 border-dashed border-slate-200 dark:border-white/[0.08] hover:border-emerald-500/50 rounded-2xl p-7 text-center cursor-pointer transition-all space-y-3 bg-slate-50/60 hover:bg-emerald-50/20 dark:bg-white/[0.01] dark:hover:bg-white/[0.03]"
               >
-                {/* Universal Phone outline icon with centered punch-hole */}
-                <div className="w-12 h-16 rounded-xl border-2 border-slate-400 group-hover:border-blue-500 dark:border-slate-500 dark:group-hover:border-blue-400 flex flex-col items-center justify-between p-1 mx-auto transition-colors shadow-sm">
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-400 group-hover:bg-blue-500 dark:bg-slate-500 dark:group-hover:border-blue-400 mt-0.5" />
-                  <Upload className="w-4 h-4 text-slate-400 group-hover:text-blue-500 dark:text-slate-500 dark:group-hover:text-blue-400" />
-                  <div className="w-4 h-0.5 rounded-full bg-slate-300 dark:bg-slate-600 mb-0.5" />
+                <div className="w-16 h-16 rounded-2xl border-2 border-slate-300 dark:border-white/[0.1] group-hover:border-emerald-500 dark:group-hover:border-emerald-400 flex flex-col items-center justify-center p-2 mx-auto transition-colors shadow-sm bg-slate-100/50 dark:bg-white/[0.02]">
+                  <Database className="w-7 h-7 text-slate-400 group-hover:text-emerald-500 dark:text-slate-500 dark:group-hover:text-emerald-400 transition-colors" />
                 </div>
                 <div className="space-y-1">
-                  <div className="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-snug">
+                  <div className="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors leading-snug">
                     {t('merge.dropHere', 'Drop .jwlibrary file here or click to browse')}
                   </div>
-                  <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">{t('merge.backup1Desc', 'First study backup')}</div>
+                  <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">{t('merge.backup1Desc', 'Base study archive')}</div>
                 </div>
               </div>
             ) : (
@@ -831,19 +827,19 @@ export const LandingPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => primaryInputRef.current?.click()}
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+                    className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-semibold"
                   >
                     Change
                   </button>
                 </div>
                 <div className="pt-2 border-t border-slate-200/60 dark:border-white/[0.04] text-[11px] text-slate-600 dark:text-slate-400 flex items-center space-x-1.5 flex-wrap">
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">{primaryFile.summary.notesCount}</span> notes
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{primaryFile.summary.notesCount}</span> {t('nav.notes', 'notes')}
                   <span>•</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">{primaryFile.summary.userMarksCount}</span> highlights
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{primaryFile.summary.userMarksCount}</span> {t('explorer.filterHighlights', 'highlights')}
                   <span>•</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">{primaryFile.summary.tagsCount}</span> tags
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{primaryFile.summary.tagsCount}</span> {t('nav.tags', 'tags')}
                   <span>•</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">{primaryFile.summary.playlistsCount}</span> playlists
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{primaryFile.summary.playlistsCount}</span> {t('explorer.playlistsCategory', 'playlists')}
                 </div>
 
                 <div className="pt-2 flex items-center justify-between border-t border-slate-200/60 dark:border-white/[0.04] gap-2 flex-wrap">
@@ -859,7 +855,7 @@ export const LandingPage: React.FC = () => {
                           type="button"
                           onClick={handleUploadPrimaryToCloud}
                           disabled={isUploadingPrimary}
-                          className="inline-flex items-center space-x-1.5 text-[10px] font-semibold text-blue-600 dark:text-blue-400 hover:underline bg-blue-50 dark:bg-blue-950/30 px-2.5 py-0.5 rounded-full border border-blue-300 dark:border-blue-700/50"
+                          className="inline-flex items-center space-x-1.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline bg-emerald-50 dark:bg-emerald-950/30 px-2.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700/50"
                         >
                           {isUploadingPrimary ? <Loader2 className="w-3 h-3 animate-spin" /> : <Cloud className="w-3 h-3" />}
                           <span>
@@ -869,9 +865,9 @@ export const LandingPage: React.FC = () => {
                           </span>
                         </button>
                         {isUploadingPrimary && (
-                          <div className="w-full bg-blue-100 dark:bg-blue-950 rounded-full h-1 overflow-hidden">
+                          <div className="w-full bg-emerald-100 dark:bg-emerald-950 rounded-full h-1 overflow-hidden">
                             <div
-                              className="bg-blue-600 dark:bg-blue-400 h-full transition-all duration-150 rounded-full"
+                              className="bg-emerald-600 dark:bg-emerald-400 h-full transition-all duration-150 rounded-full"
                               style={{ width: `${Math.max(5, uploadProgressPrimary ?? 0)}%` }}
                             />
                           </div>
@@ -884,7 +880,7 @@ export const LandingPage: React.FC = () => {
                     type="button"
                     onClick={handleOpenPrimaryInApp}
                     disabled={isLoadingAppPrimary}
-                    className="ml-auto inline-flex items-center space-x-1 text-[10px] font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] px-2.5 py-1 rounded-lg transition-all"
+                    className="ml-auto inline-flex items-center space-x-1 text-[10px] font-semibold text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] px-2.5 py-1 rounded-lg transition-all"
                     title={t('merge.openInAppTooltip', 'Load this backup as active database in the application')}
                   >
                     {isLoadingAppPrimary ? <Loader2 className="w-3 h-3 animate-spin" /> : <Compass className="w-3 h-3" />}
@@ -909,24 +905,23 @@ export const LandingPage: React.FC = () => {
                   type="button"
                   onClick={() => isOnline && handlePickFromCloud('primary')}
                   disabled={!isOnline}
-                  className={`py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all truncate ${
-                    !isOnline
+                  className={`py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all truncate ${!isOnline
                       ? 'bg-slate-100 dark:bg-white/[0.02] text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed border border-dashed border-slate-200 dark:border-white/[0.06]'
                       : 'bg-slate-100 hover:bg-slate-200/80 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300'
-                  }`}
+                    }`}
                   title={!isOnline ? t('common.offlineDriveDisabled', 'Google Drive unavailable while offline') : ''}
                 >
                   {!isOnline ? (
                     <WifiOff className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
                   ) : (
-                    <Cloud className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                    <Cloud className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                   )}
                   <span className="truncate">
                     {!isOnline
                       ? t('common.offline', 'Offline')
                       : isConnected
-                      ? t('merge.chooseFromDrive', 'Choose from Google Drive')
-                      : t('nav.connectDrive', 'Pick from Google Drive')}
+                        ? t('merge.chooseFromDrive', 'Choose from Google Drive')
+                        : t('nav.connectDrive', 'Pick from Google Drive')}
                   </span>
                 </button>
               </div>
@@ -935,24 +930,23 @@ export const LandingPage: React.FC = () => {
                 type="button"
                 onClick={() => isOnline && handlePickFromCloud('primary')}
                 disabled={!isOnline}
-                className={`w-full py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all ${
-                  !isOnline
+                className={`w-full py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all ${!isOnline
                     ? 'bg-slate-100 dark:bg-white/[0.02] text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed border border-dashed border-slate-200 dark:border-white/[0.06]'
                     : 'bg-slate-100 hover:bg-slate-200/80 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300'
-                }`}
+                  }`}
                 title={!isOnline ? t('common.offlineDriveDisabled', 'Google Drive unavailable while offline') : ''}
               >
                 {!isOnline ? (
                   <WifiOff className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
                 ) : (
-                  <Cloud className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                  <Cloud className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                 )}
                 <span>
                   {!isOnline
                     ? t('common.offline', 'Offline')
                     : isConnected
-                    ? t('merge.chooseFromDrive', 'Choose from Google Drive')
-                    : t('nav.connectDrive', 'Pick from Google Drive')}
+                      ? t('merge.chooseFromDrive', 'Choose from Google Drive')
+                      : t('nav.connectDrive', 'Pick from Google Drive')}
                 </span>
               </button>
             )}
@@ -961,17 +955,16 @@ export const LandingPage: React.FC = () => {
           {/* CONNECTOR CIRCLE */}
           <div className="md:col-span-1 flex flex-col items-center justify-center py-2 md:py-0">
             <div
-              className={`w-13 h-13 rounded-2xl flex items-center justify-center transition-all duration-300 border ${
-                bothFilesLoaded
-                  ? 'bg-blue-600 text-white border-blue-400 shadow-lg shadow-blue-500/40 scale-110'
+              className={`w-13 h-13 rounded-2xl flex items-center justify-center transition-all duration-300 border ${bothFilesLoaded
+                  ? 'bg-emerald-600 text-white border-emerald-400 shadow-lg shadow-emerald-500/40 scale-110'
                   : 'bg-slate-100/90 dark:bg-white/[0.03] border-slate-200 dark:border-white/[0.08] text-slate-400'
-              }`}
+                }`}
             >
               <GitMerge className={`w-5 h-5 ${bothFilesLoaded ? 'animate-pulse' : ''}`} />
             </div>
           </div>
 
-          {/* RIGHT CARD: UNIVERSAL TABLET */}
+          {/* RIGHT CARD: SECONDARY INCOMING ARCHIVE */}
           <div
             onDragOver={(e) => {
               e.preventDefault();
@@ -997,24 +990,23 @@ export const LandingPage: React.FC = () => {
                 await loadSecondary(files[1]);
               }
             }}
-            className={`md:col-span-5 rounded-3xl border transition-all p-6 space-y-4 backdrop-blur-xl shadow-lg shadow-slate-900/5 dark:shadow-black/40 ${
-              isDraggingSecondary
-                ? 'border-sky-500 ring-2 ring-sky-500/30 bg-sky-50/20 dark:bg-sky-950/20'
-                : 'border-slate-200/90 dark:border-white/[0.08] bg-white/90 dark:bg-[#101625]/85 hover:border-sky-500/40'
-            }`}
+            className={`md:col-span-5 rounded-3xl border transition-all p-6 space-y-4 backdrop-blur-xl shadow-lg shadow-slate-900/5 dark:shadow-black/40 ${isDraggingSecondary
+                ? 'border-teal-500 ring-2 ring-teal-500/30 bg-teal-50/20 dark:bg-teal-950/20'
+                : 'border-slate-200/90 dark:border-white/[0.08] bg-white/90 dark:bg-[#101625]/85 hover:border-teal-500/40'
+              }`}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                <Tablet className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-                <span>{t('merge.backup2', 'Backup 2')}</span>
+                <GitMerge className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                <span>{t('merge.backup2', 'Secondary Incoming Archive')}</span>
               </div>
               {isLoadingSecondary ? (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/25 flex items-center space-x-1">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/25 flex items-center space-x-1">
                   <Loader2 className="w-3 h-3 animate-spin" />
                   <span>{secondaryProgress?.percent ?? 10}%</span>
                 </span>
               ) : isUploadingSecondary ? (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/25 flex items-center space-x-1">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/25 flex items-center space-x-1">
                   <Loader2 className="w-3 h-3 animate-spin" />
                   <span>Cloud {uploadProgressSecondary ?? 0}%</span>
                 </span>
@@ -1037,24 +1029,24 @@ export const LandingPage: React.FC = () => {
             />
 
             {isLoadingSecondary ? (
-              <div className="border-2 border-dashed border-sky-400 dark:border-sky-600/60 rounded-2xl p-6 text-center space-y-3 bg-sky-50/40 dark:bg-sky-950/20">
-                <div className="flex items-center justify-center space-x-2 text-sky-600 dark:text-sky-400">
+              <div className="border-2 border-dashed border-teal-400 dark:border-teal-600/60 rounded-2xl p-6 text-center space-y-3 bg-teal-50/40 dark:bg-teal-950/20">
+                <div className="flex items-center justify-center space-x-2 text-teal-600 dark:text-teal-400">
                   <div className="relative">
-                    <div className="w-8 h-8 rounded-full border-2 border-sky-600/30 border-t-sky-600 animate-spin" />
-                    <Loader2 className="w-4 h-4 text-sky-600 animate-spin absolute inset-0 m-auto" />
+                    <div className="w-8 h-8 rounded-full border-2 border-teal-600/30 border-t-teal-600 animate-spin" />
+                    <Loader2 className="w-4 h-4 text-teal-600 animate-spin absolute inset-0 m-auto" />
                   </div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
                     {secondaryProgress?.stage || t('merge.loadingBackup', 'Reading backup archive...')}
                   </div>
-                  <div className="text-[11px] font-mono text-sky-600 dark:text-sky-400 font-semibold">
+                  <div className="text-[11px] font-mono text-teal-600 dark:text-teal-400 font-semibold">
                     {secondaryProgress?.percent ?? 10}%
                   </div>
                 </div>
                 <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
                   <div
-                    className="bg-sky-600 h-full transition-all duration-200 rounded-full"
+                    className="bg-teal-600 h-full transition-all duration-200 rounded-full"
                     style={{ width: `${secondaryProgress?.percent ?? 10}%` }}
                   />
                 </div>
@@ -1062,19 +1054,16 @@ export const LandingPage: React.FC = () => {
             ) : !secondaryFile ? (
               <div
                 onClick={() => secondaryInputRef.current?.click()}
-                className="group border-2 border-dashed border-slate-200 dark:border-white/[0.08] hover:border-sky-500/50 rounded-2xl p-7 text-center cursor-pointer transition-all space-y-3 bg-slate-50/60 hover:bg-sky-50/20 dark:bg-white/[0.01] dark:hover:bg-white/[0.03]"
+                className="group border-2 border-dashed border-slate-200 dark:border-white/[0.08] hover:border-teal-500/50 rounded-2xl p-7 text-center cursor-pointer transition-all space-y-3 bg-slate-50/60 hover:bg-teal-50/20 dark:bg-white/[0.01] dark:hover:bg-white/[0.03]"
               >
-                {/* Universal Tablet outline icon with centered camera */}
-                <div className="w-16 h-16 rounded-xl border-2 border-slate-400 group-hover:border-sky-500 dark:border-slate-500 dark:group-hover:border-sky-400 flex flex-col items-center justify-between p-1 mx-auto transition-colors shadow-sm">
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-400 group-hover:bg-sky-500 dark:bg-slate-500 dark:group-hover:bg-sky-400 mt-0.5" />
-                  <Upload className="w-4 h-4 text-slate-400 group-hover:text-sky-500 dark:text-slate-500 dark:group-hover:text-sky-400" />
-                  <div className="w-6 h-0.5 rounded-full bg-slate-300 dark:bg-slate-600 mb-0.5" />
+                <div className="w-16 h-16 rounded-2xl border-2 border-slate-300 dark:border-white/[0.1] group-hover:border-teal-500 dark:group-hover:border-teal-400 flex flex-col items-center justify-center p-2 mx-auto transition-colors shadow-sm bg-slate-100/50 dark:bg-white/[0.02]">
+                  <GitMerge className="w-7 h-7 text-slate-400 group-hover:text-teal-500 dark:text-slate-500 dark:group-hover:text-teal-400 transition-colors" />
                 </div>
                 <div className="space-y-1">
-                  <div className="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors leading-snug">
+                  <div className="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors leading-snug">
                     {t('merge.dropHere', 'Drop .jwlibrary file here or click to browse')}
                   </div>
-                  <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">{t('merge.backup2Desc', 'Second study backup')}</div>
+                  <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">{t('merge.backup2Desc', 'Secondary incoming archive')}</div>
                 </div>
               </div>
             ) : (
@@ -1094,19 +1083,19 @@ export const LandingPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => secondaryInputRef.current?.click()}
-                    className="text-xs text-sky-600 dark:text-sky-400 hover:underline font-semibold"
+                    className="text-xs text-teal-600 dark:text-teal-400 hover:underline font-semibold"
                   >
                     Change
                   </button>
                 </div>
                 <div className="pt-2 border-t border-slate-200/60 dark:border-white/[0.04] text-[11px] text-slate-600 dark:text-slate-400 flex items-center space-x-1.5 flex-wrap">
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">{secondaryFile.summary.notesCount}</span> notes
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{secondaryFile.summary.notesCount}</span> {t('nav.notes', 'notes')}
                   <span>•</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">{secondaryFile.summary.userMarksCount}</span> highlights
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{secondaryFile.summary.userMarksCount}</span> {t('explorer.filterHighlights', 'highlights')}
                   <span>•</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">{secondaryFile.summary.tagsCount}</span> tags
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{secondaryFile.summary.tagsCount}</span> {t('nav.tags', 'tags')}
                   <span>•</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">{secondaryFile.summary.playlistsCount}</span> playlists
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{secondaryFile.summary.playlistsCount}</span> {t('explorer.playlistsCategory', 'playlists')}
                 </div>
 
                 <div className="pt-2 flex items-center justify-between border-t border-slate-200/60 dark:border-white/[0.04] gap-2 flex-wrap">
@@ -1122,7 +1111,7 @@ export const LandingPage: React.FC = () => {
                           type="button"
                           onClick={handleUploadSecondaryToCloud}
                           disabled={isUploadingSecondary}
-                          className="inline-flex items-center space-x-1.5 text-[10px] font-semibold text-sky-600 dark:text-sky-400 hover:underline bg-sky-50 dark:bg-sky-950/30 px-2.5 py-0.5 rounded-full border border-sky-300 dark:border-sky-700/50"
+                          className="inline-flex items-center space-x-1.5 text-[10px] font-semibold text-teal-600 dark:text-teal-400 hover:underline bg-teal-50 dark:bg-teal-950/30 px-2.5 py-0.5 rounded-full border border-teal-300 dark:border-teal-700/50"
                         >
                           {isUploadingSecondary ? <Loader2 className="w-3 h-3 animate-spin" /> : <Cloud className="w-3 h-3" />}
                           <span>
@@ -1132,9 +1121,9 @@ export const LandingPage: React.FC = () => {
                           </span>
                         </button>
                         {isUploadingSecondary && (
-                          <div className="w-full bg-sky-100 dark:bg-sky-950 rounded-full h-1 overflow-hidden">
+                          <div className="w-full bg-teal-100 dark:bg-teal-950 rounded-full h-1 overflow-hidden">
                             <div
-                              className="bg-sky-600 dark:bg-sky-400 h-full transition-all duration-150 rounded-full"
+                              className="bg-teal-600 dark:bg-teal-400 h-full transition-all duration-150 rounded-full"
                               style={{ width: `${Math.max(5, uploadProgressSecondary ?? 0)}%` }}
                             />
                           </div>
@@ -1147,7 +1136,7 @@ export const LandingPage: React.FC = () => {
                     type="button"
                     onClick={handleOpenSecondaryInApp}
                     disabled={isLoadingAppSecondary}
-                    className="ml-auto inline-flex items-center space-x-1 text-[10px] font-semibold text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] px-2.5 py-1 rounded-lg transition-all"
+                    className="ml-auto inline-flex items-center space-x-1 text-[10px] font-semibold text-slate-600 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] px-2.5 py-1 rounded-lg transition-all"
                     title={t('merge.openInAppTooltip', 'Load this backup as active database in the application')}
                   >
                     {isLoadingAppSecondary ? <Loader2 className="w-3 h-3 animate-spin" /> : <Compass className="w-3 h-3" />}
@@ -1162,34 +1151,33 @@ export const LandingPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleUseInMemory('secondary')}
-                  className="py-2 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-xs font-semibold text-emerald-700 dark:text-emerald-300 border border-emerald-500/25 flex items-center justify-center space-x-1.5 transition-all truncate"
+                  className="py-2 px-3 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-xs font-semibold text-teal-700 dark:text-teal-300 border border-teal-500/25 flex items-center justify-center space-x-1.5 transition-all truncate"
                   title={activeSummary?.name ? `${t('merge.useInMemory', 'Use Active File')}: ${activeSummary.name}` : t('merge.useInMemory', 'Use Active File')}
                 >
-                  <Database className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                  <Database className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 flex-shrink-0" />
                   <span className="truncate">{t('merge.activeFile', 'Active')}: {inMemoryShortName}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => isOnline && handlePickFromCloud('secondary')}
                   disabled={!isOnline}
-                  className={`py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all truncate ${
-                    !isOnline
+                  className={`py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all truncate ${!isOnline
                       ? 'bg-slate-100 dark:bg-white/[0.02] text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed border border-dashed border-slate-200 dark:border-white/[0.06]'
                       : 'bg-slate-100 hover:bg-slate-200/80 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300'
-                  }`}
+                    }`}
                   title={!isOnline ? t('common.offlineDriveDisabled', 'Google Drive unavailable while offline') : ''}
                 >
                   {!isOnline ? (
                     <WifiOff className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
                   ) : (
-                    <Cloud className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 flex-shrink-0" />
+                    <Cloud className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 flex-shrink-0" />
                   )}
                   <span className="truncate">
                     {!isOnline
                       ? t('common.offline', 'Offline')
                       : isConnected
-                      ? t('merge.chooseFromDrive', 'Choose from Google Drive')
-                      : t('nav.connectDrive', 'Pick from Google Drive')}
+                        ? t('merge.chooseFromDrive', 'Choose from Google Drive')
+                        : t('nav.connectDrive', 'Pick from Google Drive')}
                   </span>
                 </button>
               </div>
@@ -1198,24 +1186,23 @@ export const LandingPage: React.FC = () => {
                 type="button"
                 onClick={() => isOnline && handlePickFromCloud('secondary')}
                 disabled={!isOnline}
-                className={`w-full py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all ${
-                  !isOnline
+                className={`w-full py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all ${!isOnline
                     ? 'bg-slate-100 dark:bg-white/[0.02] text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed border border-dashed border-slate-200 dark:border-white/[0.06]'
                     : 'bg-slate-100 hover:bg-slate-200/80 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300'
-                }`}
+                  }`}
                 title={!isOnline ? t('common.offlineDriveDisabled', 'Google Drive unavailable while offline') : ''}
               >
                 {!isOnline ? (
                   <WifiOff className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
                 ) : (
-                  <Cloud className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 flex-shrink-0" />
+                  <Cloud className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 flex-shrink-0" />
                 )}
                 <span>
                   {!isOnline
                     ? t('common.offline', 'Offline')
                     : isConnected
-                    ? t('merge.chooseFromDrive', 'Choose from Google Drive')
-                    : t('nav.connectDrive', 'Pick from Google Drive')}
+                      ? t('merge.chooseFromDrive', 'Choose from Google Drive')
+                      : t('nav.connectDrive', 'Pick from Google Drive')}
                 </span>
               </button>
             )}
@@ -1230,7 +1217,7 @@ export const LandingPage: React.FC = () => {
           <div className="rounded-3xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#101625] p-5 sm:p-6 space-y-4 shadow-md">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2 text-xs font-bold text-slate-900 dark:text-white">
-                <Sliders className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <Sliders className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>Verse Collisions Detected ({conflicts.length})</span>
               </div>
               <span className="text-[11px] text-slate-500">Choose how to resolve:</span>
@@ -1243,17 +1230,17 @@ export const LandingPage: React.FC = () => {
                     Collision #{idx + 1}: {conf.verseAnchor}
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <label className={`p-3 rounded-xl border cursor-pointer transition-all ${conf.choice === 'a' ? 'border-blue-500 bg-blue-500/10' : 'border-slate-200 dark:border-white/[0.06]'}`}>
+                    <label className={`p-3 rounded-xl border cursor-pointer transition-all ${conf.choice === 'a' ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-200 dark:border-white/[0.06]'}`}>
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-xs">{t('merge.backup1', 'Backup 1')} ({primaryFile.summary.deviceName || 'Source 1'})</span>
-                        <input type="radio" name={`conf_${conf.id}`} checked={conf.choice === 'a'} onChange={() => setConflicts(prev => prev.map(c => c.id === conf.id ? { ...c, choice: 'a' } : c))} />
+                        <span className="font-semibold text-xs">{t('merge.backup1', 'Primary Archive')} ({primaryFile.summary.deviceName || 'Source 1'})</span>
+                        <input type="radio" name={`conf_${conf.id}`} checked={conf.choice === 'a'} onChange={() => setConflicts(prev => prev.map(c => c.id === conf.id ? { ...c, choice: 'a' } : c))} className="accent-emerald-600" />
                       </div>
                       <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2 mt-1">&ldquo;{conf.sourceAText}&rdquo;</p>
                     </label>
-                    <label className={`p-3 rounded-xl border cursor-pointer transition-all ${conf.choice === 'b' ? 'border-blue-500 bg-blue-500/10' : 'border-slate-200 dark:border-white/[0.06]'}`}>
+                    <label className={`p-3 rounded-xl border cursor-pointer transition-all ${conf.choice === 'b' ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-200 dark:border-white/[0.06]'}`}>
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-xs">{t('merge.backup2', 'Backup 2')} ({secondaryFile.summary.deviceName || 'Source 2'})</span>
-                        <input type="radio" name={`conf_${conf.id}`} checked={conf.choice === 'b'} onChange={() => setConflicts(prev => prev.map(c => c.id === conf.id ? { ...c, choice: 'b' } : c))} />
+                        <span className="font-semibold text-xs">{t('merge.backup2', 'Incoming Archive')} ({secondaryFile.summary.deviceName || 'Source 2'})</span>
+                        <input type="radio" name={`conf_${conf.id}`} checked={conf.choice === 'b'} onChange={() => setConflicts(prev => prev.map(c => c.id === conf.id ? { ...c, choice: 'b' } : c))} className="accent-emerald-600" />
                       </div>
                       <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2 mt-1">&ldquo;{conf.sourceBText}&rdquo;</p>
                     </label>
@@ -1263,7 +1250,7 @@ export const LandingPage: React.FC = () => {
                     onClick={() => setConflicts(prev => prev.map(c => c.id === conf.id ? { ...c, choice: 'both' } : c))}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${conf.choice === 'both' ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
                   >
-                    {t('merge.combineBoth', 'Keep Both Notes')}
+                    {t('merge.combineBoth', 'Consolidate Both Notes')}
                   </button>
                 </div>
               ))}
@@ -1278,15 +1265,15 @@ export const LandingPage: React.FC = () => {
           <div className="rounded-3xl border border-slate-200/90 dark:border-white/[0.08] bg-white/90 dark:bg-[#101625]/90 p-5 space-y-3.5 shadow-md backdrop-blur-xl transition-all">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-start space-x-3">
-                <div className="p-2 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 mt-0.5">
+                <div className="p-2 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 mt-0.5">
                   <Tag className="w-4 h-4" />
                 </div>
                 <div>
                   <div className="text-xs font-bold text-slate-900 dark:text-white">
-                    {t('merge.tagImportedNotes', 'Tag notes imported from Backup 2')}
+                    {t('merge.tagImportedNotes', 'Tag notes imported from Secondary Archive')}
                   </div>
                   <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                    {t('merge.tagImportedNotesDesc', 'Attach a tag to all notes imported from the second backup so you can easily review them under Personal Study > Tags in JW Library.')}
+                    {t('merge.tagImportedNotesDesc', 'Attach a tag to all notes imported from the incoming archive so you can easily review them under Personal Study > Tags in JW Library.')}
                   </div>
                 </div>
               </div>
@@ -1297,7 +1284,7 @@ export const LandingPage: React.FC = () => {
                   onChange={(e) => setTagImportedNotes(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
               </label>
             </div>
 
@@ -1311,7 +1298,7 @@ export const LandingPage: React.FC = () => {
                   value={customImportTagName}
                   onChange={(e) => setCustomImportTagName(e.target.value)}
                   placeholder={t('merge.fromMerge', 'From Merge')}
-                  className="text-xs bg-slate-50 dark:bg-[#0b0f19] border border-slate-200 dark:border-white/[0.1] rounded-xl px-3.5 py-2 text-slate-900 dark:text-slate-100 font-medium focus:ring-1 focus:ring-blue-500 outline-none w-48 shadow-sm"
+                  className="text-xs bg-slate-50 dark:bg-[#0b0f19] border border-slate-200 dark:border-white/[0.1] rounded-xl px-3.5 py-2 text-slate-900 dark:text-slate-100 font-medium focus:ring-1 focus:ring-emerald-500 outline-none w-48 shadow-sm"
                 />
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <button
@@ -1332,10 +1319,10 @@ export const LandingPage: React.FC = () => {
                   )}
                   <button
                     type="button"
-                    onClick={() => setCustomImportTagName(t('merge.backup2', 'Backup 2'))}
+                    onClick={() => setCustomImportTagName(t('merge.backup2', 'Secondary Archive'))}
                     className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-300 transition-colors"
                   >
-                    {t('merge.backup2', 'Backup 2')}
+                    {t('merge.backup2', 'Secondary Archive')}
                   </button>
                 </div>
               </div>
@@ -1344,7 +1331,7 @@ export const LandingPage: React.FC = () => {
         </section>
       )}
 
-      {/* ── ACTION BUTTON: GLOWING "MERGE" ─────────────────────────── */}
+      {/* ── ACTION BUTTON: MERGE ARCHIVES ─────────────────────────── */}
       {bothFilesLoaded && !mergeResult && (
         <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="p-4 sm:p-5 rounded-3xl bg-white/90 dark:bg-[#101625]/90 border border-slate-200/90 dark:border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl backdrop-blur-xl">
@@ -1356,7 +1343,7 @@ export const LandingPage: React.FC = () => {
                 type="text"
                 value={outputName}
                 onChange={(e) => setOutputName(e.target.value)}
-                className="bg-slate-50 dark:bg-[#0b0f19] border border-slate-200 dark:border-white/[0.1] rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 font-mono w-full sm:w-80 shadow-sm"
+                className="bg-slate-50 dark:bg-[#0b0f19] border border-slate-200 dark:border-white/[0.1] rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 font-mono w-full sm:w-80 shadow-sm focus:ring-1 focus:ring-emerald-500 outline-none"
               />
             </div>
 
@@ -1364,7 +1351,7 @@ export const LandingPage: React.FC = () => {
               type="button"
               onClick={() => handleExecuteMerge()}
               disabled={isMerging}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm tracking-wide transition-all shadow-xl shadow-blue-600/30 hover:scale-[1.02] active:scale-[0.98] inline-flex items-center justify-center space-x-2"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-sm tracking-wide transition-all shadow-xl shadow-emerald-600/30 hover:scale-[1.02] active:scale-[0.98] inline-flex items-center justify-center space-x-2"
             >
               <GitMerge className="w-4 h-4" />
               <span>{isMerging ? t('merge.merging', 'Merging...') : t('merge.mergeBackups', 'Merge Backups')}</span>
@@ -1377,10 +1364,10 @@ export const LandingPage: React.FC = () => {
       {/* ── MERGE PROGRESS ─────────────────────────────────────────── */}
       {isMerging && mergeProgress && (
         <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-3xl border border-blue-500/40 bg-blue-50/70 dark:bg-blue-950/20 p-5 space-y-3 backdrop-blur-xl shadow-md animate-in fade-in duration-200">
+          <div className="rounded-3xl border border-emerald-500/40 bg-emerald-50/70 dark:bg-emerald-950/20 p-5 space-y-3 backdrop-blur-xl shadow-md animate-in fade-in duration-200">
             <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
               <div className="flex items-center space-x-2.5 min-w-0">
-                <Loader2 className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-spin flex-shrink-0" />
+                <Loader2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 animate-spin flex-shrink-0" />
                 <div className="min-w-0">
                   <span className="truncate block font-semibold text-slate-800 dark:text-slate-200">{mergeProgress.stage}</span>
                   {mergeProgress.details && (
@@ -1390,13 +1377,13 @@ export const LandingPage: React.FC = () => {
                   )}
                 </div>
               </div>
-              <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-300/40 dark:border-blue-700/50 flex-shrink-0 ml-3">
+              <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300/40 dark:border-emerald-700/50 flex-shrink-0 ml-3">
                 {Math.min(100, Math.max(0, Math.round((mergeProgress.current / mergeProgress.total) * 100)))}%
               </span>
             </div>
             <div className="w-full bg-slate-200 dark:bg-slate-800/80 rounded-full h-2.5 overflow-hidden shadow-inner">
               <div
-                className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 h-full transition-all duration-300 ease-out rounded-full shadow-sm"
+                className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 h-full transition-all duration-300 ease-out rounded-full shadow-sm"
                 style={{ width: `${Math.min(100, Math.max(0, Math.round((mergeProgress.current / mergeProgress.total) * 100)))}%` }}
               />
             </div>
@@ -1422,7 +1409,7 @@ export const LandingPage: React.FC = () => {
                 className="self-start sm:self-auto inline-flex items-center space-x-2 px-4 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/[0.1] transition-all shadow-sm hover:scale-[1.02] active:scale-[0.98]"
                 title={t('merge.cleanMergeDesc', 'Start a fresh new merge')}
               >
-                <RotateCcw className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                <RotateCcw className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span>{t('merge.newMerge', 'New Merge')}</span>
               </button>
             </div>
@@ -1439,6 +1426,12 @@ export const LandingPage: React.FC = () => {
                 <>
                   <span>•</span>
                   <span>{t('merge.statBookmarksAdded', { count: mergeResult.stats.bookmarksAdded, defaultValue: `+${mergeResult.stats.bookmarksAdded} bookmarks added` })}</span>
+                </>
+              )}
+              {(mergeResult.stats.playlistsMerged ?? 0) > 0 && (
+                <>
+                  <span>•</span>
+                  <span>{t('merge.statPlaylistsMerged', { count: mergeResult.stats.playlistsMerged, defaultValue: `+${mergeResult.stats.playlistsMerged} playlists merged` })}</span>
                 </>
               )}
             </div>
@@ -1464,7 +1457,7 @@ export const LandingPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleDownload}
-                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-lg shadow-blue-600/30 hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs transition-all shadow-lg shadow-emerald-600/30 hover:scale-[1.02] active:scale-[0.98]"
               >
                 <Download className="w-4 h-4" />
                 <span>{t('merge.downloadCombined', 'Download Combined Backup')}</span>
@@ -1476,7 +1469,7 @@ export const LandingPage: React.FC = () => {
                 disabled={isUploading || cloudSaveSuccess}
                 className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] text-xs font-semibold transition-all"
               >
-                <Cloud className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <Cloud className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>{cloudSaveSuccess ? t('merge.savedDrive') : isUploading ? t('merge.savingDrive') : t('merge.saveDrive')}</span>
               </button>
 
@@ -1487,9 +1480,9 @@ export const LandingPage: React.FC = () => {
                 className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] text-xs font-semibold transition-all disabled:opacity-60"
               >
                 {isOpenInAppLoading ? (
-                  <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                  <Loader2 className="w-4 h-4 text-emerald-600 animate-spin" />
                 ) : (
-                  <Compass className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <Compass className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 )}
                 <span>{isOpenInAppLoading ? t('merge.loadingIntoApp', 'Loading into App...') : t('merge.exploreInApp', 'Explore in App')}</span>
               </button>
@@ -1500,7 +1493,7 @@ export const LandingPage: React.FC = () => {
                 className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/[0.1] text-xs font-semibold transition-all shadow-sm hover:scale-[1.02] active:scale-[0.98]"
                 title={t('merge.cleanMergeDesc', 'Start a fresh new merge')}
               >
-                <RotateCcw className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <RotateCcw className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>{t('merge.newMerge', 'New Merge')}</span>
               </button>
             </div>
@@ -1514,7 +1507,7 @@ export const LandingPage: React.FC = () => {
           <button
             type="button"
             onClick={handleLoadDemoFiles}
-            className="inline-flex items-center space-x-1.5 text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+            className="inline-flex items-center space-x-1.5 text-emerald-600 dark:text-emerald-400 hover:underline font-semibold"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>{t('merge.loadDemoPair', 'Load Demo Pair (Sample Files)')}</span>
@@ -1550,9 +1543,9 @@ export const LandingPage: React.FC = () => {
           <div className="bg-white dark:bg-[#111726] border border-slate-200 dark:border-white/[0.1] rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/[0.06]">
               <div className="flex items-center space-x-2 text-sm font-bold text-slate-900 dark:text-white">
-                <Cloud className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <Cloud className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>
-                  Select Backup for {cloudPickerTarget === 'primary' ? t('merge.backup1', 'Backup 1') : t('merge.backup2', 'Backup 2')}
+                  Select Backup for {cloudPickerTarget === 'primary' ? t('merge.backup1', 'Primary Archive') : t('merge.backup2', 'Secondary Archive')}
                 </span>
               </div>
               <button
@@ -1572,8 +1565,8 @@ export const LandingPage: React.FC = () => {
             {isDownloadingCloud ? (
               <div className="py-8 text-center space-y-3">
                 <div className="relative mx-auto w-12 h-12 flex items-center justify-center">
-                  <RefreshCw className="w-10 h-10 text-blue-600 dark:text-blue-400 animate-spin opacity-40" />
-                  <span className="absolute font-bold text-xs text-blue-600 dark:text-blue-400 font-mono">
+                  <RefreshCw className="w-10 h-10 text-emerald-600 dark:text-emerald-400 animate-spin opacity-40" />
+                  <span className="absolute font-bold text-xs text-emerald-600 dark:text-emerald-400 font-mono">
                     {cloudDownloadProgress ?? 0}%
                   </span>
                 </div>
@@ -1587,7 +1580,7 @@ export const LandingPage: React.FC = () => {
                 </div>
                 <div className="w-48 mx-auto bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
                   <div
-                    className="bg-blue-600 h-full transition-all duration-150 rounded-full"
+                    className="bg-emerald-600 h-full transition-all duration-150 rounded-full"
                     style={{ width: `${Math.max(5, cloudDownloadProgress ?? 5)}%` }}
                   />
                 </div>
@@ -1636,7 +1629,7 @@ export const LandingPage: React.FC = () => {
                       if (cloudPasswordError) setCloudPasswordError(null);
                     }}
                     placeholder="Enter password..."
-                    className="w-full bg-slate-50 dark:bg-[#0b0f17] border border-slate-300 dark:border-white/[0.1] rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-200 focus:border-blue-500 focus:outline-none disabled:opacity-50"
+                    className="w-full bg-slate-50 dark:bg-[#0b0f17] border border-slate-300 dark:border-white/[0.1] rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-200 focus:border-emerald-500 focus:outline-none disabled:opacity-50"
                   />
                 </div>
 
@@ -1657,7 +1650,7 @@ export const LandingPage: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isVerifyingPassword || !cloudPasswordInput.trim()}
-                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold text-xs transition-all shadow-md shadow-blue-600/20 flex items-center space-x-1.5"
+                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold text-xs transition-all shadow-md shadow-emerald-600/20 flex items-center space-x-1.5"
                   >
                     {isVerifyingPassword && (
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -1666,15 +1659,15 @@ export const LandingPage: React.FC = () => {
                       {isVerifyingPassword
                         ? t('cloud.verifyingPassword', 'Verifying password...')
                         : cachedEncryptedDownload?.fileId === cloudPasswordPromptFile.id
-                        ? t('cloud.unlockCached', 'Unlock Backup')
-                        : t('cloud.unlockAndDownload', 'Unlock & Download')}
+                          ? t('cloud.unlockCached', 'Unlock Backup')
+                          : t('cloud.unlockAndDownload', 'Unlock & Download')}
                     </span>
                   </button>
                 </div>
               </form>
             ) : backups.length === 0 ? (
               <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400 space-y-2">
-                <p>{t('cloud.noBackupsFound', 'No backups found in your Google Drive “JW Sync” folder.')}</p>
+                <p>{t('cloud.noBackupsFound', 'No archives found in your Google Drive “Panda JL Studio” folder.')}</p>
               </div>
             ) : (
               <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
@@ -1685,7 +1678,7 @@ export const LandingPage: React.FC = () => {
                     <div
                       key={b.id}
                       onClick={() => handleSelectCloudBackup(b)}
-                      className="p-3 rounded-xl bg-slate-50 hover:bg-blue-50 dark:bg-white/[0.02] dark:hover:bg-blue-500/10 border border-slate-200 dark:border-white/[0.06] hover:border-blue-500/40 cursor-pointer flex items-center justify-between text-xs transition-colors"
+                      className="p-3 rounded-xl bg-slate-50 hover:bg-emerald-50 dark:bg-white/[0.02] dark:hover:bg-emerald-500/10 border border-slate-200 dark:border-white/[0.06] hover:border-emerald-500/40 cursor-pointer flex items-center justify-between text-xs transition-colors"
                     >
                       <div className="truncate max-w-[80%] space-y-1">
                         <div className="font-semibold text-slate-800 dark:text-slate-200 truncate flex items-center space-x-1.5">
@@ -1717,15 +1710,15 @@ export const LandingPage: React.FC = () => {
                           {(b.notesCount !== undefined || b.tagsCount !== undefined || b.playlistsCount !== undefined) && (
                             <span className="text-slate-600 dark:text-slate-300 font-medium">
                               • {[
-                                  b.notesCount !== undefined ? `${b.notesCount} ${t('nav.notes', 'notes')}` : null,
-                                  b.tagsCount !== undefined ? `${b.tagsCount} ${t('nav.tags', 'tags')}` : null,
-                                  b.playlistsCount !== undefined ? `${b.playlistsCount} ${t('nav.playlists', 'playlists')}` : null,
-                                ].filter(Boolean).join(' • ')}
+                                b.notesCount !== undefined ? `${b.notesCount} ${t('nav.notes', 'notes')}` : null,
+                                b.tagsCount !== undefined ? `${b.tagsCount} ${t('nav.tags', 'tags')}` : null,
+                                b.playlistsCount !== undefined ? `${b.playlistsCount} ${t('nav.playlists', 'playlists')}` : null,
+                              ].filter(Boolean).join(' • ')}
                             </span>
                           )}
                         </div>
                       </div>
-                      <span className="text-blue-600 dark:text-blue-400 font-semibold text-xs flex-shrink-0 ml-2">Select →</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-xs flex-shrink-0 ml-2">Select →</span>
                     </div>
                   );
                 })}

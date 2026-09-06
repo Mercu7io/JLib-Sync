@@ -1,5 +1,5 @@
 /**
- * JW Sync v3 — Global Zustand Store (useAppStore.ts)
+ * Panda JL Studio — Global Zustand Store (useAppStore.ts)
  * Holds the active .jwlibrary in-memory for instant switching across
  * Landing, Merge, Explorer, Stats, and Share views.
  */
@@ -202,7 +202,7 @@ export const useAppStore = create<IAppState>((set, get) => ({
 
   setSelectedLanguage: (lang: string) => {
     try {
-      localStorage.setItem('jwsync_language', lang);
+      localStorage.setItem('jlib_language', lang);
       i18n.changeLanguage(lang);
     } catch (_) {}
     set({ selectedLanguage: lang });

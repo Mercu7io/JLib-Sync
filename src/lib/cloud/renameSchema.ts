@@ -1,5 +1,5 @@
 /**
- * Panda JWL-Sync — Google Drive Cloud Backup Rename Schema & Validator
+ * Panda JL Studio — Google Drive Cloud Backup Rename Schema & Validator
  * Enforces typed schema validation, sanitization, and extension preservation.
  */
 

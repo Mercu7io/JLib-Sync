@@ -1,5 +1,5 @@
 /**
- * JW Sync v3 — Zip Archiver & Extractor for .jwlibrary bundles
+ * Panda JL Studio — Zip Archiver & Extractor for .jwlibrary bundles
  * A .jwlibrary file is a standard ZIP archive containing:
  * - manifest.json
  * - userData.db

@@ -1,5 +1,5 @@
 /**
- * Panda JWL-Sync — Zustand Store for Cloud Sync (Google Drive)
+ * Panda JL Studio — Zustand Store for Cloud Sync (Google Drive)
  */
 
 import { create } from 'zustand';
@@ -65,13 +65,13 @@ interface ICloudState {
   setEncryptionConfig: (enabled: boolean, password: null | string, expiresInMs?: number) => void;
 }
 
-const LOCAL_STORAGE_ENC_KEY = 'jwsync_cloud_enc';
-const LOCAL_STORAGE_NOTIFS_KEY = 'jwsync_cloud_notifications';
-const LOCAL_STORAGE_SHAS_KEY = 'jwsync_cloud_known_shas';
+const LOCAL_STORAGE_ENC_KEY = 'jlib_cloud_enc';
+const LOCAL_STORAGE_NOTIFS_KEY = 'jlib_cloud_notifications';
+const LOCAL_STORAGE_SHAS_KEY = 'jlib_cloud_known_shas';
 
 const loadCachedShas = (): string[] => {
   try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_SHAS_KEY);
+    const raw = localStorage.getItem(LOCAL_STORAGE_SHAS_KEY) || localStorage.getItem('jwsync_cloud_known_shas');
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) return parsed.filter((s) => typeof s === 'string');
@@ -82,7 +82,7 @@ const loadCachedShas = (): string[] => {
 
 const loadEncryptionConfig = () => {
   try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_ENC_KEY);
+    const raw = localStorage.getItem(LOCAL_STORAGE_ENC_KEY) || localStorage.getItem('jwsync_cloud_enc');
     if (!raw) return { encryptionEnabled: false, encryptionPassword: null, passwordExpiresAt: null };
     const parsed = JSON.parse(raw);
     if (parsed.passwordExpiresAt && Date.now() > parsed.passwordExpiresAt) {
@@ -100,7 +100,8 @@ const loadEncryptionConfig = () => {
 
 const getInitialNotificationsEnabled = () => {
   try {
-    return localStorage.getItem(LOCAL_STORAGE_NOTIFS_KEY) !== 'false';
+    const saved = localStorage.getItem(LOCAL_STORAGE_NOTIFS_KEY) ?? localStorage.getItem('jwsync_cloud_notifications');
+    return saved !== 'false';
   } catch {
     return true;
   }
@@ -146,7 +147,7 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
 
   acknowledgeCloudBackups: () => {
     try {
-      localStorage.setItem('jwsync_last_ack_cloud_time', Date.now().toString());
+      localStorage.setItem('jlib_last_ack_cloud_time', Date.now().toString());
     } catch (_) {}
     set({ unreadCloudBackupsCount: 0, unseenBackups: [] });
   },
@@ -157,8 +158,8 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
   },
 
   initCloud: async () => {
-    if (typeof window !== 'undefined' && !(window as any).__JWSYNC_NET_INIT__) {
-      (window as any).__JWSYNC_NET_INIT__ = true;
+    if (typeof window !== 'undefined' && !(window as any).__JLIB_NET_INIT__) {
+      (window as any).__JLIB_NET_INIT__ = true;
       window.addEventListener('online', () => set({ isOnline: true }));
       window.addEventListener('offline', () => set({ isOnline: false }));
     }
@@ -212,7 +213,7 @@ export const useCloudStore = create<ICloudState>((set, get) => ({
       const myDeviceId = getLocalDeviceId();
       let lastAckTime = 0;
       try {
-        lastAckTime = Number(localStorage.getItem('jwsync_last_ack_cloud_time') || 0);
+        lastAckTime = Number(localStorage.getItem('jlib_last_ack_cloud_time') || localStorage.getItem('jwsync_last_ack_cloud_time') || 0);
       } catch (_) {}
 
       const unseen = backups.filter((b) => {

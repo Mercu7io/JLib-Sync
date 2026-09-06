@@ -1,5 +1,5 @@
 /**
- * Panda JWL-Sync — SHA-256 Computation Utility
+ * Panda JL Studio — SHA-256 Computation Utility
  * Uses native Web Crypto API for ultra-fast, client-side checksums.
  */
 

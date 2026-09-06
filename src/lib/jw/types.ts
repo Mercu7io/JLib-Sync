@@ -1,5 +1,5 @@
 /**
- * JW Sync v3 — Core Database & Manifest Interfaces
+ * Panda JL Studio — Core Database & Manifest Interfaces
  * Matches schemaVersion 14-16+ of JW Library's userData.db
  */
 

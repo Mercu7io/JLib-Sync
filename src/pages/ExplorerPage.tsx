@@ -25,7 +25,6 @@ import { useAppStore } from '../store/useAppStore';
 import { useCloudStore } from '../store/useCloudStore';
 import { queryAll, execute, exportDatabase } from '../lib/jw/sqlite';
 import { runHealthChecks, applyHealthFix } from '../lib/jw/doctor';
-import { fastSemanticSearch } from '../lib/jw/semantic';
 import { BIBLE_BOOKS, getJwBibleLink, getJwPubLink } from '../lib/jw/locales';
 import { HIGHLIGHT_COLORS } from '../lib/jw/tokenizer';
 import { createOrUpdateManifest } from '../lib/jw/manifest';
@@ -110,7 +109,6 @@ export const ExplorerPage: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [isAiSearch, setIsAiSearch] = useState<boolean>(false);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<'all' | 'notes' | 'highlights' | 'bookmarks' | 'playlists'>('all');
 
@@ -336,7 +334,7 @@ export const ExplorerPage: React.FC = () => {
     return Array.from(map.values());
   }, [bookmarks, searchQuery]);
 
-  // ── Filtered Notes with AI Semantic Scoring ─────────────────────────────
+  // ── Filtered Notes with Instant Text Search ──────────────────────────────
   const filteredNotes = useMemo(() => {
     let list = allNotes;
 
@@ -352,28 +350,20 @@ export const ExplorerPage: React.FC = () => {
       list = list.filter((n) => n.tags.includes(selectedTag));
     }
 
-    // Search Query (Text or AI Semantic)
+    // Search Query (Text Matching)
     if (searchQuery.trim()) {
-      if (isAiSearch) {
-        const aiMatches = fastSemanticSearch(searchQuery, list);
-        const matchMap = new Map(aiMatches.map((m) => [m.noteId, m.score]));
-        return list
-          .filter((n) => matchMap.has(n.noteId))
-          .sort((a, b) => (matchMap.get(b.noteId) || 0) - (matchMap.get(a.noteId) || 0));
-      } else {
-        const q = searchQuery.toLowerCase();
-        return list.filter(
-          (n) =>
-            (n.title && n.title.toLowerCase().includes(q)) ||
-            (n.content && n.content.toLowerCase().includes(q)) ||
-            (n.locationTitle && n.locationTitle.toLowerCase().includes(q)) ||
-            n.tags.some((t) => t.toLowerCase().includes(q))
-        );
-      }
+      const q = searchQuery.toLowerCase();
+      return list.filter(
+        (n) =>
+          (n.title && n.title.toLowerCase().includes(q)) ||
+          (n.content && n.content.toLowerCase().includes(q)) ||
+          (n.locationTitle && n.locationTitle.toLowerCase().includes(q)) ||
+          n.tags.some((t) => t.toLowerCase().includes(q))
+      );
     }
 
     return list;
-  }, [allNotes, selectedType, selectedTag, searchQuery, isAiSearch]);
+  }, [allNotes, selectedType, selectedTag, searchQuery]);
 
   // ── Edit Note Handlers ──────────────────────────────────────────────────
   const startEditNote = (note: INoteCardItem) => {
@@ -560,7 +550,7 @@ export const ExplorerPage: React.FC = () => {
             onClick={openDoctor}
             className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-medium transition-colors shadow-sm"
           >
-            <Stethoscope className="w-3.5 h-3.5 text-orange-500 dark:text-orange-400" />
+            <Stethoscope className="w-3.5 h-3.5 text-teal-500 dark:text-teal-400" />
             <span>{t('explorer.doctorBtn')}</span>
           </button>
 
@@ -581,7 +571,7 @@ export const ExplorerPage: React.FC = () => {
                 type="button"
                 onClick={handleDirectCloudUpload}
                 disabled={isUploading}
-                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
                 title={t('nav.uploadToDrive', 'Upload to Drive')}
               >
                 <Upload className={`w-3.5 h-3.5 ${isUploading ? 'animate-bounce' : ''}`} />
@@ -595,14 +585,14 @@ export const ExplorerPage: React.FC = () => {
             onClick={() => setShowCloudModal(true)}
             className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] text-xs font-medium transition-colors shadow-sm"
           >
-            <Cloud className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" />
+            <Cloud className="w-3.5 h-3.5 text-teal-500 dark:text-teal-400" />
             <span>{t('explorer.cloudDriveBtn')}</span>
           </button>
 
           <button
             type="button"
             onClick={handleDownloadUpdatedBackup}
-            className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold transition-colors shadow-sm"
+            className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors shadow-sm"
           >
             <Download className="w-4 h-4" />
             <span>{t('explorer.saveBackupBtn')}</span>
@@ -618,10 +608,10 @@ export const ExplorerPage: React.FC = () => {
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder={isAiSearch ? t('explorer.searchAiPlaceholder') : t('explorer.searchPlaceholder')}
+              placeholder={t('explorer.searchPlaceholder', 'Search notes, scriptures, tags...')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-orange-500 shadow-sm"
+              className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-emerald-500 shadow-sm"
             />
             {searchQuery && (
               <button
@@ -633,20 +623,6 @@ export const ExplorerPage: React.FC = () => {
               </button>
             )}
           </div>
-
-          <button
-            type="button"
-            onClick={() => setIsAiSearch(!isAiSearch)}
-            className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-colors ${
-              isAiSearch
-                ? 'bg-purple-500/10 border-purple-500/40 text-purple-600 dark:text-purple-300'
-                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-            title="Toggle AI Semantic Search"
-          >
-            <Sparkles className={`w-3.5 h-3.5 ${isAiSearch ? 'text-purple-500 dark:text-purple-400' : 'text-slate-400'}`} />
-            <span>{t('explorer.semanticAiBtn')}</span>
-          </button>
         </div>
 
         {/* Type Filter dropdown */}
@@ -654,7 +630,7 @@ export const ExplorerPage: React.FC = () => {
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value as any)}
-            className="w-full py-2 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-orange-500 shadow-sm"
+            className="w-full py-2 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-emerald-500 shadow-sm"
           >
             <option value="all">{t('explorer.filterAll')} ({allNotes.length + playlists.length + bookmarks.length})</option>
             <option value="notes">{t('explorer.filterNotes')}</option>
@@ -673,12 +649,12 @@ export const ExplorerPage: React.FC = () => {
             className="flex items-center space-x-2 w-full text-left focus:outline-none group mb-4"
           >
             {showNotesCategory ? (
-              <ChevronDown className="w-5 h-5 text-orange-500 dark:text-orange-400 group-hover:text-orange-600 dark:group-hover:text-orange-300" />
+              <ChevronDown className="w-5 h-5 text-amber-500 dark:text-amber-400 group-hover:text-amber-600 dark:group-hover:text-amber-300" />
             ) : (
-              <ChevronRight className="w-5 h-5 text-orange-500 dark:text-orange-400 group-hover:text-orange-600 dark:group-hover:text-orange-300" />
+              <ChevronRight className="w-5 h-5 text-amber-500 dark:text-amber-400 group-hover:text-amber-600 dark:group-hover:text-amber-300" />
             )}
             <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center space-x-2">
-              <FileText className="w-5 h-5 text-orange-500 dark:text-orange-400" />
+              <FileText className="w-5 h-5 text-amber-500 dark:text-amber-400" />
               <span>{t('explorer.notesCategory', 'Notes')}</span>
               <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">({filteredNotes.length})</span>
             </h2>
@@ -694,7 +670,7 @@ export const ExplorerPage: React.FC = () => {
                     onClick={() => setSelectedTag(null)}
                     className={`px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
                       selectedTag === null
-                        ? 'bg-orange-600 text-white font-medium shadow-sm'
+                        ? 'bg-amber-600 text-white font-medium shadow-sm'
                         : 'bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
                     }`}
                   >
@@ -707,7 +683,7 @@ export const ExplorerPage: React.FC = () => {
                       onClick={() => setSelectedTag(tItem.Name === selectedTag ? null : tItem.Name)}
                       className={`px-2.5 py-1 rounded-full whitespace-nowrap transition-colors flex items-center space-x-1 ${
                         selectedTag === tItem.Name
-                          ? 'bg-orange-600 text-white font-medium shadow-sm'
+                          ? 'bg-amber-600 text-white font-medium shadow-sm'
                           : 'bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
                       }`}
                     >
@@ -729,7 +705,7 @@ export const ExplorerPage: React.FC = () => {
                       setSelectedTag(null);
                       setSelectedType('all');
                     }}
-                    className="text-xs text-orange-600 dark:text-orange-400 hover:underline font-semibold"
+                    className="text-xs text-amber-600 dark:text-amber-400 hover:underline font-semibold"
                   >
                     {t('explorer.clearAllFilters', 'Clear all filters')}
                   </button>
@@ -761,7 +737,7 @@ export const ExplorerPage: React.FC = () => {
                     return (
                       <div
                         key={note.noteId}
-                        className="border border-slate-200 dark:border-slate-800 hover:border-orange-500/40 dark:hover:border-slate-700 bg-white dark:bg-slate-900 rounded-xl p-4 flex flex-col justify-between space-y-3 transition-colors shadow-sm group"
+                        className="border border-slate-200 dark:border-slate-800 hover:border-amber-500/50 dark:hover:border-amber-500/40 bg-white dark:bg-slate-900 rounded-xl p-4 flex flex-col justify-between space-y-3 transition-colors shadow-sm group"
                       >
                         <div className="space-y-2">
                           {/* Location & Color Header */}
@@ -786,7 +762,7 @@ export const ExplorerPage: React.FC = () => {
                                 href={jwLink}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="text-slate-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors p-1"
+                                className="text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 transition-colors p-1"
                                 title="Open on JW.org"
                               >
                                 <ExternalLink className="w-3.5 h-3.5" />
@@ -814,7 +790,7 @@ export const ExplorerPage: React.FC = () => {
                               <span
                                 key={tag}
                                 onClick={() => setSelectedTag(tag)}
-                                className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 hover:text-orange-500 dark:hover:text-orange-400 cursor-pointer border border-slate-200 dark:border-slate-800"
+                                className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 cursor-pointer border border-slate-200 dark:border-slate-800"
                               >
                                 #{tag}
                               </span>
@@ -1075,7 +1051,7 @@ export const ExplorerPage: React.FC = () => {
                   type="text"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-md px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 shadow-sm"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-md px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 shadow-sm"
                 />
               </div>
 
@@ -1085,7 +1061,7 @@ export const ExplorerPage: React.FC = () => {
                   rows={6}
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-md px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 font-sans leading-relaxed shadow-sm"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-md px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 font-sans leading-relaxed shadow-sm"
                 />
               </div>
             </div>
@@ -1101,7 +1077,7 @@ export const ExplorerPage: React.FC = () => {
               <button
                 type="button"
                 onClick={saveEditedNote}
-                className="px-4 py-1.5 rounded-md bg-orange-600 hover:bg-orange-500 text-white font-medium text-xs transition-colors shadow-sm"
+                className="px-4 py-1.5 rounded-md bg-amber-600 hover:bg-amber-500 text-white font-medium text-xs transition-colors shadow-sm"
               >
                 {t('explorer.saveChanges')}
               </button>
@@ -1116,7 +1092,7 @@ export const ExplorerPage: React.FC = () => {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl max-w-xl w-full p-4 sm:p-6 space-y-6 shadow-2xl max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
               <div className="flex items-center space-x-2 text-slate-900 dark:text-white font-bold">
-                <Stethoscope className="w-5 h-5 text-orange-500 dark:text-orange-400" />
+                <Stethoscope className="w-5 h-5 text-teal-500 dark:text-teal-400" />
                 <span>{t('explorer.doctorTitle')}</span>
               </div>
               <button
@@ -1146,7 +1122,7 @@ export const ExplorerPage: React.FC = () => {
                         className={`px-1.5 py-0.5 rounded text-[11px] font-mono ${
                           check.count === 0
                             ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                            : 'bg-orange-500/10 text-orange-600 dark:text-orange-400'
+                            : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
                         }`}
                       >
                         {check.count} found
@@ -1159,7 +1135,7 @@ export const ExplorerPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => fixDoctorIssue(check.key, check.affectedIds)}
-                      className="px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-500 text-white font-medium text-xs transition-colors flex-shrink-0 shadow-sm"
+                      className="px-3 py-1.5 rounded bg-teal-600 hover:bg-teal-500 text-white font-medium text-xs transition-colors flex-shrink-0 shadow-sm"
                     >
                       {t('explorer.doctorFixBtn')}
                     </button>
@@ -1187,7 +1163,7 @@ export const ExplorerPage: React.FC = () => {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl max-w-lg w-full p-4 sm:p-6 space-y-4 shadow-2xl max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
               <div className="flex items-center space-x-2 text-slate-900 dark:text-white font-bold">
-                <Tag className="w-5 h-5 text-sky-500 dark:text-sky-400" />
+                <Tag className="w-5 h-5 text-teal-500 dark:text-teal-400" />
                 <span>{t('explorer.tagManagerTitle')}</span>
               </div>
               <button
@@ -1211,12 +1187,12 @@ export const ExplorerPage: React.FC = () => {
                         type="text"
                         value={newTagName}
                         onChange={(e) => setNewTagName(e.target.value)}
-                        className="bg-white dark:bg-slate-900 border border-orange-500 rounded px-2 py-1 text-slate-900 dark:text-white text-xs flex-1 focus:outline-none"
+                        className="bg-white dark:bg-slate-900 border border-emerald-500 rounded px-2 py-1 text-slate-900 dark:text-white text-xs flex-1 focus:outline-none"
                       />
                       <button
                         type="button"
                         onClick={handleRenameTag}
-                        className="px-2 py-1 bg-orange-600 text-white rounded font-medium"
+                        className="px-2 py-1 bg-emerald-600 text-white rounded font-medium"
                       >
                         {t('common.save')}
                       </button>

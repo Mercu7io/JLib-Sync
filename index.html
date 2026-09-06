@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Panda JWL-Sync — Merge & Organize .jwlibrary Backups</title>
-    <meta name="description" content="Merge two JW Library backups without overwriting either device. 100% client-side privacy. Selective sharing, tag management, and Google Drive sync." />
-    <meta name="theme-color" content="#0B0F19" />
+    <title>Panda JL Studio — Unified Study Archive & Backup Workspace</title>
+    <meta name="description" content="Unified Study Archive & Backup Workspace for Personal JW Library Collections. Cross-device archive unification, research vault, tag management, and private cloud backup." />
+    <meta name="theme-color" content="#090D16" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Panda JWL-Sync" />
+    <meta name="apple-mobile-web-app-title" content="Panda JL Studio" />
     <link rel="icon" type="image/jpeg" href="/logo.jpg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,13 +27,13 @@
             document.documentElement.classList.remove('dark');
           }
           var tm = document.cookie.match(/(^|;\s*)text_size=([^;]+)/);
-          var textSize = tm ? decodeURIComponent(tm[2]) : (localStorage.getItem('jwsync_text_size') || 'large');
+          var textSize = tm ? decodeURIComponent(tm[2]) : (localStorage.getItem('jlib_text_size') || localStorage.getItem('jwsync_text_size') || 'large');
           document.documentElement.setAttribute('data-text-size', textSize);
         } catch (_) {}
       })();
     </script>
   </head>
-  <body class="bg-slate-50 text-slate-900 dark:bg-[#0B0F19] dark:text-slate-100 min-h-screen antialiased selection:bg-blue-500/20 selection:text-blue-400 transition-colors duration-150">
+  <body class="bg-slate-50 text-slate-900 dark:bg-[#090D16] dark:text-slate-100 min-h-screen antialiased selection:bg-emerald-500/20 selection:text-emerald-400 transition-colors duration-150">
     <div id="root"></div>
     <script src="/env.js"></script>
     <script type="module" src="/src/main.tsx"></script>

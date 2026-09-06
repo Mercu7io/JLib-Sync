@@ -4,7 +4,7 @@ import { resources } from '../locales';
 
 export const getInitialLanguage = (): string => {
   try {
-    const saved = localStorage.getItem('jwsync_language');
+    const saved = localStorage.getItem('jlib_language') || localStorage.getItem('jwsync_language');
     if (saved && saved in resources) return saved;
   } catch (_) {}
   // Check exact browser language (e.g. zh-Hans)

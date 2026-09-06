@@ -1,5 +1,5 @@
 /**
- * JW Sync v3 — Core Multi-Database Merge Engine
+ * Panda JL Studio — Core Multi-Database Merge Engine
  * 100% Client-Side SQLite Merge using WebAssembly (sql.js).
  * 
  * Rules:
@@ -114,7 +114,7 @@ export async function mergeJwLibraries(
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
       return crypto.randomUUID();
     }
-    return 'jwsync-' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+    return 'jlib-' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
   };
 
   const totalSecondaries = secondaryFiles.length;
@@ -747,7 +747,7 @@ export async function mergeJwLibraries(
         const existingPl = queryOne<{ PlaylistItemId: number }>(
           mainDb,
           `SELECT PlaylistItemId FROM PlaylistItem 
-           WHERE Label = :l 
+           WHERE IFNULL(Label, '') = :l 
              AND IFNULL(StartTrimOffsetTicks, -1) = :s 
              AND IFNULL(EndTrimOffsetTicks, -1) = :e 
              AND Accuracy = :a 
@@ -755,7 +755,7 @@ export async function mergeJwLibraries(
              AND IFNULL(ThumbnailFilePath, '') = :t 
            LIMIT 1`,
           {
-            ':l': pl.Label,
+            ':l': pl.Label ?? '',
             ':s': pl.StartTrimOffsetTicks ?? -1,
             ':e': pl.EndTrimOffsetTicks ?? -1,
             ':a': pl.Accuracy ?? 1,
@@ -1042,7 +1042,7 @@ export async function mergeJwLibraries(
   });
 
   const finalName = options.primaryName || `${primaryManifest.name || 'Library'} (Merged)`;
-  const finalDevice = options.deviceName || 'JW Sync (Web)';
+  const finalDevice = options.deviceName || 'Panda JL Studio (Web)';
 
   const updatedManifest = await createOrUpdateManifest(
     mergedDbBytes,
@@ -1100,12 +1100,12 @@ export async function mergeJwLibraries(
 
 /**
  * Generates the default filename for merged backup archives.
- * Format: YYYY-MM-DD_Panda_JWL.jwlibrary (e.g. 2026-09-01_Panda_JWL.jwlibrary)
+ * Format: YYYY-MM-DD_Panda_JL.jwlibrary (e.g. 2026-09-01_Panda_JL.jwlibrary)
  */
 export const getDefaultMergeFilename = (date: Date = new Date()): string => {
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, '0');
   const dd = String(date.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}_Panda_JWL.jwlibrary`;
+  return `${yyyy}-${mm}-${dd}_Panda_JL.jwlibrary`;
 };
 

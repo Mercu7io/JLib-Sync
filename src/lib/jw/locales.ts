@@ -1,6 +1,6 @@
 /**
- * JW Sync v3 — Language & jw.org Locale Mappings
- * Covers 27 supported languages with strict WTLOCALE codes.
+ * Panda JL Studio — Language & Locale Mappings
+ * Supported 10 main languages including English, French, and Hebrew.
  */
 
 export interface ILanguageInfo {
@@ -14,31 +14,14 @@ export interface ILanguageInfo {
 export const SUPPORTED_LANGUAGES: ILanguageInfo[] = [
   { code: 'en', name: 'English', nativeName: 'English', wtlocale: 'E' },
   { code: 'es', name: 'Spanish', nativeName: 'Español', wtlocale: 'S' },
-  { code: 'pt', name: 'Portuguese', nativeName: 'Português', wtlocale: 'T' },
   { code: 'fr', name: 'French', nativeName: 'Français', wtlocale: 'F' },
   { code: 'de', name: 'German', nativeName: 'Deutsch', wtlocale: 'X' },
+  { code: 'pt', name: 'Portuguese', nativeName: 'Português', wtlocale: 'T' },
   { code: 'it', name: 'Italian', nativeName: 'Italiano', wtlocale: 'I' },
   { code: 'ru', name: 'Russian', nativeName: 'Русский', wtlocale: 'U' },
   { code: 'ja', name: 'Japanese', nativeName: '日本語', wtlocale: 'J' },
-  { code: 'ko', name: 'Korean', nativeName: '한국어', wtlocale: 'KO' },
-  { code: 'tl', name: 'Tagalog', nativeName: 'Tagalog', wtlocale: 'TG' },
-  { code: 'sv', name: 'Swedish', nativeName: 'Svenska', wtlocale: 'Z' },
-  { code: 'ceb', name: 'Cebuano', nativeName: 'Cebuano', wtlocale: 'CV' },
-  { code: 'ar', name: 'Arabic', nativeName: 'العربية', wtlocale: 'A', rtl: true },
-  { code: 'he', name: 'Hebrew', nativeName: 'עברית', wtlocale: 'Q', rtl: true },
-  { code: 'uk', name: 'Ukrainian', nativeName: 'Українська', wtlocale: 'K' },
-  { code: 'pl', name: 'Polish', nativeName: 'Polski', wtlocale: 'P' },
   { code: 'zh-Hans', name: 'Chinese (Simplified)', nativeName: '简体中文', wtlocale: 'CHS' },
-  { code: 'zh-Hant', name: 'Chinese (Traditional)', nativeName: '繁體中文', wtlocale: 'CH' },
-  { code: 'yue-Hant', name: 'Cantonese', nativeName: '粵語', wtlocale: 'CHC' },
-  { code: 'vi', name: 'Vietnamese', nativeName: 'Tiếng Việt', wtlocale: 'VT' },
-  { code: 'hu', name: 'Hungarian', nativeName: 'Magyar', wtlocale: 'H' },
-  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', wtlocale: 'HI' },
-  { code: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia', wtlocale: 'IN' },
-  { code: 'ro', name: 'Romanian', nativeName: 'Română', wtlocale: 'M' },
-  { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', wtlocale: 'O' },
-  { code: 'sw', name: 'Swahili', nativeName: 'Kiswahili', wtlocale: 'SW' },
-  { code: 'el', name: 'Greek', nativeName: 'Ελληνικά', wtlocale: 'G' },
+  { code: 'he', name: 'Hebrew', nativeName: 'עברית', wtlocale: 'Q', rtl: true },
 ];
 
 export const WTLOCALE_MAP: Record<string, string> = Object.fromEntries(
