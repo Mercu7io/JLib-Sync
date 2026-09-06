@@ -1,8 +1,12 @@
 # Panda JWL-Sync
 
 > A privacy-first, 100% client-side utility for merging, organizing, searching, and sharing JW Library backups.
-> It's a fork of https://github.com/j-syncer/Jw-sync-
 > 
+> It's was inspired by the idea of https://github.com/j-syncer/Jw-sync-
+>
+> It's not a fork (different technology and features)
+
+
 ## 🚀 Features
 
 - **Multi-Device Merge:** Restore is a full swap, not a merge. JW Sync combines phone and tablet backups without either overwriting the other.
