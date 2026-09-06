@@ -1,6 +1,6 @@
 # Panda JWL-Sync
 
-> A privacy-first, 100% client-side utility for merging, organizing, searching, and sharing JW Library backups. Crafted by [redpandaium.com](https://redpandaium.com).
+> A privacy-first, 100% client-side utility for merging, organizing, searching, and sharing JW Library backups.
 > It's a fork of https://github.com/j-syncer/Jw-sync-
 > 
 ## 🚀 Features
