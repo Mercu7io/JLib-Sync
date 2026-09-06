@@ -1,8 +1,8 @@
 # Panda JWL-Sync
 
-> **🌐 Live Application:** [https://jwlsync.redpandaium.com/](https://jwlsync.redpandaium.com/)  
 > A privacy-first, 100% client-side utility for merging, organizing, searching, and sharing JW Library backups. Crafted by [redpandaium.com](https://redpandaium.com).
-
+> It's a fork of https://github.com/j-syncer/Jw-sync-
+> 
 ## 🚀 Features
 
 - **Multi-Device Merge:** Restore is a full swap, not a merge. JW Sync combines phone and tablet backups without either overwriting the other.
