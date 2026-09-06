@@ -1,5 +1,5 @@
 /**
- * JW Sync v3 — Library Doctor & Health Diagnostics
+ * Panda JL Studio — Archive Diagnostics & Health Checks
  * Headless diagnostics to identify and safely repair common database inconsistencies:
  * - Duplicate notes on same anchor
  * - Empty notes

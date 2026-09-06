@@ -14,7 +14,6 @@ import {
   FolderOpen,
   GitMerge,
   BookOpen,
-  BarChart3,
   Type,
   Upload,
   WifiOff,
@@ -104,7 +103,7 @@ export const Navbar: React.FC = () => {
   const handleQuickCloudUpload = async () => {
     try {
       await backupCurrentLibrary();
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const handleThemeChange = (newTheme: ThemeMode) => {
@@ -123,7 +122,7 @@ export const Navbar: React.FC = () => {
       try {
         await loadLibrary(file);
         setMobileMenuOpen(false);
-      } catch (_) {}
+      } catch (_) { }
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -133,17 +132,17 @@ export const Navbar: React.FC = () => {
       <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/80 dark:bg-[#070A12]/80 border-b border-slate-200/80 dark:border-white/[0.08] transition-colors duration-150 h-[64px] min-h-[64px] max-h-[64px]">
         <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 h-[64px] min-h-[64px]">
           <div className="flex items-center justify-between h-[64px] min-h-[64px] gap-4">
-            
+
             {/* ── Brand Logo & Title ───────────────────────────────── */}
             <Link to="/" className="flex items-center space-x-2 sm:space-x-2.5 group flex-shrink-0 min-w-0">
               <img
                 src="/logo.jpg"
-                alt="Panda JWL-Sync"
+                alt="Panda JL Studio"
                 className="w-8 h-8 rounded-xl object-cover ring-1 ring-black/10 dark:ring-white/20 shadow-sm group-hover:scale-105 transition-transform flex-shrink-0"
               />
               <span className="font-bold text-base sm:text-lg tracking-tight text-slate-900 dark:text-white flex items-center space-x-1">
                 <span className={activeLibraryFile && summary ? 'hidden min-[480px]:inline' : 'inline'}>Panda</span>
-                <span className="text-blue-600 dark:text-blue-400">JWL-Sync</span>
+                <span className="text-emerald-600 dark:text-emerald-400">JL Studio</span>
               </span>
             </Link>
 
@@ -158,28 +157,13 @@ export const Navbar: React.FC = () => {
 
             {/* ── Desktop Header Right Controls ─────────────────────── */}
             <div className="hidden md:flex items-center space-x-2.5 flex-shrink-0">
-              {/* Secondary Navigation Links: Share & Help */}
-              <NavLink
-                to="/share"
-                className={({ isActive }) =>
-                  `flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                    isActive
-                      ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-white/[0.04]'
-                  }`
-                }
-              >
-                <Share2 className="w-3.5 h-3.5" />
-                <span>{t('nav.share', 'Share')}</span>
-              </NavLink>
-
+              {/* Secondary Navigation Link: Help */}
               <NavLink
                 to="/help"
                 className={({ isActive }) =>
-                  `flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                    isActive
-                      ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-white/[0.04]'
+                  `flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${isActive
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-white/[0.04]'
                   }`
                 }
               >
@@ -193,12 +177,12 @@ export const Navbar: React.FC = () => {
               {activeLibraryFile && summary ? (
                 <div className="flex items-center space-x-2">
                   <div
-                    className="flex items-center space-x-2 bg-blue-500/10 dark:bg-blue-500/15 border border-blue-500/30 rounded-xl px-3 py-1.5 text-xs text-blue-700 dark:text-blue-300 cursor-help"
+                    className="flex items-center space-x-2 bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/30 rounded-xl px-3 py-1.5 text-xs text-emerald-700 dark:text-emerald-300 cursor-help"
                     title={activeLibraryFile instanceof File && activeLibraryFile.name && activeLibraryFile.name !== summary.name
                       ? `${summary.name} (${activeLibraryFile.name})`
                       : summary.name}
                   >
-                    <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 animate-pulse" />
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0 animate-pulse" />
                     <span
                       className="font-semibold truncate max-w-[130px] sm:max-w-[180px]"
                       title={activeLibraryFile instanceof File && activeLibraryFile.name && activeLibraryFile.name !== summary.name
@@ -210,7 +194,7 @@ export const Navbar: React.FC = () => {
                     <button
                       type="button"
                       onClick={closeLibrary}
-                      className="text-blue-400 hover:text-red-500 transition-colors p-0.5"
+                      className="text-emerald-400 hover:text-red-500 transition-colors p-0.5"
                       title={t('nav.close', 'Close')}
                     >
                       <X className="w-3.5 h-3.5" />
@@ -223,7 +207,7 @@ export const Navbar: React.FC = () => {
                       type="button"
                       onClick={handleQuickCloudUpload}
                       disabled={isUploading}
-                      className="relative overflow-hidden flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-sm transition-all animate-in fade-in disabled:opacity-90"
+                      className="relative overflow-hidden flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all animate-in fade-in disabled:opacity-90"
                       title={isUploading && uploadProgress !== null ? `${t('cloud.uploading', 'Uploading...')} ${uploadProgress}%` : t('nav.uploadToDrive', 'Upload to Drive')}
                     >
                       {isUploading ? (
@@ -255,7 +239,7 @@ export const Navbar: React.FC = () => {
                   className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100/80 hover:bg-slate-200/80 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-white/[0.08] transition-all"
                   title={t('nav.openFile', 'Open File')}
                 >
-                  <FolderOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <FolderOpen className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   <span>{t('nav.openFile', 'Open File')}</span>
                 </button>
               )}
@@ -264,23 +248,22 @@ export const Navbar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowCloudModal(true)}
-                className={`relative flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                  !isOnline
+                className={`relative flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${!isOnline
                     ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30'
                     : isConnected
-                    ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
-                    : isSessionExpired
-                    ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30'
-                    : 'bg-slate-100/80 hover:bg-slate-200/80 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-white/[0.08]'
-                }`}
+                      ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                      : isSessionExpired
+                        ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30'
+                        : 'bg-slate-100/80 hover:bg-slate-200/80 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-white/[0.08]'
+                  }`}
                 title={
                   !isOnline
                     ? t('common.offline', 'Offline')
                     : isConnected
-                    ? 'Google Drive Connected'
-                    : isSessionExpired
-                    ? t('nav.driveSessionExpiredTooltip', 'Session Google Drive expirée - Cliquez pour reconnecter')
-                    : 'Google Drive Cloud Sync'
+                      ? 'Google Drive Connected'
+                      : isSessionExpired
+                        ? t('nav.driveSessionExpiredTooltip', 'Session Google Drive expirée - Cliquez pour reconnecter')
+                        : 'Google Drive Cloud Sync'
                 }
               >
                 {!isOnline ? (
@@ -289,19 +272,18 @@ export const Navbar: React.FC = () => {
                   <Cloud className="w-3.5 h-3.5 flex-shrink-0 text-amber-500" />
                 ) : (
                   <Cloud
-                    className={`w-3.5 h-3.5 flex-shrink-0 ${
-                      isConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'
-                    }`}
+                    className={`w-3.5 h-3.5 flex-shrink-0 ${isConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'
+                      }`}
                   />
                 )}
                 <span>
                   {!isOnline
                     ? t('common.offline', 'Offline')
                     : isConnected
-                    ? t('nav.driveConnected', 'Drive Connected')
-                    : isSessionExpired
-                    ? t('nav.driveSessionExpired', 'Drive Expiré')
-                    : t('nav.driveCloud', 'Drive Cloud')}
+                      ? t('nav.driveConnected', 'Drive Connected')
+                      : isSessionExpired
+                        ? t('nav.driveSessionExpired', 'Drive Expiré')
+                        : t('nav.driveCloud', 'Drive Cloud')}
                 </span>
                 {isConnected && isOnline && (
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -324,11 +306,10 @@ export const Navbar: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setSettingsOpen(!settingsOpen)}
-                  className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
-                    settingsOpen
+                  className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all ${settingsOpen
                       ? 'bg-slate-200 dark:bg-white/[0.1] text-slate-900 dark:text-white border-slate-300 dark:border-white/[0.2]'
                       : 'bg-slate-100/80 hover:bg-slate-200/80 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-white/[0.08]'
-                  }`}
+                    }`}
                   title="Preferences"
                 >
                   <Settings className="w-3.5 h-3.5" />
@@ -350,11 +331,10 @@ export const Navbar: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleThemeChange('light')}
-                          className={`flex items-center justify-center space-x-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                            theme === 'light'
+                          className={`flex items-center justify-center space-x-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${theme === 'light'
                               ? 'bg-white dark:bg-white/[0.1] text-amber-600 shadow-sm'
                               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                          }`}
+                            }`}
                         >
                           <Sun className="w-3.5 h-3.5" />
                           <span>{t('nav.light', 'Light')}</span>
@@ -362,11 +342,10 @@ export const Navbar: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleThemeChange('dark')}
-                          className={`flex items-center justify-center space-x-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                            theme === 'dark'
-                              ? 'bg-white dark:bg-white/[0.1] text-blue-500 shadow-sm'
+                          className={`flex items-center justify-center space-x-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${theme === 'dark'
+                              ? 'bg-white dark:bg-white/[0.1] text-emerald-500 shadow-sm'
                               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                          }`}
+                            }`}
                         >
                           <Moon className="w-3.5 h-3.5" />
                           <span>{t('nav.dark', 'Dark')}</span>
@@ -374,11 +353,10 @@ export const Navbar: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleThemeChange('system')}
-                          className={`flex items-center justify-center space-x-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                            theme === 'system'
+                          className={`flex items-center justify-center space-x-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${theme === 'system'
                               ? 'bg-white dark:bg-white/[0.1] text-slate-800 dark:text-white shadow-sm'
                               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                          }`}
+                            }`}
                         >
                           <Monitor className="w-3.5 h-3.5" />
                           <span>{t('nav.system', 'Auto')}</span>
@@ -393,16 +371,16 @@ export const Navbar: React.FC = () => {
                           <Type className="w-3.5 h-3.5 text-slate-400" />
                           <span>{t('nav.textSize', 'Text Size')}</span>
                         </label>
-                        <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
+                        <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
                           {textSize === 1
                             ? '1 • ' + t('nav.textSizeSmall', 'Compacte')
                             : textSize === 2
-                            ? '2 • ' + t('nav.textSizeNormal', 'Normale')
-                            : textSize === 3
-                            ? '3 • ' + t('nav.textSizeLarge', 'Grande')
-                            : textSize === 4
-                            ? '4 • ' + t('nav.textSizeXLarge', 'Très grande')
-                            : '5 • ' + t('nav.textSizeMax', 'Maximale')}
+                              ? '2 • ' + t('nav.textSizeNormal', 'Normale')
+                              : textSize === 3
+                                ? '3 • ' + t('nav.textSizeLarge', 'Grande')
+                                : textSize === 4
+                                  ? '4 • ' + t('nav.textSizeXLarge', 'Très grande')
+                                  : '5 • ' + t('nav.textSizeMax', 'Maximale')}
                         </span>
                       </div>
                       <div className="bg-slate-100 dark:bg-white/[0.04] p-[12px] rounded-xl border border-slate-200/60 dark:border-white/[0.06] space-y-[12px]">
@@ -417,7 +395,7 @@ export const Navbar: React.FC = () => {
                               value={textSize}
                               onChange={(e) => handleTextSizeChange(Number(e.target.value) as TextSizeLevel)}
                               aria-label={t('nav.textSize', 'Text Size')}
-                              className="w-full h-[8px] bg-slate-300 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600 focus:outline-none touch-none"
+                              className="w-full h-[8px] bg-slate-300 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-600 focus:outline-none touch-none"
                             />
                           </div>
                           <span className="w-[20px] text-center text-[18px] font-black text-slate-800 dark:text-slate-200 select-none flex-shrink-0">A</span>
@@ -430,11 +408,10 @@ export const Navbar: React.FC = () => {
                               type="button"
                               onClick={() => handleTextSizeChange(step)}
                               aria-label={`Text size ${step}`}
-                              className={`py-[5px] rounded-lg text-[11px] font-bold transition-all text-center ${
-                                textSize === step
-                                  ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/30'
+                              className={`py-[5px] rounded-lg text-[11px] font-bold transition-all text-center ${textSize === step
+                                  ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30'
                                   : 'bg-white/90 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/[0.1]'
-                              }`}
+                                }`}
                             >
                               {step}
                             </button>
@@ -452,7 +429,7 @@ export const Navbar: React.FC = () => {
                         aria-label="Language selector"
                         value={selectedLanguage}
                         onChange={(e) => setSelectedLanguage(e.target.value)}
-                        className="w-full bg-slate-100 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/[0.08] text-slate-800 dark:text-slate-200 text-xs rounded-xl px-3 py-2 font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
+                        className="w-full bg-slate-100 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/[0.08] text-slate-800 dark:text-slate-200 text-xs rounded-xl px-3 py-2 font-medium focus:outline-none focus:border-emerald-500 cursor-pointer"
                       >
                         {SUPPORTED_LANGUAGES.map((lang) => (
                           <option key={lang.code} value={lang.code} className="bg-white text-slate-900 dark:bg-[#0e1422] dark:text-slate-200">
@@ -470,7 +447,7 @@ export const Navbar: React.FC = () => {
                           installPWA();
                           setSettingsOpen(false);
                         }}
-                        className="w-full flex items-center justify-center space-x-2 px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition-colors shadow-sm"
+                        className="w-full flex items-center justify-center space-x-2 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-colors shadow-sm"
                       >
                         <Download className="w-3.5 h-3.5" />
                         <span>{t('nav.installApp', 'Install App')}</span>
@@ -514,23 +491,22 @@ export const Navbar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowCloudModal(true)}
-                className={`relative p-2 rounded-xl border text-xs font-semibold transition-all flex-shrink-0 ${
-                  !isOnline
+                className={`relative p-2 rounded-xl border text-xs font-semibold transition-all flex-shrink-0 ${!isOnline
                     ? 'bg-amber-500/10 border-amber-500/30 text-amber-600'
                     : isConnected
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600'
-                    : isSessionExpired
-                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-600'
-                    : 'bg-slate-100 dark:bg-white/[0.04] border-slate-200/80 dark:border-white/[0.08] text-slate-600 dark:text-slate-400'
-                }`}
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600'
+                      : isSessionExpired
+                        ? 'bg-amber-500/10 border-amber-500/30 text-amber-600'
+                        : 'bg-slate-100 dark:bg-white/[0.04] border-slate-200/80 dark:border-white/[0.08] text-slate-600 dark:text-slate-400'
+                  }`}
                 title={
                   !isOnline
                     ? t('common.offline', 'Offline')
                     : isConnected
-                    ? 'Google Drive Connected'
-                    : isSessionExpired
-                    ? t('nav.driveSessionExpiredTooltip', 'Session Google Drive expirée - Cliquez pour reconnecter')
-                    : 'Google Drive Cloud'
+                      ? 'Google Drive Connected'
+                      : isSessionExpired
+                        ? t('nav.driveSessionExpiredTooltip', 'Session Google Drive expirée - Cliquez pour reconnecter')
+                        : 'Google Drive Cloud'
                 }
               >
                 {!isOnline ? (
@@ -564,7 +540,7 @@ export const Navbar: React.FC = () => {
 
         {/* Loading banner */}
         {isLoading && (
-          <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white text-xs px-4 py-1.5 flex items-center justify-center space-x-2 font-medium">
+          <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 text-white text-xs px-4 py-1.5 flex items-center justify-center space-x-2 font-medium">
             <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
             <span>{loadingMessage || 'Processing in local WebAssembly SQLite...'}</span>
           </div>
@@ -586,7 +562,7 @@ export const Navbar: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/[0.08]">
               <div className="flex items-center space-x-2">
                 <img src="/logo.jpg" alt="Logo" className="w-6 h-6 rounded-lg object-cover" />
-                <span className="font-bold text-base text-slate-900 dark:text-white">Panda JWL-Sync</span>
+                <span className="font-bold text-base text-slate-900 dark:text-white">Panda JL Studio</span>
               </div>
               <button
                 type="button"
@@ -599,15 +575,15 @@ export const Navbar: React.FC = () => {
 
             {/* Active library status card or Quick Open in mobile drawer */}
             {activeLibraryFile && summary ? (
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-blue-500/10 dark:bg-blue-500/15 border border-blue-500/30">
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/30">
                 <div className="flex items-center space-x-2.5 min-w-0">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0 animate-pulse" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0 animate-pulse" />
                   <div className="min-w-0">
-                    <p className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                    <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
                       {t('landing.activeLibraryBanner', 'Active Library Loaded')}
                     </p>
                     <p
-                      className="text-xs font-bold text-blue-900 dark:text-blue-100 truncate"
+                      className="text-xs font-bold text-emerald-950 dark:text-emerald-100 truncate"
                       title={activeLibraryFile instanceof File && activeLibraryFile.name && activeLibraryFile.name !== summary.name
                         ? `${summary.name} (${activeLibraryFile.name})`
                         : summary.name}
@@ -615,7 +591,7 @@ export const Navbar: React.FC = () => {
                       {summary.name}
                     </p>
                     {summary.deviceName && (
-                      <p className="text-[10px] text-blue-700/80 dark:text-blue-300/80 truncate">
+                      <p className="text-[10px] text-emerald-700/80 dark:text-emerald-300/80 truncate">
                         {summary.deviceName}
                       </p>
                     )}
@@ -630,7 +606,7 @@ export const Navbar: React.FC = () => {
                         setMobileMenuOpen(false);
                       }}
                       disabled={isUploading}
-                      className="relative overflow-hidden flex items-center space-x-1.5 px-2.5 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold shadow-sm hover:bg-blue-500 transition-colors disabled:opacity-90"
+                      className="relative overflow-hidden flex items-center space-x-1.5 px-2.5 py-2 rounded-xl bg-emerald-600 text-white text-xs font-semibold shadow-sm hover:bg-emerald-500 transition-colors disabled:opacity-90"
                       title={isUploading && uploadProgress !== null ? `${t('cloud.uploading', 'Uploading...')} ${uploadProgress}%` : t('nav.uploadToDrive', 'Upload to Drive')}
                     >
                       {isUploading ? (
@@ -655,7 +631,7 @@ export const Navbar: React.FC = () => {
                       closeLibrary();
                       setMobileMenuOpen(false);
                     }}
-                    className="p-2 rounded-xl text-blue-500 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                    className="p-2 rounded-xl text-emerald-600 hover:text-red-500 hover:bg-red-500/10 transition-colors"
                     title={t('nav.close', 'Close')}
                   >
                     <X className="w-4 h-4" />
@@ -672,7 +648,7 @@ export const Navbar: React.FC = () => {
                 disabled={isLoading}
                 className="w-full flex items-center justify-center space-x-2 p-2.5 rounded-xl bg-slate-100/80 hover:bg-slate-200/80 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-white/[0.08] text-xs font-semibold transition-all"
               >
-                <FolderOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <FolderOpen className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>{t('nav.openFile', 'Open File')}</span>
               </button>
             )}
@@ -684,7 +660,7 @@ export const Navbar: React.FC = () => {
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.04]"
               >
-                <GitMerge className="w-4 h-4 text-blue-600" />
+                <GitMerge className="w-4 h-4 text-emerald-600" />
                 <span>{t('nav.merge', 'Merge')}</span>
               </NavLink>
 
@@ -693,17 +669,8 @@ export const Navbar: React.FC = () => {
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.04]"
               >
-                <BookOpen className="w-4 h-4 text-sky-600" />
-                <span>{t('nav.explorer', 'Explorer')}</span>
-              </NavLink>
-
-              <NavLink
-                to="/stats"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.04]"
-              >
-                <BarChart3 className="w-4 h-4 text-amber-500" />
-                <span>{t('nav.analytics', 'Stats')}</span>
+                <BookOpen className="w-4 h-4 text-teal-600" />
+                <span>{t('nav.explorer', 'Vault')}</span>
               </NavLink>
 
               <NavLink
@@ -734,9 +701,8 @@ export const Navbar: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleThemeChange('light')}
-                  className={`flex items-center justify-center space-x-1 py-2 rounded-lg text-xs font-semibold ${
-                    theme === 'light' ? 'bg-white dark:bg-white/[0.1] text-amber-600 shadow-sm' : 'text-slate-500'
-                  }`}
+                  className={`flex items-center justify-center space-x-1 py-2 rounded-lg text-xs font-semibold ${theme === 'light' ? 'bg-white dark:bg-white/[0.1] text-amber-600 shadow-sm' : 'text-slate-500'
+                    }`}
                 >
                   <Sun className="w-3.5 h-3.5" />
                   <span>{t('nav.light', 'Light')}</span>
@@ -744,9 +710,8 @@ export const Navbar: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleThemeChange('dark')}
-                  className={`flex items-center justify-center space-x-1 py-2 rounded-lg text-xs font-semibold ${
-                    theme === 'dark' ? 'bg-white dark:bg-white/[0.1] text-blue-500 shadow-sm' : 'text-slate-500'
-                  }`}
+                  className={`flex items-center justify-center space-x-1 py-2 rounded-lg text-xs font-semibold ${theme === 'dark' ? 'bg-white dark:bg-white/[0.1] text-blue-500 shadow-sm' : 'text-slate-500'
+                    }`}
                 >
                   <Moon className="w-3.5 h-3.5" />
                   <span>{t('nav.dark', 'Dark')}</span>
@@ -754,9 +719,8 @@ export const Navbar: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleThemeChange('system')}
-                  className={`flex items-center justify-center space-x-1 py-2 rounded-lg text-xs font-semibold ${
-                    theme === 'system' ? 'bg-white dark:bg-white/[0.1] text-slate-800 dark:text-white shadow-sm' : 'text-slate-500'
-                  }`}
+                  className={`flex items-center justify-center space-x-1 py-2 rounded-lg text-xs font-semibold ${theme === 'system' ? 'bg-white dark:bg-white/[0.1] text-slate-800 dark:text-white shadow-sm' : 'text-slate-500'
+                    }`}
                 >
                   <Monitor className="w-3.5 h-3.5" />
                   <span>{t('nav.system', 'Auto')}</span>
@@ -775,12 +739,12 @@ export const Navbar: React.FC = () => {
                   {textSize === 1
                     ? '1 • ' + t('nav.textSizeSmall', 'Compacte')
                     : textSize === 2
-                    ? '2 • ' + t('nav.textSizeNormal', 'Normale')
-                    : textSize === 3
-                    ? '3 • ' + t('nav.textSizeLarge', 'Grande')
-                    : textSize === 4
-                    ? '4 • ' + t('nav.textSizeXLarge', 'Très grande')
-                    : '5 • ' + t('nav.textSizeMax', 'Maximale')}
+                      ? '2 • ' + t('nav.textSizeNormal', 'Normale')
+                      : textSize === 3
+                        ? '3 • ' + t('nav.textSizeLarge', 'Grande')
+                        : textSize === 4
+                          ? '4 • ' + t('nav.textSizeXLarge', 'Très grande')
+                          : '5 • ' + t('nav.textSizeMax', 'Maximale')}
                 </span>
               </div>
               <div className="bg-slate-100 dark:bg-white/[0.04] p-[12px] rounded-xl border border-slate-200/60 dark:border-white/[0.06] space-y-[12px]">
@@ -808,11 +772,10 @@ export const Navbar: React.FC = () => {
                       type="button"
                       onClick={() => handleTextSizeChange(step)}
                       aria-label={`Text size ${step}`}
-                      className={`py-[6px] rounded-lg text-[11px] font-bold transition-all text-center ${
-                        textSize === step
+                      className={`py-[6px] rounded-lg text-[11px] font-bold transition-all text-center ${textSize === step
                           ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/30'
                           : 'bg-white/90 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/[0.1]'
-                      }`}
+                        }`}
                     >
                       {step}
                     </button>

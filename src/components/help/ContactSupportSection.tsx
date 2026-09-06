@@ -113,7 +113,7 @@ export const ContactSupportSection: React.FC = () => {
 
     // 3. Anti-bot cooldown check (25 seconds between sends)
     try {
-      const lastSend = sessionStorage.getItem('jwsync_last_contact_ts');
+      const lastSend = sessionStorage.getItem('jlib_last_contact_ts') || sessionStorage.getItem('jwsync_last_contact_ts');
       if (lastSend && Date.now() - Number(lastSend) < 25000) {
         setError(t('help.botCooldown', 'Please wait 30 seconds before sending another message.'));
         return;
@@ -151,18 +151,18 @@ export const ContactSupportSection: React.FC = () => {
       other: t('help.contactCatOther', 'Other Inquiry'),
     };
 
-    const fullSubject = `[Panda JWL-Sync] [${categoryLabels[category] || category}] ${subject.trim()}`;
+    const fullSubject = `[Panda JL Studio] [${categoryLabels[category] || category}] ${subject.trim()}`;
     const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
 
     const fullBody = [
-      `=== Panda JWL-Sync Contact ===`,
+      `=== Panda JL Studio Contact ===`,
       `${t('help.emailReqType', 'Request type')} : ${categoryLabels[category] || category}`,
       `${t('help.contactName', 'Name')} : ${name.trim()}`,
       `${t('help.contactReplyEmail', 'Email')} : ${replyEmail.trim()}`,
       `${t('help.emailSubject', 'Subject')} : ${subject.trim()}`,
       `Date : ${new Date().toLocaleString()}`,
       `Browser / OS : ${userAgent}`,
-      `Application : Panda JWL-Sync v${APP_VERSION}`,
+      `Application : Panda JL Studio v${APP_VERSION}`,
       ``,
       `=== Message ===`,
       message.trim(),
@@ -198,7 +198,7 @@ export const ContactSupportSection: React.FC = () => {
 
       if (result.success) {
         try {
-          sessionStorage.setItem('jwsync_last_contact_ts', String(Date.now()));
+          sessionStorage.setItem('jlib_last_contact_ts', String(Date.now()));
         } catch (_) {}
         setIsSuccess(true);
       } else {
@@ -239,7 +239,7 @@ export const ContactSupportSection: React.FC = () => {
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl leading-relaxed">
             {t(
               'help.contactSubtitle',
-              'Have a question, encountered a bug, or have an idea to improve Panda JWL-Sync? Send us an inquiry!'
+              'Have a question, encountered a bug, or have an idea to improve Panda JL Studio? Send us an inquiry!'
             )}
           </p>
         </div>

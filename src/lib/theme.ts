@@ -1,5 +1,5 @@
 /**
- * Theme Manager for JW Sync
+ * Theme Manager for Panda JL Studio
  * Supports 'light', 'dark', and 'system' preferences saved in a 1-year Cookie.
  */
 
@@ -117,7 +117,7 @@ export function getTextSizePreference(): TextSizeLevel {
     if (match) {
       return normalizeTextSize(decodeURIComponent(match[2].trim().toLowerCase()));
     }
-    const saved = localStorage.getItem('jwsync_text_size');
+    const saved = localStorage.getItem('jlib_text_size') || localStorage.getItem('jwsync_text_size');
     if (saved) {
       return normalizeTextSize(saved);
     }
@@ -133,7 +133,7 @@ export function setTextSizePreference(size: TextSizeMode): void {
   const level = normalizeTextSize(size);
   try {
     document.cookie = `${TEXT_SIZE_COOKIE_NAME}=${level};path=/;max-age=31536000;SameSite=Lax`;
-    localStorage.setItem('jwsync_text_size', String(level));
+    localStorage.setItem('jlib_text_size', String(level));
   } catch (_) {}
   applyTextSize(level);
 }

@@ -5,7 +5,6 @@ import { Footer } from './components/layout/Footer';
 import { FloatingDock } from './components/layout/FloatingDock';
 import { LandingPage } from './pages/LandingPage';
 import { ExplorerPage } from './pages/ExplorerPage';
-import { StatsPage } from './pages/StatsPage';
 import { SharePage } from './pages/SharePage';
 import { HelpPage } from './pages/HelpPage';
 import { CloudSyncModal } from './components/cloud/CloudSyncModal';
@@ -47,7 +46,7 @@ export const App: React.FC = () => {
             <Route path="/" element={<LandingPage />} />
             <Route path="/merge" element={<Navigate to="/" replace />} />
             <Route path="/explorer" element={<ExplorerPage />} />
-            <Route path="/stats" element={<StatsPage />} />
+            <Route path="/stats" element={<Navigate to="/" replace />} />
             <Route path="/share" element={<SharePage />} />
             <Route path="/help" element={<HelpPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />

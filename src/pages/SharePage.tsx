@@ -42,6 +42,7 @@ export const SharePage: React.FC = () => {
         `SELECT t.TagId, t.Name, COUNT(tm.TagMapId) AS count 
          FROM Tag t 
          JOIN TagMap tm ON t.TagId = tm.TagId 
+         WHERE tm.NoteId IS NOT NULL AND (t.Type = 1 OR t.Type IS NULL)
          GROUP BY t.TagId, t.Name 
          ORDER BY count DESC`
       );
@@ -261,7 +262,7 @@ export const SharePage: React.FC = () => {
 
       const selectiveManifest = await createOrUpdateManifest(cleanBytes, activeManifest, {
         name: exportName || 'Shared Study Notes',
-        deviceName: 'JW Sync Selective Share',
+        deviceName: 'Panda JL Studio Selective Export',
       });
 
       const zipBlob = await packageJwLibrary(cleanBytes, selectiveManifest);
@@ -345,7 +346,7 @@ export const SharePage: React.FC = () => {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* ── HEADER ────────────────────────────────────────────────────── */}
       <div className="space-y-1 border-b border-slate-200 dark:border-slate-800 pb-6">
-        <div className="inline-flex items-center space-x-2 text-xs font-semibold text-orange-500 dark:text-orange-400 uppercase tracking-wider">
+        <div className="inline-flex items-center space-x-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
           <Share2 className="w-3.5 h-3.5" />
           <span>{t('share.title')}</span>
         </div>
@@ -375,7 +376,7 @@ export const SharePage: React.FC = () => {
                     onClick={() => toggleTagSelection(tItem.Name)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors flex items-center space-x-1.5 ${
                       isSelected
-                        ? 'bg-orange-600 border-orange-500 text-white shadow-sm'
+                        ? 'bg-emerald-600 border-emerald-500 text-white shadow-sm'
                         : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-400'
                     }`}
                   >
@@ -398,7 +399,7 @@ export const SharePage: React.FC = () => {
               type="date"
               value={dateRangeFrom}
               onChange={(e) => setDateRangeFrom(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-md px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 shadow-sm"
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-md px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-sm"
             />
           </div>
           <div>
@@ -409,7 +410,7 @@ export const SharePage: React.FC = () => {
               type="date"
               value={dateRangeTo}
               onChange={(e) => setDateRangeTo(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-md px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 shadow-sm"
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-md px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-sm"
             />
           </div>
         </div>
@@ -423,7 +424,7 @@ export const SharePage: React.FC = () => {
             type="text"
             value={exportName}
             onChange={(e) => setExportName(e.target.value)}
-            className="w-full sm:w-80 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-md px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 shadow-sm"
+            className="w-full sm:w-80 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-md px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-sm"
           />
         </div>
       </div>
@@ -442,7 +443,7 @@ export const SharePage: React.FC = () => {
           type="button"
           onClick={handleExportSelective}
           disabled={isExporting || matchingNotes.length === 0}
-          className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3 rounded-lg bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white font-semibold text-xs transition-colors flex-shrink-0 shadow-sm"
+          className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold text-xs transition-colors flex-shrink-0 shadow-sm shadow-emerald-600/20"
         >
           <Download className="w-4 h-4" />
           <span>{isExporting ? t('share.packaging') : t('share.exportNotesBtn', { count: matchingNotes.length })}</span>

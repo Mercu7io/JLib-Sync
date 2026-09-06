@@ -470,7 +470,7 @@ test('i18n: en and fr contain all required cloud and help keys', async () => {
   assert.equal(fr.cloud.encryptedTooltip, 'Chiffré AES-256');
   assert.equal(en.cloud.unverifiedBadge, 'Unverified');
   assert.equal(fr.cloud.unverifiedBadge, 'Non vérifié');
-  assert.equal(en.cloud.uploadDirectFile, 'Upload .jwlibrary File');
+  assert.equal(en.cloud.uploadDirectFile, 'Upload .jwlibrary Archive');
   assert.equal(fr.cloud.uploadDirectFile, 'Uploader un fichier .jwlibrary');
   assert.equal(en.cloud.downloadToDevice, 'Download');
   assert.equal(fr.cloud.downloadToDevice, 'Télécharger');
@@ -540,16 +540,16 @@ test('GoogleDriveManager: uploadBackup emits accurate progressive percentages up
   }
 });
 
-test('getDefaultMergeFilename: formats default merge name as YYYY-MM-DD_Panda_JWL.jwlibrary', async () => {
+test('getDefaultMergeFilename: formats default merge name as YYYY-MM-DD_Panda_JL.jwlibrary', async () => {
   const { getDefaultMergeFilename } = await import('../src/lib/jw/merge.ts');
 
   // Specific date test (2026-09-01)
   const specificDate = new Date(2026, 8, 1); // Month is 0-indexed (8 = September)
-  assert.equal(getDefaultMergeFilename(specificDate), '2026-09-01_Panda_JWL.jwlibrary');
+  assert.equal(getDefaultMergeFilename(specificDate), '2026-09-01_Panda_JL.jwlibrary');
 
   // Default (current) date test format
   const currentDefault = getDefaultMergeFilename();
-  assert.match(currentDefault, /^\d{4}-\d{2}-\d{2}_Panda_JWL\.jwlibrary$/);
+  assert.match(currentDefault, /^\d{4}-\d{2}-\d{2}_Panda_JL\.jwlibrary$/);
 });
 
 test('GoogleDriveManager: uploadBackup deletes draft stub on upload failure (rollback)', async () => {
@@ -1000,4 +1000,28 @@ test('downloadCloudFile: auto-decrypts AES-256 encrypted backups, strips .enc, a
   }
 });
 
+test('Branding & Decoupling: language restriction, cloud folder, and manifest device name', async () => {
+  const { resources } = await import('../src/locales/index.ts');
+  const { SUPPORTED_LANGUAGES } = await import('../src/lib/jw/locales.ts');
+  const { driveManager } = await import('../src/lib/cloud/googleDrive.ts');
+  const { createOrUpdateManifest } = await import('../src/lib/jw/manifest.ts');
 
+  // 1. Verify language limits: strictly the 10 main languages (en, es, fr, de, pt, it, ru, ja, zh-Hans, he)
+  const expectedLangs = ['de', 'en', 'es', 'fr', 'he', 'it', 'ja', 'pt', 'ru', 'zh-Hans'].sort();
+  const resourceKeys = Object.keys(resources).sort();
+  assert.deepEqual(resourceKeys, expectedLangs);
+
+  const langCodes = SUPPORTED_LANGUAGES.map((l) => l.code).sort();
+  assert.deepEqual(langCodes, expectedLangs);
+  assert.equal(langCodes.length, 10);
+
+  // 2. Verify cloud folder name and index file
+  assert.equal((driveManager as any).folderName, 'Panda JL Studio');
+  assert.equal((driveManager as any).indexFileName, '.jlib_archive_index.json');
+
+  // 3. Verify manifest generator default deviceName
+  const mockDbBytes = new Uint8Array([1, 2, 3, 4]);
+  const manifest = await createOrUpdateManifest(mockDbBytes);
+  assert.equal(manifest.deviceName, 'Panda JL Studio (Web)');
+  assert.equal(manifest.userDataBackup.deviceName, 'Panda JL Studio');
+});

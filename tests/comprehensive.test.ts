@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { openDatabase, execute, queryAll, queryOne, exportDatabase, getLibrarySummary } from '../src/lib/jw/sqlite.ts';
 import { mergeJwLibraries } from '../src/lib/jw/merge.ts';
 import { runHealthChecks, applyHealthFix } from '../src/lib/jw/doctor.ts';
-import { fastSemanticSearch } from '../src/lib/jw/semantic.ts';
 import type { IManifest } from '../src/lib/jw/types.ts';
 
 function createBaseSchema(db: any) {
@@ -204,6 +203,129 @@ test('Comprehensive MERGE: full integration with notes, highlights, duplicates, 
   mergedDb.close();
 });
 
+test('Comprehensive PLAYLIST MERGE: merges playlists, maps items and positions, preserves media and markers', async () => {
+  function setupPlaylistTables(db: any) {
+    createBaseSchema(db);
+    execute(db, `
+      CREATE TABLE IF NOT EXISTS PlaylistItem (
+        PlaylistItemId INTEGER PRIMARY KEY AUTOINCREMENT,
+        Label TEXT,
+        StartTrimOffsetTicks INTEGER,
+        EndTrimOffsetTicks INTEGER,
+        Accuracy INTEGER,
+        EndAction INTEGER,
+        ThumbnailFilePath TEXT
+      );
+      CREATE TABLE IF NOT EXISTS PlaylistItemAccuracy (
+        PlaylistItemAccuracyId INTEGER PRIMARY KEY,
+        Description TEXT
+      );
+      CREATE TABLE IF NOT EXISTS IndependentMedia (
+        IndependentMediaId INTEGER PRIMARY KEY AUTOINCREMENT,
+        OriginalFilename TEXT,
+        FilePath TEXT,
+        MimeType TEXT,
+        Hash TEXT
+      );
+      CREATE TABLE IF NOT EXISTS PlaylistItemIndependentMediaMap (
+        PlaylistItemId INTEGER,
+        IndependentMediaId INTEGER,
+        DurationTicks INTEGER
+      );
+    `);
+  }
+
+  // 1. Primary DB with Playlist "Meeting Songs" having 1 item "Song 105"
+  const dbA = await openDatabase();
+  setupPlaylistTables(dbA);
+  execute(dbA, `INSERT INTO Tag (TagId, Type, Name) VALUES (1, 2, 'Meeting Songs')`);
+  execute(dbA, `INSERT INTO PlaylistItem (PlaylistItemId, Label, Accuracy, EndAction) VALUES (1, 'Song 105', 1, 0)`);
+  execute(dbA, `INSERT INTO TagMap (TagMapId, PlaylistItemId, TagId, Position) VALUES (1, 1, 1, 0)`);
+  const primaryBytes = exportDatabase(dbA);
+  dbA.close();
+
+  // 2. Secondary DB with:
+  // - overlapping Playlist "Meeting Songs" having 1 new item "Song 120"
+  // - new Playlist "Family Study" having 1 item "Creation Video"
+  const dbB = await openDatabase();
+  setupPlaylistTables(dbB);
+  execute(dbB, `INSERT INTO Tag (TagId, Type, Name) VALUES (1, 2, 'Meeting Songs')`);
+  execute(dbB, `INSERT INTO PlaylistItem (PlaylistItemId, Label, Accuracy, EndAction) VALUES (1, 'Song 120', 1, 0)`);
+  execute(dbB, `INSERT INTO TagMap (TagMapId, PlaylistItemId, TagId, Position) VALUES (1, 1, 1, 0)`);
+
+  execute(dbB, `INSERT INTO Tag (TagId, Type, Name) VALUES (2, 2, 'Family Study')`);
+  execute(dbB, `INSERT INTO PlaylistItem (PlaylistItemId, Label, Accuracy, EndAction) VALUES (2, 'Creation Video', 1, 0)`);
+  execute(dbB, `INSERT INTO TagMap (TagMapId, PlaylistItemId, TagId, Position) VALUES (2, 2, 2, 0)`);
+
+  const secondaryBytes = exportDatabase(dbB);
+  dbB.close();
+
+  const manifestA: IManifest = {
+    name: 'Primary Backup',
+    creationDate: '2026-09-01',
+    version: 1,
+    type: 0,
+    userDataBackup: {
+      lastModifiedDate: '2026-09-01T10:00:00Z',
+      deviceName: 'Phone',
+      databaseName: 'userData.db',
+      schemaVersion: 14,
+    },
+  };
+
+  const manifestB: IManifest = {
+    name: 'Secondary Backup',
+    creationDate: '2026-09-02',
+    version: 1,
+    type: 0,
+    userDataBackup: {
+      lastModifiedDate: '2026-09-02T10:00:00Z',
+      deviceName: 'Tablet',
+      databaseName: 'userData.db',
+      schemaVersion: 14,
+    },
+  };
+
+  const result = await mergeJwLibraries(
+    primaryBytes,
+    manifestA,
+    [{ name: 'Tablet.jwlibrary', dbBytes: secondaryBytes, manifest: manifestB }],
+    { doctorCheck: false }
+  );
+
+  assert.ok(result.mergedBlob);
+  assert.equal(result.stats.playlistsMerged, 2, 'Must merge 2 new playlist items');
+  assert.equal(result.details.mergedPlaylists.length, 2, 'Must record merged playlist details');
+
+  const mergedDb = await openDatabase(result.mergedDbBytes);
+  // Tags of type 2: "Meeting Songs" should be unified, "Family Study" added
+  const playlistTags = queryAll<any>(mergedDb, 'SELECT * FROM Tag WHERE Type = 2 ORDER BY TagId ASC');
+  assert.equal(playlistTags.length, 2, 'Should have 2 distinct playlist tags');
+  assert.equal(playlistTags[0].Name, 'Meeting Songs');
+  assert.equal(playlistTags[1].Name, 'Family Study');
+
+  // PlaylistItem table: should have 3 items (Song 105, Song 120, Creation Video)
+  const playlistItems = queryAll<any>(mergedDb, 'SELECT * FROM PlaylistItem ORDER BY PlaylistItemId ASC');
+  assert.equal(playlistItems.length, 3, 'Should have 3 playlist items total');
+
+  // TagMap for "Meeting Songs" should have 2 items at position 0 and 1
+  const meetingTagMaps = queryAll<any>(mergedDb, 'SELECT * FROM TagMap WHERE TagId = :tid ORDER BY Position ASC', { ':tid': playlistTags[0].TagId });
+  assert.equal(meetingTagMaps.length, 2, 'Meeting Songs playlist should contain 2 items');
+  assert.equal(meetingTagMaps[0].Position, 0);
+  assert.equal(meetingTagMaps[1].Position, 1);
+
+  // TagMap for "Family Study" should have 1 item at position 0
+  const familyTagMaps = queryAll<any>(mergedDb, 'SELECT * FROM TagMap WHERE TagId = :tid ORDER BY Position ASC', { ':tid': playlistTags[1].TagId });
+  assert.equal(familyTagMaps.length, 1, 'Family Study playlist should contain 1 item');
+  assert.equal(familyTagMaps[0].Position, 0);
+
+  // Check library summary playlistsCount
+  const summary = getLibrarySummary(mergedDb, manifestA, result.mergedDbBytes.length);
+  assert.equal(summary.playlistsCount, 2, 'Summary should report 2 playlists');
+
+  mergedDb.close();
+});
+
 test('Comprehensive STATS: metrics, highlight colors, and Bible distribution', async () => {
   const db = await openDatabase();
   createBaseSchema(db);
@@ -291,7 +413,7 @@ test('Comprehensive EXPLORER: note search, editing, deletion, tag manager & doct
                 VALUES (1, 'guid-1', 1, 'Faith in Trials', 'Perseverance produces approved condition', '2026-09-04T00:00:00Z', '2026-09-04T00:00:00Z')`);
   execute(db, `INSERT INTO TagMap (TagMapId, NoteId, TagId) VALUES (1, 1, 1)`);
 
-  // 1. Semantic Search
+  // 1. Direct Keyword Search (Direct note search without LLM overhead)
   const allNotes = [
     {
       noteId: 1,
@@ -309,8 +431,16 @@ test('Comprehensive EXPLORER: note search, editing, deletion, tag manager & doct
     },
   ];
 
-  const searchResults = fastSemanticSearch('perseverance trials', allNotes);
-  assert.ok(searchResults.length > 0, 'Semantic search should match note');
+  const searchKeyword = 'perseverance';
+  const q = searchKeyword.toLowerCase();
+  const searchResults = allNotes.filter(
+    (n) =>
+      (n.title && n.title.toLowerCase().includes(q)) ||
+      (n.content && n.content.toLowerCase().includes(q)) ||
+      (n.locationTitle && n.locationTitle.toLowerCase().includes(q)) ||
+      n.tags.some((t) => t.toLowerCase().includes(q))
+  );
+  assert.ok(searchResults.length > 0, 'Direct search should match note');
   assert.equal(searchResults[0].noteId, 1, 'Top result should be note 1');
 
   // 2. Note Editing

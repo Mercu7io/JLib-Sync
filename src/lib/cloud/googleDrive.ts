@@ -1,7 +1,7 @@
 /**
- * Panda JWL-Sync — Google Drive Cloud Sync Manager
+ * Panda JL Studio — Google Drive Cloud Sync Manager
  * Uses Google Identity Services with restricted 'drive.file' scope
- * (only touches files and folders created by Panda JWL-Sync, never personal Drive files).
+ * (only touches files and folders created by Panda JL Studio, never personal Drive files).
  */
 
 export interface IDriveFile {
@@ -20,7 +20,7 @@ export interface IDriveFile {
   bookmarksCount?: number;
 }
 
-export interface IJwSyncIndexBackup {
+export interface IJlibArchiveBackup {
   fileId: string;
   fileName: string;
   sha256: string;
@@ -34,18 +34,22 @@ export interface IJwSyncIndexBackup {
   bookmarksCount?: number;
 }
 
-export interface IJwSyncIndex {
+export type IJwSyncIndexBackup = IJlibArchiveBackup;
+
+export interface IJlibArchiveIndex {
   version: number;
   lastUpdated: string;
-  backups: IJwSyncIndexBackup[];
+  backups: IJlibArchiveBackup[];
 }
+
+export type IJwSyncIndex = IJlibArchiveIndex;
 
 export function getLocalDeviceId(): string {
   if (typeof localStorage === 'undefined') return 'device_unknown';
-  let id = localStorage.getItem('jwsync_device_id');
+  let id = localStorage.getItem('jlib_device_id') || localStorage.getItem('jwsync_device_id');
   if (!id) {
     id = 'dev_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now().toString(36);
-    localStorage.setItem('jwsync_device_id', id);
+    localStorage.setItem('jlib_device_id', id);
   }
   return id;
 }
@@ -86,8 +90,11 @@ export class GoogleDriveManager {
   }
   private accessToken: string | null = null;
   private folderId: string | null = null;
-  private folderName = 'JW Sync';
-  private indexFileName = '.jwsync_index.json';
+  private folderName = 'Panda JL Studio';
+  private jlibLegacyFolderName = 'Panda JLib Studio';
+  private legacyFolderName = 'JW Sync';
+  private indexFileName = '.jlib_archive_index.json';
+  private legacyIndexFileName = '.jwsync_index.json';
   private tokenClient: any = null;
   private baseUrl = 'https://www.googleapis.com/drive/v3';
   private scope = 'https://www.googleapis.com/auth/drive.file';
@@ -124,9 +131,9 @@ export class GoogleDriveManager {
     // Set expiry with a 2-minute safety buffer
     const expiresAt = Date.now() + Math.max(0, expiresInSec - 120) * 1000;
     try {
-      localStorage.setItem('jwsync_drive_token', token);
-      localStorage.setItem('jwsync_drive_token_expires_at', expiresAt.toString());
-      localStorage.setItem('jwsync_drive_connected', 'true');
+      localStorage.setItem('jlib_drive_token', token);
+      localStorage.setItem('jlib_drive_token_expires_at', expiresAt.toString());
+      localStorage.setItem('jlib_drive_connected', 'true');
     } catch (_) {}
   }
 
@@ -134,6 +141,9 @@ export class GoogleDriveManager {
     this.accessToken = null;
     this.folderId = null;
     try {
+      localStorage.removeItem('jlib_drive_token');
+      localStorage.removeItem('jlib_drive_token_expires_at');
+      localStorage.removeItem('jlib_drive_connected');
       localStorage.removeItem('jwsync_drive_token');
       localStorage.removeItem('jwsync_drive_token_expires_at');
       localStorage.removeItem('jwsync_drive_connected');
@@ -144,16 +154,21 @@ export class GoogleDriveManager {
     this.accessToken = null;
     this.folderId = null;
     try {
+      localStorage.removeItem('jlib_drive_token');
+      localStorage.removeItem('jlib_drive_token_expires_at');
       localStorage.removeItem('jwsync_drive_token');
       localStorage.removeItem('jwsync_drive_token_expires_at');
-      // Intentionally keep 'jwsync_drive_connected' = 'true' so the UI displays the reconnect prompt
+      // Intentionally keep 'jlib_drive_connected' = 'true' so the UI displays the reconnect prompt
     } catch (_) {}
     this.sessionExpiredCallback?.();
   }
 
   wasPreviouslyConnected(): boolean {
     try {
-      return localStorage.getItem('jwsync_drive_connected') === 'true';
+      return (
+        localStorage.getItem('jlib_drive_connected') === 'true' ||
+        localStorage.getItem('jwsync_drive_connected') === 'true'
+      );
     } catch (_) {
       return false;
     }
@@ -167,8 +182,12 @@ export class GoogleDriveManager {
 
   getStoredToken(): string | null {
     try {
-      const token = localStorage.getItem('jwsync_drive_token');
-      const expiresAtStr = localStorage.getItem('jwsync_drive_token_expires_at');
+      const token =
+        localStorage.getItem('jlib_drive_token') ||
+        localStorage.getItem('jwsync_drive_token');
+      const expiresAtStr =
+        localStorage.getItem('jlib_drive_token_expires_at') ||
+        localStorage.getItem('jwsync_drive_token_expires_at');
       if (token && expiresAtStr) {
         const expiresAt = parseInt(expiresAtStr, 10);
         if (Date.now() < expiresAt) {
@@ -305,12 +324,31 @@ export class GoogleDriveManager {
   }
 
   async findSyncFolder(): Promise<string | null> {
+    // 1. Search for primary folder: 'Panda JL Studio'
     const query = encodeURIComponent(
       `name='${this.folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
     );
     const data = await this.request(`/files?q=${query}&fields=files(id,name)`);
     if (data.files && data.files.length > 0) {
       this.folderId = data.files[0].id;
+      return this.folderId;
+    }
+    // 2. Backward compatibility: check if user previously had 'Panda JLib Studio'
+    const jlibLegacyQuery = encodeURIComponent(
+      `name='${this.jlibLegacyFolderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
+    );
+    const jlibLegacyData = await this.request(`/files?q=${jlibLegacyQuery}&fields=files(id,name)`);
+    if (jlibLegacyData.files && jlibLegacyData.files.length > 0) {
+      this.folderId = jlibLegacyData.files[0].id;
+      return this.folderId;
+    }
+    // 3. Backward compatibility: check if user previously had backups in legacy folder
+    const legacyQuery = encodeURIComponent(
+      `name='${this.legacyFolderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
+    );
+    const legacyData = await this.request(`/files?q=${legacyQuery}&fields=files(id,name)`);
+    if (legacyData.files && legacyData.files.length > 0) {
+      this.folderId = legacyData.files[0].id;
       return this.folderId;
     }
     return null;
@@ -337,12 +375,21 @@ export class GoogleDriveManager {
 
   async findIndexFile(): Promise<string | null> {
     if (!this.folderId) await this.ensureSyncFolder();
+    // 1. Primary index: .jlib_archive_index.json
     const query = encodeURIComponent(
       `name='${this.indexFileName}' and '${this.folderId}' in parents and trashed=false`
     );
     const data = await this.request(`/files?q=${query}&fields=files(id,name)`);
     if (data.files && data.files.length > 0) {
       return data.files[0].id;
+    }
+    // 2. Backward compatibility: check legacy index file
+    const legacyQuery = encodeURIComponent(
+      `name='${this.legacyIndexFileName}' and '${this.folderId}' in parents and trashed=false`
+    );
+    const legacyData = await this.request(`/files?q=${legacyQuery}&fields=files(id,name)`);
+    if (legacyData.files && legacyData.files.length > 0) {
+      return legacyData.files[0].id;
     }
     return null;
   }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { GitMerge, BookOpen, BarChart3 } from 'lucide-react';
+import { GitMerge, BookOpen, Share2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export const FloatingDock: React.FC = () => {
@@ -16,15 +16,15 @@ export const FloatingDock: React.FC = () => {
     },
     {
       to: '/explorer',
-      label: t('nav.explorer', 'Explorer'),
+      label: t('nav.explorer', 'Vault'),
       icon: BookOpen,
       isActive: location.pathname === '/explorer',
     },
     {
-      to: '/stats',
-      label: t('nav.analytics', 'Stats'),
-      icon: BarChart3,
-      isActive: location.pathname === '/stats',
+      to: '/share',
+      label: t('nav.share', 'Share'),
+      icon: Share2,
+      isActive: location.pathname === '/share',
     },
   ];
 
@@ -43,7 +43,7 @@ export const FloatingDock: React.FC = () => {
               to={item.to}
               className={`relative flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                 active
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 dark:shadow-blue-500/25 scale-[1.02]'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 dark:shadow-emerald-500/25 scale-[1.02]'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-white/[0.05]'
               }`}
             >

@@ -41,11 +41,11 @@ export const HelpPage: React.FC = () => {
     {
       num: '2',
       icon: GitMerge,
-      color: 'text-indigo-500 bg-indigo-500/10 border-indigo-500/25',
-      title: t('help.step2Title', '2. Merge them together on Panda JWL-Sync'),
+      color: 'text-teal-500 bg-teal-500/10 border-teal-500/25',
+      title: t('help.step2Title', '2. Merge them together on Panda JL Studio'),
       description: t(
         'help.step2Desc',
-        'Drop your phone backup on the left and your tablet backup on the right. Our algorithm unifies notes on the same verses, consolidates tags, and avoids duplicates.'
+        'Drop your primary archive on the left and your incoming archive on the right. Our algorithm unifies notes on identical verses, consolidates tags, and avoids duplicates.'
       ),
       tips: [
         t('help.step2Tip1', 'Automatic deduplication of highlights & bookmarks'),
@@ -75,7 +75,7 @@ export const HelpPage: React.FC = () => {
       q: t('help.faq1Q', 'Will my highlights or tags be lost?'),
       a: t(
         'help.faq1A',
-        'No! Unlike the official restore which overwrites the entire database, Panda JWL-Sync combines records intelligently without deleting either side.'
+        'No! Unlike the standard restore which overwrites the entire database, Panda JL Studio combines records intelligently without deleting either side.'
       ),
     },
     {
@@ -93,10 +93,10 @@ export const HelpPage: React.FC = () => {
       ),
     },
     {
-      q: t('help.faqPwaQ', 'Can I use Panda JWL-Sync offline or install it as an app?'),
+      q: t('help.faqPwaQ', 'Can I use Panda JL Studio offline or install it as an app?'),
       a: t(
         'help.faqPwaA',
-        'Yes! Panda JWL-Sync is a Progressive Web App (PWA). You can install it on your device and open .jwlibrary files directly even without an internet connection. When offline, local merging and database exploration remain 100% operational.'
+        'Yes! Panda JL Studio is a Progressive Web App (PWA). You can install it on your device and open .jwlibrary files directly even without an internet connection. When offline, local merging and database exploration remain 100% operational.'
       ),
     },
   ];
@@ -178,7 +178,7 @@ export const HelpPage: React.FC = () => {
         <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
           {t(
             'help.privacyDesc',
-            'Panda JWL-Sync runs completely on your device using WebAssembly SQLite. Your personal notes, highlights, and study tags are never sent to any server.'
+            'Panda JL Studio runs completely on your device using WebAssembly SQLite. Your personal notes, highlights, and study tags are never sent to any server.'
           )}
         </p>
         <div className="flex flex-wrap gap-4 pt-1 text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
@@ -205,7 +205,7 @@ export const HelpPage: React.FC = () => {
               className="rounded-2xl border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#101625] p-5 space-y-2 shadow-sm"
             >
               <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
-                <span className="text-blue-500 font-black">{t('help.faqQuestionPrefix', 'Q:')}</span>
+                <span className="text-emerald-500 font-black">{t('help.faqQuestionPrefix', 'Q:')}</span>
                 <span>{faq.q}</span>
               </h4>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -220,14 +220,14 @@ export const HelpPage: React.FC = () => {
       <div className="rounded-3xl border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#101625] p-6 space-y-4 shadow-sm">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center space-x-2.5 text-slate-900 dark:text-white">
-            <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <h3 className="text-sm font-bold">{t('help.gdprTitle', 'RGPD / GDPR Compliance & Transparency')}</h3>
           </div>
           <a
             href="/privacy.html"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center space-x-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+            className="inline-flex items-center space-x-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
           >
             <span>{t('help.viewFullPolicy', 'View Full Privacy Policy')}</span>
             <ExternalLink className="w-3 h-3" />
@@ -236,7 +236,7 @@ export const HelpPage: React.FC = () => {
         <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
           {t(
             'help.gdprDesc',
-            'In strict compliance with the European General Data Protection Regulation (RGPD/GDPR), Panda JWL-Sync does not store, collect, process, or sell any personal data on external servers. All personal notes and markings remain under your absolute control on your device and in your private Google Drive.'
+            'In strict compliance with the European General Data Protection Regulation (RGPD/GDPR), Panda JL Studio does not store, collect, process, or sell any personal data on external servers. All personal notes and markings remain under your absolute control on your device and in your private Google Drive.'
           )}
         </p>
       </div>
@@ -248,9 +248,9 @@ export const HelpPage: React.FC = () => {
       <div className="pt-4 text-center">
         <Link
           to="/"
-          className="inline-flex items-center space-x-2 px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs tracking-wide transition-all shadow-lg shadow-blue-600/30"
+          className="inline-flex items-center space-x-2 px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs tracking-wide transition-all shadow-lg shadow-emerald-600/30"
         >
-          <span>{t('help.startMergingBtn', 'Start Merging Backups')}</span>
+          <span>{t('help.startMergingBtn', 'Start Weaving Archives')}</span>
           <ArrowRight className="w-4 h-4" />
         </Link>
       </div>

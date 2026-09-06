@@ -1,11 +1,15 @@
-# Panda JLib-Studio
+# Panda JL Studio
 
-> A privacy-first, 100% client-side utility for merging, organizing, searching, and sharing JW Library backups.
-> 
+> **🌐 Live Application:** [https://jwlsync.redpandaium.com/](https://jwlsync.redpandaium.com/)  
+>
+> A privacy-first, 100% client-side utility for merging, organizing, searching, and sharing JW Library backups. 
+>
+> Crafted by [redpandaium.com](https://redpandaium.com).
+
+
 > It's was inspired by the idea of https://github.com/j-syncer/Jw-sync-
 >
 > It's not a fork (different technology and features)
-
 
 ## 🚀 Features
 

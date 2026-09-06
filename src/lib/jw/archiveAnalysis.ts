@@ -1,5 +1,5 @@
 /**
- * Panda JWL-Sync — Direct .jwlibrary Archive Analyzer
+ * Panda JL Studio — Direct .jwlibrary Archive Analyzer
  * Extracts and inspects a .jwlibrary bundle to compute counts (notes, tags, playlists, bookmarks)
  * and SHA-256 hash without mutating the active app workspace.
  */
